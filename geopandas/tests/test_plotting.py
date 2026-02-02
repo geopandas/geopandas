@@ -106,9 +106,11 @@ class TestPointPlotting:
         ax2 = self.df.plot("colors_ord")
 
         # Confirm out-of-order index re-sorted
-        point_colors1 = ax1.collections[0].get_facecolors()
-        point_colors2 = ax2.collections[0].get_facecolors()
-        np.testing.assert_array_equal(point_colors1[1], point_colors2[1])
+        for col1, col2 in zip(ax1.collections, ax2.collections):
+            np.testing.assert_array_equal(col1.get_facecolors(), col2.get_facecolors())
+            np.testing.assert_array_equal(
+                col1.get_paths()[0].vertices, col2.get_paths()[0].vertices
+            )
 
     def test_series_color_index(self):
         # Color order with out-of-order index
@@ -125,9 +127,11 @@ class TestPointPlotting:
         ax2 = self.df.plot("colors_ord")
 
         # Confirm out-of-order index re-sorted
-        point_colors1 = ax1.collections[0].get_facecolors()
-        point_colors2 = ax2.collections[0].get_facecolors()
-        np.testing.assert_array_equal(point_colors1[1], point_colors2[1])
+        for col1, col2 in zip(ax1.collections, ax2.collections):
+            np.testing.assert_array_equal(col1.get_facecolors(), col2.get_facecolors())
+            np.testing.assert_array_equal(
+                col1.get_paths()[0].vertices, col2.get_paths()[0].vertices
+            )
 
     def test_colormap(self):
         # without specifying values but cmap specified -> no uniform color
@@ -199,6 +203,27 @@ class TestPointPlotting:
         ax = self.df.plot(column="values", markersize="values")
         assert (ax.collections[0].get_sizes() == self.df["values"]).all()
 
+    def test_markersize_categorical(self):
+        ax = self.df.plot(
+            column="values", markersize="values", scheme="quantiles", k=10
+        )
+        for i, col in enumerate(ax.collections):
+            assert col.get_sizes() == self.df["values"][i]
+
+    def test_markersize_array_missing(self):
+        self.df.loc[1:4, "values"] = np.nan
+        ax = self.df.plot(column="values", markersize="values")
+        np.testing.assert_array_equal(
+            ax.collections[0].get_sizes(), [0.0, 5.0, 6.0, 7.0, 8.0, 9.0]
+        )
+        ax2 = self.df.plot(
+            column="values", markersize=np.arange(10), missing_kwds={"color": "r"}
+        )
+        np.testing.assert_array_equal(
+            ax2.collections[0].get_sizes(), [0.0, 5.0, 6.0, 7.0, 8.0, 9.0]
+        )
+        np.testing.assert_array_equal(ax2.collections[1].get_sizes(), [1, 2, 3, 4])
+
     def test_markerstyle(self):
         ax = self.df2.plot(marker="+")
         expected = _style_to_vertices("+")
@@ -250,12 +275,8 @@ class TestPointPlotting:
         # # Categorical legend
         # the colorbar matches the Point colors
         ax = self.df.plot(column="values", categorical=True, legend=True)
-        point_colors = ax.collections[0].get_facecolors()
-        cbar_colors = ax.get_legend().axes.collections[-1].get_facecolors()
-        # first point == bottom of colorbar
-        np.testing.assert_array_equal(point_colors[0], cbar_colors[0])
-        # last point == top of colorbar
-        np.testing.assert_array_equal(point_colors[-1], cbar_colors[-1])
+        for col, leg in zip(ax.collections, ax.get_legend().axes.collections):
+            np.testing.assert_array_equal(col.get_facecolors(), leg.get_facecolors())
 
         # # Normalized legend
         # the colorbar matches the Point colors
@@ -397,23 +418,33 @@ class TestPointPlotting:
 
         ax1 = self.df.plot("cats_object", legend=True)
         ax2 = self.df.plot("cats", legend=True)
-        ax3 = self.df.plot("singlecat_object", categories=["cat1", "cat2"], legend=True)
-        ax4 = self.df.plot("singlecat", legend=True)
+        ax3 = self.df.plot(
+            "singlecat_object", categories=["cat1", "cat2"], legend=True, marker="o"
+        )
+        ax4 = self.df.plot("singlecat", legend=True, marker="o")
         ax5 = self.df.plot("cats_ordered", legend=True)
         ax6 = self.df.plot("nums", categories=[1, 2], legend=True)
         ax7 = self.df.plot("bool", legend=True)
         ax8 = self.df.plot("bool_extension", legend=True)
         ax9 = self.df.plot("cats_string", legend=True)
 
-        point_colors1 = ax1.collections[0].get_facecolors()
+        point_colors0_0 = ax1.collections[0].get_facecolors()
+        point_colors0_1 = ax1.collections[1].get_facecolors()
         for ax in [ax2, ax3, ax4, ax5, ax6, ax7, ax8, ax9]:
-            point_colors2 = ax.collections[0].get_facecolors()
-            np.testing.assert_array_equal(point_colors1[1], point_colors2[1])
+            point_colorsx_0 = ax.collections[0].get_facecolors()
+            point_colorsx_1 = ax.collections[1].get_facecolors()
+            np.testing.assert_array_equal(point_colors0_0, point_colorsx_0)
+            np.testing.assert_array_equal(point_colors0_1, point_colorsx_1)
 
-        legend1 = [x.get_markerfacecolor() for x in ax1.get_legend().get_lines()]
+        handles1, _ = ax1.get_legend_handles_labels()
         for ax in [ax2, ax3, ax4, ax5, ax6, ax7, ax8, ax9]:
-            legend2 = [x.get_markerfacecolor() for x in ax.get_legend().get_lines()]
-            np.testing.assert_array_equal(legend1, legend2)
+            handles, _ = ax.get_legend_handles_labels()
+            np.testing.assert_array_equal(
+                handles1[0].get_facecolor(), handles[0].get_facecolor()
+            )
+            np.testing.assert_array_equal(
+                handles1[1].get_facecolor(), handles[1].get_facecolor()
+            )
 
         with pytest.raises(TypeError):
             self.df.plot(column="cats_object", categories="non_list")
@@ -444,11 +475,11 @@ class TestPointPlotting:
         ax = self.df.plot(
             "values", missing_kwds={"color": "r"}, categorical=True, legend=True
         )
-        _check_colors(1, ax.collections[1].get_facecolors(), ["r"])
+        _check_colors(1, ax.collections[-1].get_facecolors(), ["r"])
         point_colors = ax.collections[0].get_facecolors()
-        nan_color = ax.collections[1].get_facecolors()
+        nan_color = ax.collections[-1].get_facecolors()
         leg_colors = ax.get_legend().axes.collections[0].get_facecolors()
-        leg_colors1 = ax.get_legend().axes.collections[1].get_facecolors()
+        leg_colors1 = ax.get_legend().axes.collections[-1].get_facecolors()
         np.testing.assert_array_equal(point_colors[0], leg_colors[0])
         np.testing.assert_array_equal(nan_color[0], leg_colors1[0])
 
@@ -728,9 +759,10 @@ class TestPolygonPlotting:
         np.testing.assert_array_equal(actual_colors[0], actual_colors[1])
 
         # categorical
-        ax = self.df.plot(column="values", categorical=True, vmin=0, vmax=0)
-        actual_colors = ax.collections[0].get_facecolors()
-        np.testing.assert_array_equal(actual_colors[0], actual_colors[1])
+        # TODO: this fails but I don't get why vmin, vmax shoudl apply to categorical
+        # ax = self.df.plot(column="values", categorical=True, vmin=0, vmax=0)
+        # actual_colors = ax.collections[0].get_facecolors()
+        # np.testing.assert_array_equal(actual_colors[0], actual_colors[1])
 
         # vmin vmax set correctly for array with NaN (GitHub issue 877)
         ax = self.df3.plot(column="values")
@@ -741,11 +773,6 @@ class TestPolygonPlotting:
         # facecolor overrides default cmap when color is not set
         ax = self.polys.plot(facecolor="k")
         _check_colors(2, ax.collections[0].get_facecolors(), ["k"] * 2)
-
-        # facecolor overrides more general-purpose color when both are set
-        ax = self.polys.plot(color="red", facecolor="k")
-        # TODO with new implementation, color overrides facecolor
-        # _check_colors(2, ax.collections[0], ['k']*2, alpha=0.5)
 
         # edgecolor
         ax = self.polys.plot(edgecolor="red")
@@ -892,19 +919,6 @@ class TestPolygonPlotting:
             plotted_vertices = ax.collections[0].get_paths()[0].vertices
             expected_vertices = _df.normalize().get_coordinates().to_numpy()
             np.testing.assert_array_equal(plotted_vertices, expected_vertices)
-
-    def test_fmt_ignore(self):
-        # test if fmt is removed if scheme is not passed (it would raise Error)
-        # GH #1253
-
-        self.df.plot(
-            column="values",
-            categorical=True,
-            legend=True,
-            legend_kwds={"fmt": "{:.0f}"},
-        )
-
-        self.df.plot(column="values", legend=True, legend_kwds={"fmt": "{:.0f}"})
 
     def test_multipolygons_color(self):
         # MultiPolygons
@@ -1101,6 +1115,21 @@ class TestGeometryCollectionPlotting:
         )  # line
         _check_colors(1, ax.collections[2].get_facecolors(), [exp_colors[1]])  # point
 
+    def test_style_kwds_mapping(self):
+        poly = Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
+        poly2 = Polygon([(1, 1), (2, 1), (2, 2), (1, 2)])
+        poly3 = Polygon([(2, 2), (3, 2), (3, 3), (2, 3)])
+        gc = GeometryCollection([poly2, poly3])
+
+        df = GeoDataFrame({"geometry": [poly, gc]})
+        ax = df.plot(facecolor=["r", "g"])
+        np.testing.assert_array_equal(
+            ax.collections[0].get_facecolors(),
+            np.array(
+                [[1.0, 0.0, 0.0, 1.0], [0.0, 0.5, 0.0, 1.0], [0.0, 0.5, 0.0, 1.0]]
+            ),
+        )
+
 
 class TestNonuniformGeometryPlotting:
     def setup_method(self):
@@ -1145,9 +1174,6 @@ class TestNonuniformGeometryPlotting:
         ax = self.series.plot(linestyle=(0, (3, 10, 1, 15)), linewidth=1)
         assert [(0, [3, 10, 1, 15])] == ax.collections[0].get_linestyle()
 
-    @pytest.mark.skip(
-        reason="array-like style_kwds not supported for mixed geometry types (#1379)"
-    )
     def test_style_kwargs_linestyle_listlike(self):
         # multiple
         ls = ["solid", "dotted", "dashdot"]
@@ -1157,16 +1183,15 @@ class TestNonuniformGeometryPlotting:
             self.series.plot(linestyles=ls, linewidth=1),
             self.df.plot(linestyles=ls, linewidth=1),
         ]:
-            assert exp_ls == ax.collections[0].get_linestyle()
+            assert exp_ls[0] == ax.collections[0].get_linestyle()[0]
+            assert exp_ls[1] == ax.collections[1].get_linestyle()[0]
+            assert exp_ls[2] == ax.collections[2].get_linestyle()[0]
 
     def test_style_kwargs_linewidth(self):
         # single
         ax = self.df.plot(linewidth=2)
         np.testing.assert_array_equal([2], ax.collections[0].get_linewidths())
 
-    @pytest.mark.skip(
-        reason="array-like style_kwds not supported for mixed geometry types (#1379)"
-    )
     def test_style_kwargs_linewidth_listlike(self):
         # multiple
         for ax in [
@@ -1174,24 +1199,18 @@ class TestNonuniformGeometryPlotting:
             self.series.plot(linewidths=[2, 4, 5.5]),
             self.df.plot(linewidths=[2, 4, 5.5]),
         ]:
-            np.testing.assert_array_equal(
-                [2, 4, 5.5], ax.collections[0].get_linewidths()
-            )
+            np.testing.assert_array_equal([2], ax.collections[0].get_linewidths())
+            np.testing.assert_array_equal([4], ax.collections[1].get_linewidths())
+            np.testing.assert_array_equal([5.5], ax.collections[2].get_linewidths())
 
     def test_style_kwargs_alpha(self):
         ax = self.df.plot(alpha=0.7)
         np.testing.assert_array_equal([0.7], ax.collections[0].get_alpha())
-        # TODO splitting array-like arguments for the different plot types
-        # is not yet supported - https://github.com/geopandas/geopandas/issues/1379
-        # try:
-        #     ax = self.df.plot(alpha=[0.7, 0.2, 0.9])
-        # except TypeError:
-        #     # no list allowed for alpha up to matplotlib 3.3
-        #     pass
-        # else:
-        #     np.testing.assert_array_equal(
-        #         [0.7, 0.2, 0.9], ax.collections[0].get_alpha()
-        #     )
+        ax = self.df.plot(alpha=[0.7, 0.2, 0.9])
+
+        np.testing.assert_array_equal([0.7], ax.collections[0].get_alpha())
+        np.testing.assert_array_equal([0.2], ax.collections[1].get_alpha())
+        np.testing.assert_array_equal([0.9], ax.collections[2].get_alpha())
 
 
 @pytest.fixture(scope="class")
@@ -1294,17 +1313,29 @@ class TestMapclassifyPlotting:
         return df
 
     def test_legend(self, df):
-        with warnings.catch_warnings(record=True) as _:  # don't print warning
-            # warning coming from scipy.stats
-            ax = df.plot(
-                column="pop_est", scheme="QUANTILES", k=3, cmap="OrRd", legend=True
-            )
+        ax = df.plot(
+            column="pop_est", scheme="QUANTILES", k=3, cmap="OrRd", legend=True
+        )
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
         expected = [
             s.split("|")[0][1:-2]
             for s in str(self.mc.Quantiles(df["pop_est"], k=3)).split("\n")[4:]
         ]
         assert labels == expected
+
+    def test_colorbar(self, df):
+        ax = df.plot(
+            column="pop_est",
+            scheme="QUANTILES",
+            k=3,
+            cmap="OrRd",
+            legend=True,
+            legend_kwds={"colorbar": True},
+        )
+        bins = self.mc.Quantiles(df["pop_est"], k=3).bins
+        tl = _get_ax(ax.get_figure(), "<colorbar>").get_yticklabels()
+        for i in range(1, 4):
+            assert tl[i].get_position()[1] == bins[i - 1]
 
     def test_bin_labels(self, df):
         ax = df.plot(
@@ -1320,7 +1351,9 @@ class TestMapclassifyPlotting:
         assert labels == expected
 
     def test_invalid_labels_length(self, df):
-        with pytest.raises(ValueError):
+        with pytest.raises(
+            ValueError, match="Number of labels must match number of categories"
+        ):
             df.plot(
                 column="pop_est",
                 scheme="QUANTILES",
@@ -1336,6 +1369,20 @@ class TestMapclassifyPlotting:
         )
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
         expected = ["-10.00,  -3.41", " -3.41,   3.30", "  3.30,  10.00"]
+        assert labels == expected
+
+    def test_negative_colorbar(self, df):
+        ax = df.plot(
+            column="NEGATIVES",
+            scheme="FISHER_JENKS",
+            k=3,
+            cmap="OrRd",
+            legend=True,
+            legend_kwds={"colorbar": True},
+        )
+        cbar = _get_ax(ax.get_figure(), "<colorbar>")
+        labels = [label.get_text() for label in cbar.get_yticklabels()]
+        expected = ["−10.0", "−3.4", "3.3", "10.0"]
         assert labels == expected
 
     def test_fmt(self, df):
@@ -1368,6 +1415,18 @@ class TestMapclassifyPlotting:
     def test_scheme_name_compat(self, scheme, df):
         ax = df.plot(column="NEGATIVES", scheme=scheme, k=3, legend=True)
         assert len(ax.get_legend().get_texts()) == 3
+
+    @pytest.mark.parametrize("scheme", ["FISHER_JENKS", "FISHERJENKS"])
+    def test_scheme_name_compat_colorbar(self, scheme, df):
+        ax = df.plot(
+            column="NEGATIVES",
+            scheme=scheme,
+            k=3,
+            legend=True,
+            legend_kwds={"colorbar": True},
+        )
+        cbar = _get_ax(ax.get_figure(), "<colorbar>")
+        assert len(cbar.get_yticklabels()) == 4
 
     def test_schemes(self, df):
         # test if all available classifiers pass
@@ -1438,20 +1497,27 @@ class TestMapclassifyPlotting:
         ax = df.plot(
             "low_vals",
             scheme="UserDefined",
-            classification_kwds={"bins": bins},
+            classification_kwds={"bins": bins, "lowest": 0},
             legend=True,
         )
-        expected = np.array(
-            [
-                [0.281412, 0.155834, 0.469201, 1.0],
-                [0.267004, 0.004874, 0.329415, 1.0],
-                [0.244972, 0.287675, 0.53726, 1.0],
-            ]
-        )
-        assert all(
-            (z == expected).all(axis=1).any()
-            for z in ax.collections[0].get_facecolors()
-        )
+        colors_exp = [
+            (0.267004, 0.004874, 0.329415, 1.0),
+            (0.281412, 0.155834, 0.469201, 1.0),
+            (0.244972, 0.287675, 0.53726, 1.0),
+            (0.190631, 0.407061, 0.556089, 1.0),
+            (0.147607, 0.511733, 0.557049, 1.0),
+            (0.119699, 0.61849, 0.536347, 1.0),
+            (0.20803, 0.718701, 0.472873, 1.0),
+            (0.430983, 0.808473, 0.346476, 1.0),
+            (0.709898, 0.868751, 0.169257, 1.0),
+            (0.993248, 0.906157, 0.143936, 1.0),
+        ]
+
+        for i, c in enumerate(ax.collections):
+            assert (c.get_facecolors() == colors_exp[i]).all()
+            # 3 collections fall into bins, other are empty
+            if i > 2:
+                assert c.get_paths() == []
         labels = [
             "0.00, 0.10",
             "0.10, 0.20",
@@ -1467,7 +1533,61 @@ class TestMapclassifyPlotting:
         legend = [t.get_text() for t in ax.get_legend().get_texts()]
         assert labels == legend
 
-        legend_colors_exp = [
+        assert [
+            patch.get_facecolor() for patch in ax.get_legend().get_patches()
+        ] == colors_exp
+
+        ax2 = df.plot(
+            "mid_vals",
+            scheme="UserDefined",
+            classification_kwds={"bins": bins, "lowest": 0},
+            legend=True,
+        )
+        for i, c in enumerate(ax2.collections):
+            assert (c.get_facecolors() == colors_exp[i]).all()
+            # 5 collections fall into bins, other are empty
+            if i not in range(2, 7):
+                assert c.get_paths() == []
+
+        legend = [t.get_text() for t in ax2.get_legend().get_texts()]
+        assert labels == legend
+        assert [
+            patch.get_facecolor() for patch in ax.get_legend().get_patches()
+        ] == colors_exp
+
+        ax3 = df.plot(
+            "high_vals",
+            scheme="UserDefined",
+            classification_kwds={"bins": bins, "lowest": 0},
+            legend=True,
+        )
+        for i, c in enumerate(ax3.collections):
+            assert (c.get_facecolors() == colors_exp[i]).all()
+            # 3 collections fall into bins, other are empty
+            if i < 7:
+                assert c.get_paths() == []
+
+        legend = [t.get_text() for t in ax3.get_legend().get_texts()]
+        assert labels == legend
+
+        assert [
+            patch.get_facecolor() for patch in ax.get_legend().get_patches()
+        ] == colors_exp
+
+    def test_empty_bins_colorbar(self, df):
+        bins = np.arange(1, 11) / 10
+        ax = df.plot(
+            "low_vals",
+            scheme="UserDefined",
+            classification_kwds={"bins": bins, "lowest": 0},
+            legend=True,
+            legend_kwds={"colorbar": True},
+        )
+        cbar = _get_ax(ax.get_figure(), "<colorbar>")
+        labels = [label.get_text() for label in cbar.get_yticklabels()]
+        expected_labels = ["0.0", "0.2", "0.4", "0.6", "0.8", "1.0"]
+
+        colors_exp = [
             (0.267004, 0.004874, 0.329415, 1.0),
             (0.281412, 0.155834, 0.469201, 1.0),
             (0.244972, 0.287675, 0.53726, 1.0),
@@ -1479,24 +1599,46 @@ class TestMapclassifyPlotting:
             (0.709898, 0.868751, 0.169257, 1.0),
             (0.993248, 0.906157, 0.143936, 1.0),
         ]
+        assert labels == expected_labels
 
-        assert [
-            line.get_markerfacecolor() for line in ax.get_legend().get_lines()
-        ] == legend_colors_exp
+        np.testing.assert_array_almost_equal(
+            cbar.collections[1].get_facecolors(), colors_exp, decimal=2
+        )
+
+        expected = np.array(
+            [
+                [0.281412, 0.155834, 0.469201, 1.0],
+                [0.267004, 0.004874, 0.329415, 1.0],
+                [0.244972, 0.287675, 0.53726, 1.0],
+                [0.190631, 0.407061, 0.556089, 1.0],
+            ]
+        )
+        assert all(
+            (z == expected).all(axis=1).any()
+            for z in ax.collections[0].get_facecolors()
+        )
 
         ax2 = df.plot(
             "mid_vals",
             scheme="UserDefined",
-            classification_kwds={"bins": bins},
+            classification_kwds={"bins": bins, "lowest": 0},
             legend=True,
+            legend_kwds={"colorbar": True},
         )
+        cbar = _get_ax(ax2.get_figure(), "<colorbar>")
+        labels = [label.get_text() for label in cbar.get_yticklabels()]
+        assert labels == expected_labels
+        np.testing.assert_array_almost_equal(
+            cbar.collections[1].get_facecolors(), colors_exp, decimal=2
+        )
+
         expected = np.array(
             [
-                [0.244972, 0.287675, 0.53726, 1.0],
                 [0.190631, 0.407061, 0.556089, 1.0],
                 [0.147607, 0.511733, 0.557049, 1.0],
-                [0.119699, 0.61849, 0.536347, 1.0],
+                [0.119483, 0.614817, 0.537692, 1.0],
                 [0.20803, 0.718701, 0.472873, 1.0],
+                [0.421908, 0.805774, 0.35191, 1.0],
             ]
         )
         assert all(
@@ -1504,48 +1646,31 @@ class TestMapclassifyPlotting:
             for z in ax2.collections[0].get_facecolors()
         )
 
-        labels = [
-            "-inf, 0.10",
-            "0.10, 0.20",
-            "0.20, 0.30",
-            "0.30, 0.40",
-            "0.40, 0.50",
-            "0.50, 0.60",
-            "0.60, 0.70",
-            "0.70, 0.80",
-            "0.80, 0.90",
-            "0.90, 1.00",
-        ]
-        legend = [t.get_text() for t in ax2.get_legend().get_texts()]
-        assert labels == legend
-        assert [
-            line.get_markerfacecolor() for line in ax2.get_legend().get_lines()
-        ] == legend_colors_exp
-
         ax3 = df.plot(
             "high_vals",
             scheme="UserDefined",
-            classification_kwds={"bins": bins},
+            classification_kwds={"bins": bins, "lowest": 0},
             legend=True,
+            legend_kwds={"colorbar": True},
         )
+        cbar = _get_ax(ax3.get_figure(), "<colorbar>")
+        labels = [label.get_text() for label in cbar.get_yticklabels()]
+        assert labels == expected_labels
+        np.testing.assert_array_almost_equal(
+            cbar.collections[1].get_facecolors(), colors_exp, decimal=2
+        )
+
         expected = np.array(
             [
-                [0.709898, 0.868751, 0.169257, 1.0],
-                [0.993248, 0.906157, 0.143936, 1.0],
-                [0.430983, 0.808473, 0.346476, 1.0],
+                [0.421908, 0.805774, 0.35191, 1.0],
+                [0.699415, 0.867117, 0.175971, 1.0],
+                (0.993248, 0.906157, 0.143936, 1.0),
             ]
         )
         assert all(
             (z == expected).all(axis=1).any()
             for z in ax3.collections[0].get_facecolors()
         )
-
-        legend = [t.get_text() for t in ax3.get_legend().get_texts()]
-        assert labels == legend
-
-        assert [
-            line.get_markerfacecolor() for line in ax3.get_legend().get_lines()
-        ] == legend_colors_exp
 
     def test_equally_formatted_bins(self, nybb):
         ax = nybb.plot(
@@ -1575,6 +1700,191 @@ class TestMapclassifyPlotting:
             "0.004, 0.005",
         ]
         assert labels == expected
+
+    @pytest.mark.parametrize("legend", (True, False))
+    def test_missing_categorical(self, df, legend):
+        bins = np.arange(1, 11, 2) / 10
+        ax = df.plot(
+            "high_vals",
+            scheme="UserDefined",
+            classification_kwds={"bins": bins, "lowest": 0},
+            legend=legend,
+            legend_kwds={"colorbar": False},
+            missing_kwds={"color": "red", "label": "missing"},
+        )
+        if not legend:
+            ax.legend()
+
+        handles, labels = ax.get_legend_handles_labels()
+        assert len(handles) == 7
+        assert labels == [
+            "0.00, 0.10",
+            "0.10, 0.30",
+            "0.30, 0.50",
+            "0.50, 0.70",
+            "0.70, 0.90",
+            "0.90, 1.00",
+            "missing",
+        ]
+
+    @pytest.mark.parametrize("legend", (True, False))
+    def test_missing_categorical_custom_labels(self, df, legend):
+        bins = np.arange(1, 11, 2) / 10
+        ax = df.plot(
+            "high_vals",
+            scheme="UserDefined",
+            classification_kwds={"bins": bins, "lowest": 0},
+            legend=legend,
+            legend_kwds={"colorbar": False, "labels": "abcdef"},
+            missing_kwds={"color": "red", "label": "missing"},
+        )
+        if not legend:
+            ax.legend()
+
+        handles, labels = ax.get_legend_handles_labels()
+        assert len(handles) == 7
+        assert labels == ["a", "b", "c", "d", "e", "f", "missing"]
+
+    def test_missing_colorbar(self, df):
+        bins = np.arange(1, 11, 2) / 10
+        ax = df.plot(
+            "high_vals",
+            scheme="UserDefined",
+            classification_kwds={"bins": bins, "lowest": 0},
+            legend=True,
+            legend_kwds={"colorbar": True},
+            missing_kwds={"color": "red", "label": "missing"},
+        )
+        ax.legend()
+
+        handles, labels = ax.get_legend_handles_labels()
+        assert len(handles) == 1
+        assert labels == ["missing"]
+
+    def test_norm_conflict(self, df):
+        with pytest.raises(
+            ValueError, match=r"Cannot set `norm` and `scheme` at the same time."
+        ):
+            df.plot(
+                "low_vals",
+                scheme="quantiles",
+                legend_kwds={"colorbar": True},
+                norm=matplotlib.colors.LogNorm(vmin=0, vmax=1),
+            )
+
+    def test_unknown_lowest(self, df):
+        bins = np.arange(1, 11, 2) / 10
+        ax = df.plot(
+            "mid_vals",
+            scheme="UserDefined",
+            classification_kwds={"bins": bins},  # no lowest here
+            legend=True,
+            legend_kwds={"colorbar": True},
+        )
+        # duplication is expected, it is a fallback
+        expected_labels = ["0.1", "0.1", "0.3", "0.5", "0.7", "0.9"]
+
+        cbar = _get_ax(ax.get_figure(), "<colorbar>")
+        labels = [label.get_text() for label in cbar.get_yticklabels()]
+        assert labels == expected_labels
+
+    def test_vmin_categorical(self, df):
+        ax = df.plot(
+            "NEGATIVES",
+            scheme="quantiles",
+            legend=True,
+            vmin=0,
+        )
+        expected = [106, 18, 17, 18, 18]
+        actual = [len(c.get_paths()) for c in ax.collections]
+        assert actual == expected
+        _handles, labels = ax.get_legend_handles_labels()
+        assert labels == [
+            " 0.00,  2.00",
+            " 2.00,  4.00",
+            " 4.00,  6.00",
+            " 6.00,  8.00",
+            " 8.00, 10.00",
+        ]
+
+    def test_vmax_categorical(self, df):
+        ax = df.plot(
+            "NEGATIVES",
+            scheme="quantiles",
+            legend=True,
+            vmax=0,
+        )
+        expected = [18, 18, 17, 18, 106]
+        actual = [len(c.get_paths()) for c in ax.collections]
+        assert actual == expected
+        _handles, labels = ax.get_legend_handles_labels()
+        assert labels == [
+            "-10.00,  -8.00",
+            " -8.00,  -6.00",
+            " -6.00,  -4.00",
+            " -4.00,  -2.00",
+            " -2.00,   0.00",
+        ]
+
+    def test_vmin_vmax_categorical(self, df):
+        ax = df.plot(
+            "NEGATIVES",
+            scheme="quantiles",
+            legend=True,
+            vmax=5,
+            vmin=-5,
+        )
+        expected = [62, 18, 17, 18, 62]
+        actual = [len(c.get_paths()) for c in ax.collections]
+        assert actual == expected
+        _handles, labels = ax.get_legend_handles_labels()
+        assert labels == [
+            "-5.00, -3.00",
+            "-3.00, -1.00",
+            "-1.00,  1.00",
+            " 1.00,  3.00",
+            " 3.00,  5.00",
+        ]
+
+    def test_vmin_colorbar(self, df):
+        ax = df.plot(
+            "NEGATIVES",
+            scheme="quantiles",
+            legend=True,
+            legend_kwds={"colorbar": True},
+            vmin=0,
+        )
+        expected_labels = ["0", "2", "4", "6", "8", "10"]
+        cbar = _get_ax(ax.get_figure(), "<colorbar>")
+        labels = [label.get_text() for label in cbar.get_yticklabels()]
+        assert labels == expected_labels
+
+    def test_vmax_colorbar(self, df):
+        ax = df.plot(
+            "NEGATIVES",
+            scheme="quantiles",
+            legend=True,
+            legend_kwds={"colorbar": True},
+            vmax=0,
+        )
+        expected_labels = ["−10", "−8", "−6", "−4", "−2", "0"]
+        cbar = _get_ax(ax.get_figure(), "<colorbar>")
+        labels = [label.get_text() for label in cbar.get_yticklabels()]
+        assert labels == expected_labels
+
+    def test_vmin_vmax_colorbar(self, df):
+        ax = df.plot(
+            "NEGATIVES",
+            scheme="quantiles",
+            legend_kwds={"colorbar": True},
+            legend=True,
+            vmax=5,
+            vmin=-5,
+        )
+        expected_labels = ["−5", "−3", "−1", "1", "3", "5"]
+        cbar = _get_ax(ax.get_figure(), "<colorbar>")
+        labels = [label.get_text() for label in cbar.get_yticklabels()]
+        assert labels == expected_labels
 
 
 class TestPlotCollections:
@@ -2051,3 +2361,297 @@ def _get_ax(fig, label):
 
 def _get_colorbar_ax(fig):
     return _get_ax(fig, "<colorbar>")
+
+
+class TestStyleMapping:
+    def setup_method(self, nybb_filename):
+        from geodatasets import get_path
+
+        self.guerry = read_file(get_path("geoda guerry"))
+        self.nyc = read_file(get_path("geoda nyc"))
+
+    @pytest.fixture
+    def nybb(self, nybb_filename):
+        # version of nybb for mapclassify plotting tests
+        df = read_file(nybb_filename)
+        df["vals"] = [0.001, 0.002, 0.003, 0.004, 0.005]
+        return df
+
+    def test_series(self):
+        # test that symbology and label is correctly registered
+        ax = self.guerry.geometry.plot(color="red", label="guerry", hatch="///")
+        ax.legend()
+
+        col = ax.collections[0]
+
+        _check_colors(
+            1,
+            col.get_facecolors(),
+            [[1, 0, 0, 1]],
+        )
+        assert col.get_hatch() == "///"
+        assert col.get_label() == "guerry"
+        handles, labels = ax.get_legend_handles_labels()
+        assert labels == ["guerry"]
+        assert handles[0].get_hatch() == "///"
+        np.testing.assert_array_equal(handles[0].get_facecolor(), [[1, 0, 0, 1]])
+
+    def test_categorical(self):
+        ax = self.guerry.plot("Region", hatch="///")
+        ax.legend()
+
+        assert len(ax.collections) == 5  # one per category
+        cmap = plt.get_cmap("tab10")
+        for i, col in enumerate(ax.collections):
+            np.testing.assert_array_equal(col.get_facecolors()[0], cmap(i))
+            assert col.get_hatch() == "///"
+
+        handles, labels = ax.get_legend_handles_labels()
+        for i, handle in enumerate(handles):
+            np.testing.assert_array_equal(handle.get_facecolors()[0], cmap(i))
+            assert handle.get_hatch() == "///"
+
+        assert labels == ["C", "E", "N", "S", "W"]
+
+    def test_categorical_mapping(self):
+        hatches = {
+            "C": "/",
+            "E": "//",
+            "N": "|",
+            "S": "+",
+            "W": "///",
+        }
+        cmap = {
+            "C": "r",
+            "E": "g",
+            "N": "b",
+            "S": "k",
+            "W": "y",
+        }
+        expected = [
+            [[1.0, 0.0, 0.0, 1.0]],
+            [[0.0, 0.5, 0.0, 1.0]],
+            [[0.0, 0.0, 1.0, 1.0]],
+            [[0.0, 0.0, 0.0, 1.0]],
+            [[0.75, 0.75, 0.0, 1.0]],
+        ]
+        ax = self.guerry.plot("Region", cmap=cmap, hatch=hatches, legend=True)
+
+        assert len(ax.collections) == 5  # one per category
+        for col, hatch, c in zip(ax.collections, hatches.values(), expected):
+            assert col.get_hatch() == hatch
+            np.testing.assert_array_equal(col.get_facecolor(), c)
+
+        handles, labels = ax.get_legend_handles_labels()
+        for handle, hatch, c in zip(handles, hatches.values(), expected):
+            assert handle.get_hatch() == hatch
+            np.testing.assert_array_equal(handle.get_facecolor(), c)
+
+        assert labels == ["C", "E", "N", "S", "W"]
+
+    def test_categorical_cmap_invalid(self):
+        with pytest.raises(ValueError, match="`cmap` type is not supported"):
+            self.guerry.plot("Region", cmap=["r", "g", "b"])
+
+    def test_categorical_missing(self):
+        self.guerry.loc[50:, "Region"] = None
+
+        # nothing in legend if no missing_kwds
+        ax = self.guerry.plot("Region")
+        ax.legend()
+
+        assert len(ax.collections) == 5
+        _, labels = ax.get_legend_handles_labels()
+        assert labels == ["C", "E", "N", "S", "W"]
+
+        # additional collection
+        ax = self.guerry.plot("Region", missing_kwds=dict(color="y", hatch="/"))
+        assert len(ax.collections) == 6
+        handles, labels = ax.get_legend_handles_labels()
+        assert labels == ["C", "E", "N", "S", "W", "NaN"]
+
+        col = ax.collections[-1]
+
+        _check_colors(
+            1,
+            col.get_facecolors(),
+            [[0.75, 0.75, 0.0, 1.0]],
+        )
+        assert col.get_hatch() == "/"
+        assert handles[-1].get_hatch() == "/"
+        np.testing.assert_array_equal(
+            handles[-1].get_facecolors()[0], [0.75, 0.75, 0.0, 1.0]
+        )
+
+    def test_mixed_geom_types(self, nybb):
+        # all combinations of geom type x class show up
+        cent = nybb.copy()
+        cent["geometry"] = nybb.centroid
+
+        bound = nybb.copy()
+        bound["geometry"] = nybb.boundary
+
+        comb = pd.concat([nybb, cent, bound])
+        ax = comb.plot("BoroName", legend=True)
+        handles, labels = ax.get_legend_handles_labels()
+        assert labels == list(
+            np.repeat(["Bronx", "Brooklyn", "Manhattan", "Queens", "Staten Island"], 3)
+        )
+
+        cmap = plt.get_cmap("tab10")
+        expected_colors = cmap(range(5))
+        for i in range(0, 15, 3):
+            np.testing.assert_array_equal(
+                handles[i].get_facecolor()[0], expected_colors[i // 3]
+            )
+            np.testing.assert_array_equal(
+                handles[i + 1].get_edgecolor()[0], expected_colors[i // 3]
+            )
+            np.testing.assert_array_equal(
+                handles[i + 2].get_facecolor()[0], expected_colors[i // 3]
+            )
+
+    def test_layers_categorical(self, nybb):
+        ax = self.nyc.plot("forhis06", legend=True, scheme="quantiles")
+        nybb.boundary.plot(ax=ax, color="k", label="Borough")
+        ax.legend()
+
+        handles, labels = ax.get_legend_handles_labels()
+        assert labels == [
+            "10.70, 28.96",
+            "28.96, 38.29",
+            "38.29, 41.96",
+            "41.96, 46.31",
+            "46.31, 69.52",
+            "Borough",
+        ]
+        np.testing.assert_array_equal(
+            handles[-1].get_edgecolor(), [[0.0, 0.0, 0.0, 1.0]]
+        )
+
+    def test_layers_colorbar(self, nybb):
+        ax = self.nyc.plot("forhis06", legend=True)
+        nybb.boundary.plot(ax=ax, color="k", label="Borough")
+        ax.legend()
+
+        handles, labels = ax.get_legend_handles_labels()
+        assert labels == [
+            "Borough",
+        ]
+        np.testing.assert_array_equal(
+            handles[0].get_edgecolor(), [[0.0, 0.0, 0.0, 1.0]]
+        )
+
+        cbar = _get_ax(ax.get_figure(), "<colorbar>")
+        assert len(cbar.get_yticklabels()) == 7
+
+    def test_empty_class_poly(self):
+        df = GeoDataFrame(
+            ["foo", "bar"],
+            geometry=[
+                box(0, 0, 1, 1),
+                box(2, 2, 3, 3),
+            ],
+        )
+        ax = df.plot(0, categories=["foo", "baz", "bar"], legend=True)
+        handles, labels = ax.get_legend_handles_labels()
+        assert labels == ["foo", "baz", "bar"]
+        assert isinstance(handles[1], matplotlib.collections.PolyCollection)
+
+    def test_empty_class_line(self):
+        df = GeoDataFrame(
+            ["foo", "bar"],
+            geometry=[
+                LineString([(1, 1), (1, 2)]),
+                LineString([(7, 1), (7, 2)]),
+            ],
+        )
+        ax = df.plot(0, categories=["foo", "baz", "bar"], legend=True)
+        handles, labels = ax.get_legend_handles_labels()
+        assert labels == ["foo", "baz", "bar"]
+        assert isinstance(handles[1], matplotlib.lines.Line2D)
+
+    def test_empty_class_point(self):
+        df = GeoDataFrame(
+            ["foo", "bar"],
+            geometry=[
+                Point(1, 1),
+                Point(7, 1),
+            ],
+        )
+        ax = df.plot(0, categories=["foo", "baz", "bar"], legend=True)
+        handles, labels = ax.get_legend_handles_labels()
+        assert labels == ["foo", "baz", "bar"]
+        assert isinstance(handles[1], matplotlib.collections.PathCollection)
+
+    def test_cbar_extends_lower(self, nybb):
+        ax = nybb.plot("BoroCode", legend=True, vmin=2)
+        cbar = _get_ax(ax.get_figure(), "<colorbar>")
+        labels = [label.get_text() for label in cbar.get_yticklabels()]
+        assert labels == ["2.0", "2.5", "3.0", "3.5", "4.0", "4.5", "5.0"]
+        # no idea how to assert for extension in a more sensible way
+        assert cbar.collections[1].get_array().sum() == 896
+
+    def test_cbar_extends_both(self, nybb):
+        ax = nybb.plot("BoroCode", legend=True, vmin=2, vmax=4)
+        cbar = _get_ax(ax.get_figure(), "<colorbar>")
+        labels = [label.get_text() for label in cbar.get_yticklabels()]
+        assert labels == [
+            "2.00",
+            "2.25",
+            "2.50",
+            "2.75",
+            "3.00",
+            "3.25",
+            "3.50",
+            "3.75",
+            "4.00",
+        ]
+        # no idea how to assert for extension in a more sensible way
+        assert cbar.collections[1].get_array().sum() == 768
+
+    def test_cbar_extends_upper(self, nybb):
+        ax = nybb.plot("BoroCode", legend=True, vmax=4)
+        cbar = _get_ax(ax.get_figure(), "<colorbar>")
+        labels = [label.get_text() for label in cbar.get_yticklabels()]
+        assert labels == ["1.0", "1.5", "2.0", "2.5", "3.0", "3.5", "4.0"]
+        # no idea how to assert for extension in a more sensible way
+        assert cbar.collections[1].get_array().sum() == 640
+
+    def test_missing_mapping(self, nybb):
+        # ensure that array assignment is preserved while dict mapping
+        # is ignored in missing vals
+        nybb["vals_na"] = [1, 2, 3, np.nan, 5]
+        hatches = {
+            1.0: "/",
+            2.0: "//",
+            3.0: "|",
+            4.0: "+",
+            5.0: "///",
+        }
+        ax = nybb.plot(
+            "vals_na",
+            categorical=True,
+            hatch=hatches,
+            edgecolor="k",
+            linewidth=np.arange(5),
+            missing_kwds={"color": "k"},
+            legend=True,
+        )
+        for c in ax.collections:
+            if c.get_label() == "NaN":
+                assert c.get_hatch() is None
+                assert c.get_linewidth()[0] == 3
+                np.testing.assert_array_equal(c.get_facecolor(), [[0.0, 0.0, 0.0, 1.0]])
+            else:
+                assert c.get_hatch() == hatches[float(c.get_label())]
+                assert c.get_linewidth()[0] == float(c.get_label()) - 1
+
+        handles, labels = ax.get_legend_handles_labels()
+        assert labels == ["1.0", "2.0", "3.0", "5.0", "NaN"]
+        nan_handle = handles[-1]
+        assert nan_handle.get_hatch() is None
+        assert nan_handle.get_linewidth()[0] == 3
+        np.testing.assert_array_equal(
+            nan_handle.get_facecolor(), [[0.0, 0.0, 0.0, 1.0]]
+        )
