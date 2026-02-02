@@ -10,10 +10,9 @@ __all__ = [
     "clip",
     "collect",
     "geocode",
+    "make_grid",
     "overlay",
     "reverse_geocode",
     "sjoin",
     "sjoin_nearest",
-    "clip",
-    "make_grid",
 ]
