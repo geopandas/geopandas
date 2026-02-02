@@ -367,7 +367,17 @@ def _basic_checks(input_geometry, cell_size, offset, what, cell_type, intersect)
         bounds = np.array(input_geometry.total_bounds)
     else:
         bounds = np.array(input_geometry.bounds)
-    if (offset[0] > (bounds[2] - bounds[0])) and (offset[1] > (bounds[3] - bounds[1])):
-        warnings.warn("`offset` is larger than input_geometry bounds", stacklevel=2)
-    if (cell_size > (bounds[2] - bounds[0])) and (cell_size > (bounds[3] - bounds[1])):
-        warnings.warn("`cell_size` is larger than input_geometry bounds", stacklevel=2)
+    width = bounds[2] - bounds[0]
+    height = bounds[3] - bounds[1]
+    if (offset[0] > width) and (offset[1] > height):
+        warnings.warn(
+            f"`offset` {offset} is larger than "
+            f"input_geometry dimensions ({width}, {height})",
+            stacklevel=2,
+        )
+    if (cell_size > width) and (cell_size > height):
+        warnings.warn(
+            f"`cell_size` {cell_size} is larger than "
+            f"input_geometry dimensions ({width}, {height})",
+            stacklevel=2,
+        )
