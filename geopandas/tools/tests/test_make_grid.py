@@ -1,11 +1,11 @@
 import numpy as np
-import pytest
 
 from shapely.geometry import MultiPolygon, Point, Polygon
 
 from geopandas import GeoDataFrame, GeoSeries
 from geopandas.tools.make_grid import make_grid
 
+import pytest
 from geopandas.testing import assert_geoseries_equal
 
 
