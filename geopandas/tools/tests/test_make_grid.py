@@ -135,9 +135,9 @@ class TestMakeGridSquare:
         exp_out = GeoSeries([Point(0.5, 0.5), Point(1.5, 1.5)])
         assert_geoseries_equal(out, exp_out)
 
-    def test_exotic_square_centers(self, excotic_polygon):
+    def test_exotic_square_centers(self, exotic_polygon):
         cell_size = 1
-        out = make_grid(excotic_polygon, cell_size, what="centers", cell_type="square")
+        out = make_grid(exotic_polygon, cell_size, what="centers", cell_type="square")
         exp_out = GeoSeries([Point(0.5, 0.5), Point(0.5, 1.5), Point(1.5, 0.5)])
         assert_geoseries_equal(out, exp_out)
 
@@ -215,15 +215,17 @@ class TestMakeGridSquare:
 
     def test_square_cellsize_too_large(self, square):
         cell_size = 5
-        out = make_grid(
-            square, cell_size, what="centers", cell_type="square", intersect=False
-        )
+        with pytest.warns(UserWarning):
+            out = make_grid(
+                square, cell_size, what="centers", cell_type="square", intersect=False
+            )
         exp_out = GeoSeries([Point(2.5, 2.5)])
         assert_geoseries_equal(out, exp_out)
 
     def test_square_cellsize_too_large_intersect(self, square):
         cell_size = 5
-        out = make_grid(square, cell_size, what="centers", cell_type="square")
+        with pytest.warns(UserWarning):
+            out = make_grid(square, cell_size, what="centers", cell_type="square")
         exp_out = GeoSeries()
         assert_geoseries_equal(out, exp_out)
 
@@ -295,9 +297,10 @@ class TestMakeGridHexagon:
 
     def test_hexagon_corners_cs_larger_bb(self, square):
         cell_size = 3
-        out = make_grid(
-            square, cell_size, what="corners", cell_type="hexagon", intersect=False
-        )
+        with pytest.warns(UserWarning):
+            out = make_grid(
+                square, cell_size, what="corners", cell_type="hexagon", intersect=False
+            )
         exp_out = GeoSeries(
             [
                 Point(-1.5, -1.5 * np.sqrt(3)),
@@ -378,9 +381,10 @@ class TestMakeGridHexagon:
 
     def test_hexagon_polygons(self, square):
         cell_size = 3
-        out = make_grid(
-            square, cell_size, what="polygons", cell_type="hexagon", intersect=False
-        )
+        with pytest.warn(UserWarning):
+            out = make_grid(
+                square, cell_size, what="polygons", cell_type="hexagon", intersect=False
+            )
         exp_out = GeoSeries(
             [
                 Polygon(
