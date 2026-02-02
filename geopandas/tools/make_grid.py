@@ -57,8 +57,9 @@ def make_grid(
     Examples
     --------
     >>> import geopandas
+    >>> import geodatasets
     >>> world = geopandas.read_file(
-    ...     geopandas.datasets.get_path('naturalearth_lowres'))
+    ...     geodatasets.get_path('naturalearth land'))
     >>> uruguay = world[world["name"] == "Uruguay"]
     >>> sq_grid = geopandas.make_grid(uruguay,3)
     >>> sq_grid
