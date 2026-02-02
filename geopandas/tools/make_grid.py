@@ -8,8 +8,6 @@ from shapely.geometry import MultiPolygon, Polygon
 from geopandas import GeoDataFrame, GeoSeries, points_from_xy
 from geopandas.array import from_shapely
 
-from .. import _compat as compat
-
 
 def make_grid(
     input_geometry,
@@ -20,7 +18,7 @@ def make_grid(
     intersect=True,
     flat_topped=True,
 ):
-    """Provides the centers, corners, or polygons of a square or hexagonal grid.
+    """Provide the centers, corners, or polygons of a square or hexagonal grid.
 
     The output covers the area ot the `input_geometry`. The origin of the grid is
     at the lower left corner of the bouding box of the `input_geometry`. By default,
@@ -32,7 +30,7 @@ def make_grid(
     the grid is intersected with the individual geometries.
 
     Parameters
-    ------------
+    ----------
     input_geometry : (Multi)Polygon, GeoSeries, GeoDataFrame
         Polygon within its boundaries the grid is made.
     cell_size : float
@@ -69,7 +67,6 @@ def make_grid(
     2    POLYGON ((-55.42707 -34.95265, -52.42707 -34.9...
     3    POLYGON ((-55.42707 -31.95265, -52.42707 -31.9...
     """
-
     # Run basic checks
     _basic_checks(input_geometry, cell_size, offset, what, cell_type, intersect)
 
@@ -223,10 +220,10 @@ def make_grid(
 
 
 def _hex_polygon_corners(xv, yv, index_0=(0, 0)):
-    """Helper function that groups hexagon corners that belong to the same grid cell
+    """Group hexagon corners that belong to the same grid cell.
 
     Parameters
-    ------------
+    ----------
     xv : np.array
         meshgrid containing x-values of all centers and corners of the hexgon grid
     yv : np.array
@@ -242,7 +239,6 @@ def _hex_polygon_corners(xv, yv, index_0=(0, 0)):
         x,y coordinates.
 
     """
-
     i_x0 = index_0[0]
     i_y0 = index_0[1]
 
@@ -313,13 +309,13 @@ def _hex_polygon_corners(xv, yv, index_0=(0, 0)):
 
 
 def _basic_checks(input_geometry, cell_size, offset, what, cell_type, intersect):
-    """Checks the validity of make_grid input parameters.
+    """Check the validity of make_grid input parameters.
 
     `cell_size` must be larger than 0.
     `what` and `cell_type` must be a valid option.
 
     Parameters
-    ------------
+    ----------
     input_geometry : (Multi)Polygon, GeoSeries, GeoDataFrame
     cell_size : float
     offset : tuple
@@ -328,7 +324,6 @@ def _basic_checks(input_geometry, cell_size, offset, what, cell_type, intersect)
     cell_type : str, one of "square", "hexagon"
         grid type
     """
-
     if not isinstance(input_geometry, (GeoDataFrame, GeoSeries, Polygon, MultiPolygon)):
         raise TypeError(
             "`input_geometry` should be GeoDataFrame, GeoSeries or"
@@ -372,6 +367,6 @@ def _basic_checks(input_geometry, cell_size, offset, what, cell_type, intersect)
     else:
         bounds = np.array(input_geometry.bounds)
     if (offset[0] > (bounds[2] - bounds[0])) and (offset[1] > (bounds[3] - bounds[1])):
-        warnings.warn("`offset` is larger than input_geometry bounds")
+        warnings.warn("`offset` is larger than input_geometry bounds", stacklevel=2)
     if (cell_size > (bounds[2] - bounds[0])) and (cell_size > (bounds[3] - bounds[1])):
-        warnings.warn("`cell_size` is larger than input_geometry bounds")
+        warnings.warn("`cell_size` is larger than input_geometry bounds", stacklevel=2)
