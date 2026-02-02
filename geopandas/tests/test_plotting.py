@@ -3,7 +3,6 @@ import warnings
 
 import numpy as np
 import pandas as pd
-from geodatasets import get_path
 
 from shapely.affinity import rotate
 from shapely.geometry import (
@@ -2366,6 +2365,8 @@ def _get_colorbar_ax(fig):
 
 class TestStyleMapping:
     def setup_method(self, nybb_filename):
+        from geodatasets import get_path
+
         self.guerry = read_file(get_path("geoda guerry"))
         self.nyc = read_file(get_path("geoda nyc"))
 
