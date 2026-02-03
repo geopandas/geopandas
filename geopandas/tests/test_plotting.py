@@ -432,7 +432,9 @@ class TestPointPlotting:
         values = np.array(["cat1", "cat2"], dtype=object)
         categories = ["cat1"]
 
-        with pytest.raises(ValueError, match="Column contains values not listed in categories"):
+        with pytest.raises(
+            ValueError, match="Column contains values not listed in categories"
+        ):
             _check_invalid_categories(categories, values)
 
     def test_missing(self):

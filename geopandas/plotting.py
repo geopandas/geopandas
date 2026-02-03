@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from pandas.core.dtypes.cast import coerce_indexer_dtype
 import warnings
 from collections.abc import Collection, Iterable, Sequence
 from typing import TYPE_CHECKING, Any, Literal
@@ -8,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Literal
 import numpy as np
 import pandas as pd
 from pandas import CategoricalDtype
+from pandas.core.dtypes.cast import coerce_indexer_dtype
 from pandas.plotting import PlotAccessor
 
 import shapely
