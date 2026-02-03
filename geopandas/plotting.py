@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pandas.core.dtypes.cast import coerce_indexer_dtype
 import warnings
 from collections.abc import Collection, Iterable, Sequence
 from typing import TYPE_CHECKING, Any, Literal
@@ -864,10 +865,6 @@ def plot_dataframe(
         if cmap is None:
             cmap = "tab10"
         cat = _check_invalid_categories(categories, values)
-        # if isinstance(values, pd.Categorical):
-        #     cat = values
-        # else:
-        #     cat = pd.Categorical(values, categories=categories)
         categories = list(cat.categories)
 
         values = cat.codes[~nan_idx]
@@ -1030,23 +1027,24 @@ def _check_invalid_categories(
 ) -> pd.Categorical:
     if categories is None:
         cat = pd.Categorical(values, categories=categories)
-        return cat
-    # Pandas 4 compat https://github.com/pandas-dev/pandas/pull/62142
-    # Could potentially be replaced with a try/except on the above once the warning
-    # becomes an exception. This logic is derived from
-    # pandas/core/arrays/categorical.py::_get_codes_for_values
-    dtype = CategoricalDtype._from_values_or_dtype(values, categories)
-    categories = dtype.categories
-    codes = categories.get_indexer_for(values)
-    wrong = (codes == -1) & ~pd.isna(values)
-    if wrong.any():
-        missing = list(np.unique(values[wrong]))
-        raise ValueError(
-            "Column contains values not listed in categories. "
-            f"Missing categories: {missing}."
-        )
-    codes_downcast = pd.core.dtypes.cast.coerce_indexer_dtype(codes, categories)
-    cat = pd.Categorical.from_codes(codes_downcast, categories)
+    else:
+        # Pandas 4 compat https://github.com/pandas-dev/pandas/pull/62142
+        # Could potentially be replaced with a try/except on the above once the warning
+        # becomes an exception. This logic is derived from
+        # pandas/core/arrays/categorical.py::_get_codes_for_values
+        dtype = CategoricalDtype._from_values_or_dtype(values, categories)
+        categories = dtype.categories
+        codes = categories.get_indexer_for(values)
+        wrong = (codes == -1) & ~pd.isna(values)
+        if wrong.any():
+            missing = list(np.unique(values[wrong]))
+            raise ValueError(
+                "Column contains values not listed in categories. "
+                f"Missing categories: {missing}."
+            )
+        else:
+            codes_downcast = coerce_indexer_dtype(codes, categories)
+            cat = pd.Categorical.from_codes(codes_downcast, categories)
     return cat
 
 
