@@ -4,6 +4,9 @@
 
 New features and improvements:
 
+- `GeoDataFrame.plot` now supports `scheme="greedy"` for topological coloring
+  where adjacent geometries receive different colors, using mapclassify's
+  greedy function (#2818).
 - `GeoDataFrame.to_parquet` and `read_parquet` will now write and read ``attrs``
   respectively (#3597)
 - Add ``grid_size`` parameter to ``union``, ``difference``, ``symmetric_difference``
