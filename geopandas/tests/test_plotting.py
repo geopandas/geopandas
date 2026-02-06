@@ -1997,8 +1997,14 @@ class TestGreedyColoring:
         self.polys = GeoSeries([t1, t2, t3, t4])
         self.df = GeoDataFrame({"geometry": self.polys, "values": [1, 2, 3, 4]})
 
+try:
+    import mapclassify
+    HAS_GREEDY = hasattr(mapclassify, "greedy")
+except ImportError:
+    HAS_GREEDY = False
+
     @pytest.mark.skipif(
-        not hasattr(__import__("mapclassify", fromlist=[""]), "greedy"),
+        not HAS_GREEDY,
         reason="mapclassify.greedy not available",
     )
     def test_greedy_scheme(self):
@@ -2007,7 +2013,7 @@ class TestGreedyColoring:
         assert len(ax.collections) > 0
 
     @pytest.mark.skipif(
-        not hasattr(__import__("mapclassify", fromlist=[""]), "greedy"),
+        not HAS_GREEDY,
         reason="mapclassify.greedy not available",
     )
     def test_greedy_with_legend(self):
@@ -2016,7 +2022,7 @@ class TestGreedyColoring:
         assert ax.get_legend() is not None
 
     @pytest.mark.skipif(
-        not hasattr(__import__("mapclassify", fromlist=[""]), "greedy"),
+        not HAS_GREEDY,
         reason="mapclassify.greedy not available",
     )
     def test_greedy_with_cmap(self):
@@ -2025,7 +2031,7 @@ class TestGreedyColoring:
         assert len(ax.collections) > 0
 
     @pytest.mark.skipif(
-        not hasattr(__import__("mapclassify", fromlist=[""]), "greedy"),
+        not HAS_GREEDY,
         reason="mapclassify.greedy not available",
     )
     def test_greedy_adjacent_different_colors(self):
