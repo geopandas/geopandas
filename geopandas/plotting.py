@@ -832,6 +832,11 @@ def plot_dataframe(
             unique_colors = sorted(greedy_colors.unique())
             values = pd.Categorical(greedy_colors.values, categories=unique_colors)
             categories = unique_colors
+            # Create labels for legend (color indices as strings)
+            if legend_kwds is not None and "labels" in legend_kwds:
+                labels = list(legend_kwds.pop("labels"))
+            else:
+                labels = [str(c) for c in unique_colors]
             # set categorical to True for creating the legend
             categorical = True
             if cmap is None:
