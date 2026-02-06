@@ -765,7 +765,7 @@ def plot_dataframe(
     if isinstance(markersize, str):
         markersize = df[markersize].values
 
-    if column is None:
+    if column is None and not (scheme and scheme.lower() == "greedy"):
         return plot_series(
             df.geometry,
             cmap=cmap,
@@ -779,7 +779,10 @@ def plot_dataframe(
         )
 
     # To accept pd.Series and np.arrays as column
-    if isinstance(column, np.ndarray | pd.Series | pd.Index):
+    if column is None and scheme and scheme.lower() == "greedy":
+        # Greedy coloring doesn't use column values, just geometry
+        values = pd.Series([0] * len(df), index=df.index)
+    elif isinstance(column, np.ndarray | pd.Series | pd.Index):
         if column.shape[0] != df.shape[0]:
             raise ValueError(
                 "The dataframe and given column have different number of rows."
