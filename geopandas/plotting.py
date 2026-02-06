@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Literal
 import numpy as np
 import pandas as pd
 from pandas import CategoricalDtype
+from pandas.core.dtypes.cast import coerce_indexer_dtype
 from pandas.plotting import PlotAccessor
 
 import shapely
@@ -864,10 +865,6 @@ def plot_dataframe(
         if cmap is None:
             cmap = "tab10"
         cat = _check_invalid_categories(categories, values)
-        # if isinstance(values, pd.Categorical):
-        #     cat = values
-        # else:
-        #     cat = pd.Categorical(values, categories=categories)
         categories = list(cat.categories)
 
         values = cat.codes[~nan_idx]
@@ -1025,7 +1022,8 @@ def plot_dataframe(
 
 
 def _check_invalid_categories(
-    categories: Collection[Any] | None, values
+    categories: Collection[Any] | None,
+    values,
 ) -> pd.Categorical:
     if categories is None:
         cat = pd.Categorical(values, categories=categories)
@@ -1040,16 +1038,13 @@ def _check_invalid_categories(
         wrong = (codes == -1) & ~pd.isna(values)
         if wrong.any():
             missing = list(np.unique(values[wrong]))
-        else:
-            missing = []
-            codes_downcast = pd.core.dtypes.cast.coerce_indexer_dtype(codes, categories)
-            cat = pd.Categorical.from_codes(codes_downcast, categories)
-
-        if missing:
             raise ValueError(
                 "Column contains values not listed in categories. "
                 f"Missing categories: {missing}."
             )
+        else:
+            codes_downcast = coerce_indexer_dtype(codes, categories)
+            cat = pd.Categorical.from_codes(codes_downcast, categories)
     return cat
 
 
