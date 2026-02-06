@@ -1980,6 +1980,14 @@ def test_polygon_patch():
         assert len(path.vertices) == len(path.codes) == 198
 
 
+
+try:
+    import mapclassify
+    HAS_GREEDY = hasattr(mapclassify, "greedy")
+except ImportError:
+    HAS_GREEDY = False
+
+
 class TestGreedyColoring:
     """Test greedy topological coloring (scheme='greedy') for issue #2818."""
 
@@ -1996,12 +2004,6 @@ class TestGreedyColoring:
         t4 = Polygon([(1, 1), (2, 1), (2, 2), (1, 2)])  # adjacent to t2, t3
         self.polys = GeoSeries([t1, t2, t3, t4])
         self.df = GeoDataFrame({"geometry": self.polys, "values": [1, 2, 3, 4]})
-
-try:
-    import mapclassify
-    HAS_GREEDY = hasattr(mapclassify, "greedy")
-except ImportError:
-    HAS_GREEDY = False
 
     @pytest.mark.skipif(
         not HAS_GREEDY,
