@@ -21,6 +21,8 @@ Bug fixes:
 
 - Fix `GeoSeries.sample_points` not accepting list-like `size` when generating points using
   `pointpaterns` (#3710).
+- Fix `_check_invalid_categories` raising `UnboundLocalError` instead of `ValueError` when
+  plotting with invalid category values (#3718).
 
 Community:
 

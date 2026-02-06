@@ -428,6 +428,24 @@ class TestPointPlotting:
         ):
             self.df.plot(column="cats", categories=["cat1"])
 
+    def test_check_invalid_categories_raises_valueerror(self):
+        """Test that _check_invalid_categories raises ValueError, not UnboundLocalError.
+
+        Regression test for https://github.com/geopandas/geopandas/issues/3718
+        """
+        from geopandas.plotting import _check_invalid_categories
+
+        values = pd.Series(["cat1", "cat2", "cat3"])
+
+        # Should raise ValueError with clear message about missing categories
+        with pytest.raises(ValueError, match="Missing categories"):
+            _check_invalid_categories(["cat1", "cat2"], values)
+
+        # Valid case should work without error
+        result = _check_invalid_categories(["cat1", "cat2", "cat3"], values)
+        assert isinstance(result, pd.Categorical)
+        assert list(result.categories) == ["cat1", "cat2", "cat3"]
+
     def test_missing(self):
         self.df.loc[0, "values"] = np.nan
         ax = self.df.plot("values")

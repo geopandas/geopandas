@@ -1040,16 +1040,13 @@ def _check_invalid_categories(
         wrong = (codes == -1) & ~pd.isna(values)
         if wrong.any():
             missing = list(np.unique(values[wrong]))
-        else:
-            missing = []
-            codes_downcast = pd.core.dtypes.cast.coerce_indexer_dtype(codes, categories)
-            cat = pd.Categorical.from_codes(codes_downcast, categories)
-
-        if missing:
             raise ValueError(
                 "Column contains values not listed in categories. "
                 f"Missing categories: {missing}."
             )
+        codes_downcast = pd.core.dtypes.cast.coerce_indexer_dtype(codes, categories)
+        cat = pd.Categorical.from_codes(codes_downcast, categories)
+
     return cat
 
 
