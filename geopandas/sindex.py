@@ -61,9 +61,16 @@ class SpatialIndex:
         output_format="indices",
     ):
         """
-        Return all combinations of each input geometry
-        and tree geometries where the bounding box of each input geometry
-        intersects the bounding box of a tree geometry.
+        Return the indices of tree geometries that satisfy the given query.
+
+        When no predicate is provided, this returns geometries whose bounding
+        box intersects the bounding box of the input geometry.
+
+        When a predicate is provided, the tree geometries are first queried
+        based on bounding box intersection, and then further filtered to those
+        that satisfy the predicate when comparing the input geometry to the
+        tree geometry using the actual geometry (not the bounding box):
+        ``predicate(input_geometry, tree_geometry)``.
 
         The result can be returned as an array of 'indices' or a boolean 'sparse' or
         'dense' array. This can be controlled using the ``output_format`` keyword.
@@ -93,11 +100,6 @@ class SpatialIndex:
             numpy array with shape (len(tree), n) with boolean values marking
             whether the bounding box of a geometry in the tree intersects a bounding box
             of a given scalar.
-
-        If a predicate is provided, the tree geometries are first queried based
-        on the bounding box of the input geometry and then are further filtered
-        to those that meet the predicate when comparing the input geometry to
-        the tree geometry: ``predicate(geometry, tree_geometry)``.
 
         The 'dwithin' predicate requires GEOS >= 3.10.
 
