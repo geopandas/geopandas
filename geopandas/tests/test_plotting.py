@@ -1989,6 +1989,73 @@ def test_polygon_patch():
         assert len(path.vertices) == len(path.codes) == 198
 
 
+try:
+    import mapclassify
+
+    HAS_GREEDY = hasattr(mapclassify, "greedy")
+except ImportError:
+    HAS_GREEDY = False
+
+
+class TestGreedyColoring:
+    """Test greedy topological coloring (scheme='greedy') for issue #2818."""
+
+    @pytest.fixture(autouse=True)
+    def setup_method(self):
+        # Create adjacent polygons for greedy coloring test
+        # Layout: a grid of 4 adjacent squares
+        #   t3 | t4
+        #   ---+---
+        #   t1 | t2
+        t1 = Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
+        t2 = Polygon([(1, 0), (2, 0), (2, 1), (1, 1)])  # adjacent to t1
+        t3 = Polygon([(0, 1), (1, 1), (1, 2), (0, 2)])  # adjacent to t1
+        t4 = Polygon([(1, 1), (2, 1), (2, 2), (1, 2)])  # adjacent to t2, t3
+        self.polys = GeoSeries([t1, t2, t3, t4])
+        self.df = GeoDataFrame({"geometry": self.polys, "values": [1, 2, 3, 4]})
+
+    @pytest.mark.skipif(
+        not HAS_GREEDY,
+        reason="mapclassify.greedy not available",
+    )
+    def test_greedy_scheme(self):
+        # Test that scheme="greedy" works without error
+        ax = self.df.plot(scheme="greedy")
+        assert len(ax.collections) > 0
+
+    @pytest.mark.skipif(
+        not HAS_GREEDY,
+        reason="mapclassify.greedy not available",
+    )
+    def test_greedy_with_legend(self):
+        # Test greedy coloring with legend
+        ax = self.df.plot(scheme="greedy", legend=True)
+        assert ax.get_legend() is not None
+
+    @pytest.mark.skipif(
+        not HAS_GREEDY,
+        reason="mapclassify.greedy not available",
+    )
+    def test_greedy_with_cmap(self):
+        # Test greedy coloring with custom colormap
+        ax = self.df.plot(scheme="greedy", cmap="Set1")
+        assert len(ax.collections) > 0
+
+    @pytest.mark.skipif(
+        not HAS_GREEDY,
+        reason="mapclassify.greedy not available",
+    )
+    def test_greedy_adjacent_different_colors(self):
+        # Test that adjacent polygons have different colors
+        # This is the core feature of greedy coloring
+        ax = self.df.plot(scheme="greedy")
+        colors = ax.collections[0].get_facecolors()
+        # t1 (index 0) is adjacent to t2 (index 1) - should have different colors
+        assert not np.allclose(colors[0], colors[1])
+        # t1 (index 0) is adjacent to t3 (index 2) - should have different colors
+        assert not np.allclose(colors[0], colors[2])
+
+
 def _check_colors(N, actual_colors, expected_colors, alpha=None):
     """
     Asserts that the members of `collection` match the `expected_colors`
