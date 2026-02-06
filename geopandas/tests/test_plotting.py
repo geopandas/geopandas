@@ -1980,9 +1980,9 @@ def test_polygon_patch():
         assert len(path.vertices) == len(path.codes) == 198
 
 
-
 try:
     import mapclassify
+
     HAS_GREEDY = hasattr(mapclassify, "greedy")
 except ImportError:
     HAS_GREEDY = False
