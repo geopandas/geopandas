@@ -2152,6 +2152,16 @@ class TestGeomMethods:
         with pytest.raises(AttributeError, match="pointpats.random module has no"):
             gs.sample_points(10, method="nonexistent")
 
+    def test_sample_points_pointpats_array(self):
+        pytest.importorskip("pointpats")
+        output = concat([self.g1, self.g1]).sample_points(
+            [10, 15, 20, 25], method="cluster_poisson"
+        )
+        expected = Series(
+            [10, 15, 20, 25], index=[0, 1, 0, 1], name="sampled_points", dtype="int32"
+        )
+        assert_series_equal(shapely.get_num_geometries(output), expected)
+
     def test_offset_curve(self):
         oc = GeoSeries([self.l1]).offset_curve(1, join_style="mitre")
         expected = GeoSeries([LineString([[-1, 0], [-1, 2], [1, 2]])])
