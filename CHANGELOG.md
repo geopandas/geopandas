@@ -1,5 +1,12 @@
 # Changelog
 
+## Version 1.1.3 (Feburary XX, 2026)
+
+Bug fixes:
+
+- Fix `GeoSeries.sample_points` not accepting list-like `size` when generating points using
+  `pointpaterns` (#3710).
+
 ## Version 1.1.2 (December 22, 2025)
 
 Bug fixes:
