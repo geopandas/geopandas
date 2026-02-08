@@ -3,9 +3,11 @@
 ## Version 1.1.3 (Feburary XX, 2026)
 
 Bug fixes:
-
+- Several fixes for pandas 3.0 copy-on-write to make use of deferred copies where possible 
 - Fix `GeoSeries.sample_points` not accepting list-like `size` when generating points using
   `pointpaterns` (#3710).
+- Fix `from_wkt/wkb` to correctly handle missing values with pandas 3 (where the new `str` dtype is used) (#3714).
+- Fix `to_postgis` to correctly handle missing values with pandas 3 (where the new `str` dtype is used) (#3722).
 
 ## Version 1.1.2 (December 22, 2025)
 
