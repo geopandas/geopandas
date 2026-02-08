@@ -233,7 +233,7 @@ def _get_geometry_type(gdf):
     has_curve = False
 
     for gt in geom_types:
-        if gt is None:
+        if pd.isna(gt):
             continue
         elif "LinearRing" in gt:
             has_curve = True
@@ -242,7 +242,7 @@ def _get_geometry_type(gdf):
         if has_curve:
             target_geom_type = "LINESTRING"
         else:
-            if geom_types[0] is None:
+            if pd.isna(geom_types[0]):
                 raise ValueError("No valid geometries in the data.")
             else:
                 target_geom_type = geom_types[0].upper()

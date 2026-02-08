@@ -152,17 +152,19 @@ class TestDataFrame:
         df = GeoDataFrame(data)
         s = GeoSeries([Point(x, y + 1) for x, y in zip(range(5), range(5))])
 
+        expected = s.copy()
+
         # setting geometry column
         for vals in [s, s.values]:
             df["geometry"] = vals
-            assert_geoseries_equal(df["geometry"], s)
-            assert_geoseries_equal(df.geometry, s)
+            assert_geoseries_equal(df["geometry"], expected)
+            assert_geoseries_equal(df.geometry, expected)
 
         # non-aligned values
         s2 = GeoSeries([Point(x, y + 1) for x, y in zip(range(6), range(6))])
         df["geometry"] = s2
-        assert_geoseries_equal(df["geometry"], s)
-        assert_geoseries_equal(df.geometry, s)
+        assert_geoseries_equal(df["geometry"], expected)
+        assert_geoseries_equal(df.geometry, expected)
 
         # setting other column with geometry values -> preserve geometry type
         for vals in [s, s.values]:
@@ -254,10 +256,12 @@ class TestDataFrame:
     def test_set_geometry(self):
         geom = GeoSeries([Point(x, y) for x, y in zip(range(5), range(5))])
         original_geom = self.df.geometry
+        expected = geom.copy()
+        expected.crs = self.df.crs
 
         df2 = self.df.set_geometry(geom)
-        assert self.df is not df2
-        assert_geoseries_equal(df2.geometry, geom, check_crs=False)
+        assert df2 is not self.df
+        assert_geoseries_equal(df2.geometry, expected)
         assert_geoseries_equal(self.df.geometry, original_geom)
         assert_geoseries_equal(self.df["geometry"], self.df.geometry)
         # unknown column
@@ -290,7 +294,7 @@ class TestDataFrame:
     def test_set_geometry_col(self):
         g = self.df.geometry
         g_simplified = g.simplify(100)
-        self.df["simplified_geometry"] = g_simplified
+        self.df["simplified_geometry"] = g_simplified.copy()
         df2 = self.df.set_geometry("simplified_geometry")
 
         # Drop is false by default
