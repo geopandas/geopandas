@@ -603,7 +603,7 @@ class GeoSeries(GeoPandasBase, Series):
                 data = data.reindex(index)
             else:
                 index = data.index
-            data = data.values
+            data = data.to_numpy(na_value=None)
         return cls(
             from_wkb_or_wkt_function(data, crs=crs, on_invalid=on_invalid),
             index=index,

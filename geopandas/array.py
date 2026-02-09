@@ -239,6 +239,8 @@ def from_wkb(
           without a warning. Requires GEOS >= 3.11 and shapely >= 2.1.
 
     """
+    if isinstance(data, ExtensionArray):
+        data = data.to_numpy(na_value=None)
     return GeometryArray(shapely.from_wkb(data, on_invalid=on_invalid), crs=crs)
 
 
@@ -275,6 +277,8 @@ def from_wkt(
           without a warning. Requires GEOS >= 3.11 and shapely >= 2.1.
 
     """
+    if isinstance(data, ExtensionArray):
+        data = data.to_numpy(na_value=None)
     return GeometryArray(shapely.from_wkt(data, on_invalid=on_invalid), crs=crs)
 
 

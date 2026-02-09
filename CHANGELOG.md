@@ -8,6 +8,7 @@ New features and improvements:
   respectively (#3597)
 - Add ``grid_size`` parameter to ``union``, ``difference``, ``symmetric_difference``
   and ``intersection`` (#3593).
+- `read_parquet` now support direct reading from HTTP/HTTPS protocols (#3699)
 - Impoved compatibility with pandas 3.0 Copy-on-Write feature, making use of deferred copies where possible (#3298).
 
 Deprecations and compatibility notes:
