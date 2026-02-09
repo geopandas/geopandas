@@ -717,7 +717,7 @@ class TestSetCRS:
         naive = constructor([Point(0, 0), Point(1, 1)], crs=None)
         assert naive.crs is None
 
-        # by default returns a copy
+        # by default returns a (shallow) copy
         result = naive.set_crs(crs="EPSG:4326")
         assert result.crs == "EPSG:4326"
         assert naive.crs is None
