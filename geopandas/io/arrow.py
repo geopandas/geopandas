@@ -14,7 +14,7 @@ from geopandas.array import from_shapely, from_wkb
 
 from .file import _expand_user
 
-METADATA_VERSION = "1.0.0"
+METADATA_VERSION = "1.1.0"
 SUPPORTED_VERSIONS_LITERAL = Literal["0.1.0", "0.4.0", "1.0.0-beta.1", "1.0.0", "1.1.0"]
 SUPPORTED_VERSIONS = list(get_args(SUPPORTED_VERSIONS_LITERAL))
 GEOARROW_ENCODINGS = [
@@ -131,12 +131,7 @@ def _create_metadata(
     dict
     """
     if schema_version is None:
-        if geometry_encoding and any(
-            encoding != "WKB" for encoding in geometry_encoding.values()
-        ):
-            schema_version = "1.1.0"
-        else:
-            schema_version = METADATA_VERSION
+        schema_version = METADATA_VERSION
 
     if schema_version not in SUPPORTED_VERSIONS:
         raise ValueError(
