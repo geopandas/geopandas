@@ -319,9 +319,20 @@ def _psql_insert_copy(tbl, conn, keys, data_iter):
     import csv
     import io
 
+    keys = list(keys)
+
     s_buf = io.StringIO()
     writer = csv.writer(s_buf)
-    writer.writerows(data_iter)
+    if len(keys) != 1:
+        writer.writerows(data_iter)
+    else:
+        for data in data_iter:
+            if pd.notna(data[0]):
+                writer.writerow(data)
+            else:
+                # avoid writing ""\n for NA
+                # which will be interpreted as an empty string
+                s_buf.write(writer.dialect.lineterminator)
     s_buf.seek(0)
 
     columns = ", ".join(f'"{k}"' for k in keys)
