@@ -38,7 +38,7 @@ the ``layer`` keyword::
     countries_gdf = geopandas.read_file("package.gpkg", layer='countries')
 
 If you have a file with multiple layers, you can list them using
-:func:`geopandas.list_layers`. Note that this function requires Pyogrio.
+:func:`geopandas.list_layers`. To read associated layer metadata, you can use :func:`geopandas._read_layer_metadata`. Note that these functions requires Pyogrio.
 
 GeoPandas can also load resources directly from
 a web URL, for example for GeoJSON files from `geojson.xyz <http://geojson.xyz/>`_::
