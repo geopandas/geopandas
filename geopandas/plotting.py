@@ -634,7 +634,9 @@ def plot_dataframe(
         'HeadTailBreaks', 'JenksCaspall', 'JenksCaspallForced',
         'JenksCaspallSampled', 'MaxP', 'MaximumBreaks',
         'NaturalBreaks', 'Quantiles', 'Percentiles', 'StdMean',
-        'UserDefined'). Arguments can be passed in classification_kwds.
+        'UserDefined'). Additionally, 'greedy' is supported for topological
+        coloring where adjacent geometries receive different colors.
+        Arguments can be passed in classification_kwds.
     k : int (default 5)
         Number of classes (ignored if scheme is None)
     vmin : None or float (default None)
@@ -764,7 +766,7 @@ def plot_dataframe(
     if isinstance(markersize, str):
         markersize = df[markersize].values
 
-    if column is None:
+    if column is None and not (scheme and scheme.lower() == "greedy"):
         return plot_series(
             df.geometry,
             cmap=cmap,
@@ -778,7 +780,10 @@ def plot_dataframe(
         )
 
     # To accept pd.Series and np.arrays as column
-    if isinstance(column, np.ndarray | pd.Series | pd.Index):
+    if column is None and scheme and scheme.lower() == "greedy":
+        # Greedy coloring doesn't use column values, just geometry
+        values = pd.Series([0] * len(df), index=df.index)
+    elif isinstance(column, np.ndarray | pd.Series | pd.Index):
         if column.shape[0] != df.shape[0]:
             raise ValueError(
                 "The dataframe and given column have different number of rows."
@@ -820,45 +825,63 @@ def plot_dataframe(
 
         if classification_kwds is None:
             classification_kwds = {}
-        if "k" not in classification_kwds:
-            classification_kwds["k"] = k
 
-        binning = mapclassify.classify(
-            np.asarray(values[~nan_idx]), scheme, **classification_kwds
-        )
-        # set categorical to True for creating the legend
-        categorical = True
-        if legend_kwds is not None and "labels" in legend_kwds:
-            if len(legend_kwds["labels"]) != binning.k:
-                raise ValueError(
-                    "Number of labels must match number of bins, "
-                    "received {} labels for {} bins".format(
-                        len(legend_kwds["labels"]), binning.k
-                    )
-                )
-            else:
+        # Handle greedy coloring separately - it uses geometry, not values
+        if scheme.lower() == "greedy":
+            greedy_colors = mapclassify.greedy(df, **classification_kwds)
+            # Create categorical values from greedy colors
+            unique_colors = sorted(greedy_colors.unique())
+            values = pd.Categorical(greedy_colors.values, categories=unique_colors)
+            categories = unique_colors
+            # Create labels for legend (color indices as strings)
+            if legend_kwds is not None and "labels" in legend_kwds:
                 labels = list(legend_kwds.pop("labels"))
-        else:
-            fmt = "{:.2f}"
-            if legend_kwds is not None and "fmt" in legend_kwds:
-                fmt = legend_kwds.pop("fmt")
-
-            labels = binning.get_legend_classes(fmt)
-            if legend_kwds is not None:
-                show_interval = legend_kwds.pop("interval", False)
             else:
-                show_interval = False
-            if not show_interval:
-                labels = [c[1:-1] for c in labels]
+                labels = [str(c) for c in unique_colors]
+            # set categorical to True for creating the legend
+            categorical = True
+            if cmap is None:
+                cmap = "tab10"
+        else:
+            if "k" not in classification_kwds:
+                classification_kwds["k"] = k
 
-        values = pd.Categorical(
-            [np.nan] * len(values), categories=binning.bins, ordered=True
-        )
-        values[~nan_idx] = pd.Categorical.from_codes(
-            binning.yb, categories=binning.bins, ordered=True
-        )
-        if cmap is None:
-            cmap = "viridis"
+            binning = mapclassify.classify(
+                np.asarray(values[~nan_idx]), scheme, **classification_kwds
+            )
+            # set categorical to True for creating the legend
+            categorical = True
+            if legend_kwds is not None and "labels" in legend_kwds:
+                if len(legend_kwds["labels"]) != binning.k:
+                    raise ValueError(
+                        "Number of labels must match number of bins, "
+                        "received {} labels for {} bins".format(
+                            len(legend_kwds["labels"]), binning.k
+                        )
+                    )
+                else:
+                    labels = list(legend_kwds.pop("labels"))
+            else:
+                fmt = "{:.2f}"
+                if legend_kwds is not None and "fmt" in legend_kwds:
+                    fmt = legend_kwds.pop("fmt")
+
+                labels = binning.get_legend_classes(fmt)
+                if legend_kwds is not None:
+                    show_interval = legend_kwds.pop("interval", False)
+                else:
+                    show_interval = False
+                if not show_interval:
+                    labels = [c[1:-1] for c in labels]
+
+            values = pd.Categorical(
+                [np.nan] * len(values), categories=binning.bins, ordered=True
+            )
+            values[~nan_idx] = pd.Categorical.from_codes(
+                binning.yb, categories=binning.bins, ordered=True
+            )
+            if cmap is None:
+                cmap = "viridis"
 
     # Define `values` as a Series
     if categorical:
