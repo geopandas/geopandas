@@ -418,9 +418,9 @@ def _to_parquet(
         output except `RangeIndex` which is stored as metadata only.
     compression : {'snappy', 'gzip', 'brotli', None}, default 'snappy'
         Name of the compression to use. Use ``None`` for no compression.
-    geometry_encoding : {'WKB', 'geoarrow'}, default 'WKB'
+    geometry_encoding : {'WKB', 'native', 'geoarrow'}, default 'WKB'
         The encoding to use for the geometry columns. Defaults to "WKB"
-        for maximum interoperability. Specify "geoarrow" to use one of the
+        for maximum interoperability. Specify "native" or "geoarrow" to use one of the
         native GeoArrow-based single-geometry type encodings.
     schema_version : {'0.1.0', '0.4.0', '1.0.0', '1.1.0', None}
         GeoParquet specification version; if not provided will default to
@@ -435,6 +435,10 @@ def _to_parquet(
     parquet = import_optional_dependency(
         "pyarrow.parquet", extra="pyarrow is required for Parquet support."
     )
+
+    # Map "native" to "geoarrow", required for the _geopandas_to_arrow function
+    if geometry_encoding == "native":
+        geometry_encoding = "geoarrow"
 
     path = _expand_user(path)
     table = _geopandas_to_arrow(
