@@ -908,6 +908,11 @@ def test_pickle():
     assert T[:-2].geom_equals(T2[:-2]).all()
 
 
+def test_nbytes():
+    # `8 * len(T)` is the minimum for just the object array
+    assert T.nbytes > 8 * len(T)
+
+
 def test_raise_on_bad_sizes():
     with pytest.raises(ValueError) as info:
         T.contains(P)

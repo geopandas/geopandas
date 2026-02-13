@@ -1554,7 +1554,7 @@ class GeometryArray(ExtensionArray):
 
     @property
     def nbytes(self):
-        return self._data.nbytes
+        return self._data.nbytes + len(self) * compat.GEOMETRY_OBJECT_SIZE
 
     def shift(self, periods: int = 1, fill_value: Any | None = None) -> GeometryArray:
         """
