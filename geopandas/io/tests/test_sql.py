@@ -384,6 +384,127 @@ class TestIO:
         # by user; should not be set to 0, as from get_srid failure
         assert df.crs is None
 
+    @pytest.mark.parametrize("connection_postgis", POSTGIS_DRIVERS, indirect=True)
+    def test_read_postgis_multiple_geometry_columns(self, connection_postgis, df_nybb):
+        from shapely import Point
+
+        gdf = GeoDataFrame(
+            {
+                "data": [0, 1, 2],
+                "geometry": [Point(1, 1), Point(2, 2), Point(3, 3)],
+                "additional_geometry_01": [Point(10, 10), Point(20, 20), Point(30, 30)],
+                "additional_geometry_02": [
+                    Point(100, 100),
+                    Point(200, 200),
+                    Point(300, 300),
+                ],
+            }
+        )
+        con = connection_postgis
+
+        create_postgis(con, df_nybb)
+
+        geom_insert = "ST_GeometryFromText(%s)"
+        try:
+            cursor = con.cursor()
+            cursor.execute("DROP TABLE IF EXISTS test_multiple_geom;")
+
+            sql = """CREATE TABLE test_multiple_geom (
+                data     integer,
+                geometry     geometry,
+                additional_geometry_01   geometry,
+                additional_geometry_02   geometry
+                );"""
+
+            cursor.execute(sql)
+
+            for i, row in gdf.iterrows():
+                sql = f"""INSERT INTO test_multiple_geom VALUES
+                 (%s, {geom_insert}, {geom_insert}, {geom_insert});"""
+                cursor.execute(
+                    sql,
+                    (
+                        row["data"],
+                        row["geometry"].wkt,
+                        row["additional_geometry_01"].wkt,
+                        row["additional_geometry_02"].wkt,
+                    ),
+                )
+        finally:
+            cursor.close()
+            con.commit()
+
+        sql = "SELECT * FROM test_multiple_geom;"
+        df = read_postgis(sql, con, geom_col="geometry")
+
+        # Confirm geometry column is active geometry and other
+        # geometry columns are not converted
+        assert (df.geometry.values == [Point(1, 1), Point(2, 2), Point(3, 3)]).all()
+        assert not (
+            df["additional_geometry_01"].values
+            == [Point(10, 10), Point(20, 20), Point(30, 30)]
+        ).any()
+        assert not (
+            df["additional_geometry_02"].values
+            == [Point(100, 100), Point(200, 200), Point(300, 300)]
+        ).any()
+
+        # Confirm all converted when listed in geometry column
+        df = read_postgis(
+            sql,
+            con,
+            geom_col="geometry",
+            additional_geom_cols=["additional_geometry_01", "additional_geometry_02"],
+        )
+
+        assert (df.geometry.values == [Point(1, 1), Point(2, 2), Point(3, 3)]).all()
+        assert (
+            df["additional_geometry_01"].values
+            == [Point(10, 10), Point(20, 20), Point(30, 30)]
+        ).all()
+        assert (
+            df["additional_geometry_02"].values
+            == [Point(100, 100), Point(200, 200), Point(300, 300)]
+        ).all()
+
+        # Check when non-geometry column is listed in additional_geom_cols
+        with pytest.raises(
+            TypeError,
+            match=r"Encountered an issue in converting the geometry column. "
+            r"Check the geometry columns are listed correctly.",
+        ):
+            df = read_postgis(
+                sql,
+                con,
+                geom_col="geometry",
+                additional_geom_cols=["data", "additional_geometry_01"],
+            )
+
+        # Check when geometry column is repeated in both gom_cols
+        # and additional_geom_cols
+        with pytest.raises(
+            ValueError,
+            match=r"Active geometry colum, geometry, should not be listed "
+            r"as an additional_geom_cols.",
+        ):
+            df = read_postgis(
+                sql,
+                con,
+                geom_col="geometry",
+                additional_geom_cols=["geometry", "additional_geometry_01"],
+            )
+
+        # Confirm active geometry can be other columns
+        df = read_postgis(
+            sql,
+            con,
+            geom_col="additional_geometry_01",
+            additional_geom_cols=["geometry", "additional_geometry_02"],
+        )
+        assert (
+            df.geometry.values == [Point(10, 10), Point(20, 20), Point(30, 30)]
+        ).all()
+
     @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
     def test_write_postgis_default(self, engine_postgis, df_nybb):
         """Tests that GeoDataFrame can be written to PostGIS with defaults."""
