@@ -1,7 +1,4 @@
 import importlib
-import os
-import sys
-import warnings
 from packaging.version import Version
 
 import pandas as pd
@@ -24,19 +21,6 @@ PANDAS_INFER_STR = PANDAS_GE_23 and pd.options.future.infer_string
 GEOS_GE_390 = shapely.geos_version >= (3, 9, 0)
 GEOS_GE_310 = shapely.geos_version >= (3, 10, 0)
 GEOS_GE_312 = shapely.geos_version >= (3, 12, 0)
-
-
-if USE_SHAPELY_20:
-    _geom = shapely.Point(1, 1)
-    GEOMETRY_OBJECT_SIZE = sys.getsizeof(_geom)
-elif HAS_PYGEOS:
-    _geom = pygeos.Geometry("POINT (1 1)")
-    GEOMETRY_OBJECT_SIZE = sys.getsizeof(_geom)
-else:
-    import shapely.geometry
-
-    _geom = shapely.geometry.Point(1, 1)
-    GEOMETRY_OBJECT_SIZE = sys.getsizeof(_geom)
 
 
 def import_optional_dependency(name: str, extra: str = ""):

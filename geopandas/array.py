@@ -3,6 +3,7 @@ from __future__ import annotations
 import inspect
 import numbers
 import operator
+import sys
 import typing
 import warnings
 from functools import lru_cache
@@ -45,6 +46,8 @@ if HAS_PYPROJ:
 
     TransformerFromCRS = lru_cache(Transformer.from_crs)
 
+_geom = shapely.Point(1, 1)
+GEOMETRY_OBJECT_SIZE = sys.getsizeof(_geom)
 
 _names = {
     "MISSING": None,
@@ -1554,7 +1557,7 @@ class GeometryArray(ExtensionArray):
 
     @property
     def nbytes(self):
-        return self._data.nbytes + len(self) * compat.GEOMETRY_OBJECT_SIZE
+        return self._data.nbytes + len(self) * GEOMETRY_OBJECT_SIZE
 
     def shift(self, periods: int = 1, fill_value: Any | None = None) -> GeometryArray:
         """
