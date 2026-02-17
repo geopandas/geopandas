@@ -63,7 +63,7 @@ class SpatialIndex:
         """
         Return the indices of tree geometries that satisfy the given query.
 
-        When no predicate is provided, this returns geometries whose bounding
+        When no predicate is provided, this returns indices of tree geometries whose bounding
         box intersects the bounding box of the input geometry.
 
         When a predicate is provided, the tree geometries are first queried
