@@ -928,7 +928,7 @@ def plot_dataframe(
     points = expl_series[point_idx & np.invert(nan_idx)]
     subset = values[point_idx & np.invert(nan_idx)]
     if not points.empty:
-        if isinstance(markersize, np.ndarray):
+        if pd.api.types.is_list_like(markersize):
             markersize = np.take(markersize, multiindex, axis=0)
             markersize = markersize[point_idx & np.invert(nan_idx)]
         _plot_point_collection(
