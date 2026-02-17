@@ -596,9 +596,20 @@ def _explore(
     if highlight:
         if "fillOpacity" not in highlight_kwds:
             highlight_kwds["fillOpacity"] = 0.75
-
+        if "style_function" in highlight_kwds:
+            highlight_kwds_function = highlight_kwds["style_function"]
+            if not callable(highlight_kwds_function):
+                raise ValueError("'style_function' has to be a callable")
+            highlight_kwds.pop("style_function")
+        else:
+            
+            def _no_style(x):
+                return {}
+            
+            highlight_kwds_function = _no_style
+            
         def _style_highlight(x):
-            return {**highlight_kwds}
+            return {**highlight_kwds, **highlight_kwds_function(x)}
 
         highlight_function = _style_highlight
     else:
