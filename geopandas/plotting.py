@@ -90,10 +90,11 @@ def _expand_kwargs(kwargs: dict, multiindex: np.ndarray) -> None:
 
     scalar_kwargs = ["marker", "path_effects"]
     for att, value in kwargs.items():
-        if "color" in att:  # color(s), edgecolor(s), facecolor(s)
+        # color(s), edgecolor(s), facecolor(s), or abbreviations ec, fc
+        if "color" in att or att in ("fc", "ec"):
             if is_color_like(value):
                 continue
-        elif "linestyle" in att:  # linestyle(s)
+        elif "linestyle" in att or att == "ls":  # linestyle(s) or ls
             # A single linestyle can be 2-tuple of a number and an iterable.
             if (
                 isinstance(value, tuple)
