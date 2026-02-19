@@ -6461,7 +6461,7 @@ GeometryCollection
                 result = [
                     (
                         points_from_xy(
-                            *sample_function(x, size=s, **kwargs).T
+                            *sample_function(x, size=s, rng=rng, **kwargs).T
                         ).union_all()
                         if not (x.is_empty or x is None or "Polygon" not in x.geom_type)
                         else MultiPoint()
@@ -6472,7 +6472,7 @@ GeometryCollection
                 result = self.geometry.apply(
                     lambda x: (
                         points_from_xy(
-                            *sample_function(x, size=size, **kwargs).T
+                            *sample_function(x, size=size, rng=rng, **kwargs).T
                         ).union_all()
                         if not (x.is_empty or x is None or "Polygon" not in x.geom_type)
                         else MultiPoint()
