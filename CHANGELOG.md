@@ -10,6 +10,7 @@ New features and improvements:
   and ``intersection`` (#3593).
 - `read_parquet` now support direct reading from HTTP/HTTPS protocols (#3699)
 - Impoved compatibility with pandas 3.0 Copy-on-Write feature, making use of deferred copies where possible (#3298).
+- Random states in ``pointpats`` methods of ``sample_points`` can now be fixed with ``rng`` (#3737).
 
 Deprecations and compatibility notes:
 
