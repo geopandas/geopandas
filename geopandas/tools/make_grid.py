@@ -1,4 +1,5 @@
 import warnings
+from typing import Literal
 
 import numpy as np
 
@@ -10,24 +11,26 @@ from geopandas.array import from_shapely
 
 
 def make_grid(
-    input_geometry,
-    cell_size,
-    cell_type="square",
-    what="polygons",
-    offset=(0, 0),
-    intersect=True,
-    flat_topped=True,
-):
+    input_geometry: Polygon | MultiPolygon | GeoSeries | GeoDataFrame,
+    cell_size: float,
+    cell_type: Literal["square", "hexagon"] = "square",
+    what: Literal["centers", "corners", "polygons"] = "polygons",
+    offset: tuple[float, float] = (0, 0),
+    intersect: bool = True,
+    flat_topped: bool = True,
+) -> GeoSeries:
     """Provide the centers, corners, or polygons of a square or hexagonal grid.
 
-    The output covers the area ot the `input_geometry`. The origin of the grid is
-    at the lower left corner of the bouding box of the `input_geometry`. By default,
-    the grid is intersected with the `input_geometry`. Automatic intersecting can
-    be avoided by adjusting the `intersect` parameter to `False`.
+    The output covers the area of the ``input_geometry``. The origin of the grid is
+    at the lower left corner of the bounding box of the ``input_geometry``. By
+    default, the grid is filtered to only include elements that spatially overlap
+    with the ``input_geometry``. This filtering can be disabled by setting the
+    ``intersect`` parameter to ``False``.
 
     If there are multiple geometries in a GeoSeries/GeoDataFrame, the grid will
     be created over the total bounds of the GeoSeries/GeoDataFrame. Subsequently,
-    the grid is intersected with the individual geometries.
+    the grid is filtered to only include elements that spatially overlap with
+    any of the individual geometries.
 
     Parameters
     ----------
@@ -38,12 +41,16 @@ def make_grid(
     cell_type : str, one of "square", "hexagon", default "square"
         Grid type that is returned.
     what : str, one of "centers", "corners", "polygons", default "polygons"
-        Grid feature that is returned.
+        Grid feature that is returned. ``"centers"`` returns points at the
+        center of each grid cell. ``"corners"`` returns points at all unique
+        vertices of the grid cells (i.e., the points where cell edges meet).
+        ``"polygons"`` returns the grid cell polygons.
     offset : tuple
         x, y offset of the grid realtive to lower-left corner of the input
         geometry's bounding box.
     intersect : bool, default True
-        If False, the grid is not intersected with the `input_geometry`.
+        If False, the grid is not filtered by the ``input_geometry`` and the
+        full grid covering the bounding box is returned.
     flat_topped : bool, default True
         If False, the orientation of the hexagonal cells are rotated by 90 degree
         such that a corner points upwards.
@@ -53,6 +60,22 @@ def make_grid(
     GeoSeries
         The returned GeoSeries contains the grid-cell centers, corners, or
         polygons.
+
+    Notes
+    -----
+    When ``intersect=True``, the grid is filtered using the ``"intersects"``
+    spatial predicate. The filtering behavior depends on ``what``:
+
+    - ``"polygons"``: All grid cell polygons that share any area or boundary
+      with the ``input_geometry`` are returned.
+    - ``"centers"``: Only center points that fall within or on the boundary of
+      the ``input_geometry`` are returned.
+    - ``"corners"``: Only corner points that fall within or on the boundary of
+      the ``input_geometry`` are returned.
+
+    As a result, the set of corners returned when ``what="corners"`` may not
+    correspond exactly to the vertices of the polygons returned when
+    ``what="polygons"``.
 
     Examples
     --------
@@ -220,7 +243,9 @@ def make_grid(
         return output_grid
 
 
-def _hex_polygon_corners(xv, yv, index_0=(0, 0)):
+def _hex_polygon_corners(
+    xv: np.ndarray, yv: np.ndarray, index_0: tuple[int, int] = (0, 0)
+) -> np.ndarray:
     """Group hexagon corners that belong to the same grid cell.
 
     Parameters
@@ -309,7 +334,14 @@ def _hex_polygon_corners(xv, yv, index_0=(0, 0)):
     return hex_coords
 
 
-def _basic_checks(input_geometry, cell_size, offset, what, cell_type, intersect):
+def _basic_checks(
+    input_geometry: Polygon | MultiPolygon | GeoSeries | GeoDataFrame,
+    cell_size: float,
+    offset: tuple[float, float],
+    what: str,
+    cell_type: str,
+    intersect: bool,
+) -> None:
     """Check the validity of make_grid input parameters.
 
     `cell_size` must be larger than 0.
