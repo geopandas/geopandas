@@ -88,6 +88,14 @@ class TestBasicChecks:
         with pytest.raises(ValueError):
             make_grid(square, 1, what="corner")
 
+    def test_inputs_intersect_type(self, square):
+        with pytest.raises(TypeError):
+            make_grid(square, 1, intersect="True")
+
+    def test_offset_too_large(self, square):
+        with pytest.warns(UserWarning):
+            make_grid(square, 1, offset=(3, 3))
+
 
 class TestMakeGridSquare:
     def test_square_centers(self, square):
@@ -440,4 +448,87 @@ class TestMakeGridHexagon:
             ]
         )
 
+        assert_geoseries_equal(out, exp_out, check_less_precise=True)
+
+    def test_hexagon_centers_not_flat_topped(self, square):
+        cell_size = 1
+        out = make_grid(
+            square,
+            cell_size,
+            what="centers",
+            cell_type="hexagon",
+            flat_topped=False,
+            intersect=False,
+        )
+        exp_out = GeoSeries(
+            [
+                Point(-0.5 * np.sqrt(3), 0.5),
+                Point(0, 2),
+                Point(0.5 * np.sqrt(3), 0.5),
+                Point(np.sqrt(3), 2),
+                Point(1.5 * np.sqrt(3), 0.5),
+                Point(2 * np.sqrt(3), 2),
+            ]
+        )
+        assert_geoseries_equal(out, exp_out, check_less_precise=True)
+
+    def test_hexagon_corners_not_flat_topped(self, square):
+        cell_size = 1
+        out = make_grid(
+            square,
+            cell_size,
+            what="corners",
+            cell_type="hexagon",
+            flat_topped=False,
+            intersect=False,
+        )
+        exp_out = GeoSeries(
+            [
+                Point(-0.5 * np.sqrt(3), -0.5),
+                Point(-0.5 * np.sqrt(3), 1.5),
+                Point(-0.5 * np.sqrt(3), 2.5),
+                Point(0, 0),
+                Point(0, 1),
+                Point(0, 3),
+                Point(0.5 * np.sqrt(3), -0.5),
+                Point(0.5 * np.sqrt(3), 1.5),
+                Point(0.5 * np.sqrt(3), 2.5),
+                Point(np.sqrt(3), 0),
+                Point(np.sqrt(3), 1),
+                Point(np.sqrt(3), 3),
+                Point(1.5 * np.sqrt(3), -0.5),
+                Point(1.5 * np.sqrt(3), 1.5),
+                Point(1.5 * np.sqrt(3), 2.5),
+                Point(2 * np.sqrt(3), 0),
+                Point(2 * np.sqrt(3), 1),
+                Point(2 * np.sqrt(3), 3),
+            ]
+        )
+        assert_geoseries_equal(out, exp_out, check_less_precise=True)
+
+    def test_hexagon_polygons_not_flat_topped(self, square):
+        cell_size = 3
+        with pytest.warns(UserWarning):
+            out = make_grid(
+                square,
+                cell_size,
+                what="polygons",
+                cell_type="hexagon",
+                flat_topped=False,
+                intersect=False,
+            )
+        exp_out = GeoSeries(
+            [
+                Polygon(
+                    [
+                        (0, 0),
+                        (0, 3),
+                        (1.5 * np.sqrt(3), 4.5),
+                        (3 * np.sqrt(3), 3),
+                        (3 * np.sqrt(3), 0),
+                        (1.5 * np.sqrt(3), -1.5),
+                    ]
+                ),
+            ]
+        )
         assert_geoseries_equal(out, exp_out, check_less_precise=True)
