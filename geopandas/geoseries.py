@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import typing
 import warnings
-from typing import Any
+from typing import Any, Literal
 
 import numpy as np
 import pandas as pd
@@ -1589,3 +1589,69 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         (7,)
         """
         return geopandas.clip(self, mask=mask, keep_geom_type=keep_geom_type, sort=sort)
+
+    def make_grid(
+        self,
+        cell_size: float,
+        cell_type: Literal["square", "hexagon"] = "square",
+        what: Literal["centers", "corners", "polygons"] = "polygons",
+        offset: tuple = (0, 0),
+        intersect: bool = True,
+        flat_topped: bool = True,
+    ) -> GeoSeries:
+        """Provide the centers, corners, or polygons of a square or hexagonal grid.
+
+        The grid covers the area of the GeoSeries' bounds. By default, only
+        grid elements that spatially overlap with the GeoSeries geometries
+        are returned.
+
+        Parameters
+        ----------
+        cell_size : float
+            Side length of the square or hexagonal grid cell.
+        cell_type : str, one of "square", "hexagon", default "square"
+            Grid type that is returned.
+        what : str, one of "centers", "corners", "polygons", default "polygons"
+            Grid feature that is returned. ``"centers"`` returns points at the
+            center of each grid cell. ``"corners"`` returns points at all unique
+            vertices of the grid cells. ``"polygons"`` returns the grid cell
+            polygons.
+        offset : tuple
+            x, y offset of the grid relative to lower-left corner of the
+            bounding box.
+        intersect : bool, default True
+            If False, the grid is not filtered by the geometry and the full
+            grid covering the bounding box is returned.
+        flat_topped : bool, default True
+            If False, the orientation of the hexagonal cells are rotated by
+            90 degrees such that a corner points upwards.
+
+        Returns
+        -------
+        GeoSeries
+
+        See Also
+        --------
+        make_grid : equivalent top-level function
+
+        Examples
+        --------
+        >>> import geodatasets
+        >>> world = geopandas.read_file(
+        ...     geodatasets.get_path('naturalearth land'))
+        >>> borneo = world.loc[[42]]
+        >>> borneo.geometry.make_grid(6)
+        0    POLYGON ((108.95266 -4.10698, 114.95266 -4.106...
+        1    POLYGON ((108.95266 1.89302, 114.95266 1.89302...
+        2    POLYGON ((114.95266 -4.10698, 120.95266 -4.106...
+        3    POLYGON ((114.95266 1.89302, 120.95266 1.89302...
+        """
+        return geopandas.make_grid(
+            self,
+            cell_size=cell_size,
+            cell_type=cell_type,
+            what=what,
+            offset=offset,
+            intersect=intersect,
+            flat_topped=flat_topped,
+        )
