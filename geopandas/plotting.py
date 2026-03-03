@@ -179,6 +179,37 @@ def _subset_kwds(kwds: dict, index: np.ndarray) -> dict:
     return subset_kwds
 
 
+def _plot_empty_collection(ax, majority_geom_type, color, label, **group_style_kwds):
+    """Plot empty collections using correct handle and label."""
+    from matplotlib import collections
+
+    if majority_geom_type.endswith("Polygon"):
+        ax.add_collection(
+            collections.PolyCollection(
+                [],
+                color=color,
+                **group_style_kwds,
+                label=label,
+            )
+        )
+    elif majority_geom_type.endswith("Point"):
+        ax.scatter(
+            [],
+            [],
+            color=color,
+            **group_style_kwds,
+            label=label,
+        )
+    else:
+        ax.plot(
+            [],
+            [],
+            color=color,
+            **group_style_kwds,
+            label=label,
+        )
+
+
 def _PolygonPatch(polygon: shapely.Geometry, **kwargs) -> PathPatch:
     """Construct a matplotlib patch from a (Multi)Polygon geometry.
 
@@ -789,7 +820,7 @@ def plot_dataframe(
     """
     try:
         import matplotlib.pyplot as plt
-        from matplotlib import cm, collections, colormaps, colors
+        from matplotlib import cm, colormaps, colors
     except ImportError:
         raise ImportError(
             "The matplotlib package is required for plotting in geopandas. "
@@ -999,31 +1030,14 @@ def plot_dataframe(
             # plot nothing to get an item for legend. Determine how to plot nothing
             # based on a majority geom type to get matching handle in the legend
             if group.empty:
-                if majority_geom_type.endswith("Polygon"):
-                    ax.add_collection(
-                        collections.PolyCollection(
-                            [],
-                            color=_color(i, name, ngroups, cmap),
-                            **group_style_kwds,
-                            label=label,
-                        )
-                    )
-                elif majority_geom_type.endswith("Point"):
-                    ax.scatter(
-                        [],
-                        [],
-                        color=_color(i, name, ngroups, cmap),
-                        **group_style_kwds,
-                        label=label,
-                    )
-                else:
-                    ax.plot(
-                        [],
-                        [],
-                        color=_color(i, name, ngroups, cmap),
-                        **group_style_kwds,
-                        label=label,
-                    )
+                _plot_empty_collection(
+                    ax,
+                    majority_geom_type,
+                    color=_color(i, name, ngroups, cmap),
+                    label=label,
+                    **group_style_kwds,
+                )
+
             else:
                 plot_series(
                     group.geometry,
