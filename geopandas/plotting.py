@@ -981,7 +981,9 @@ def plot_dataframe(
                 if isinstance(val, dict):
                     group_style_kwds[key] = val.get(name)
                 elif pd.api.types.is_list_like(val) and len(val) == len(df):
-                    group_style_kwds[key] = np.take(val, grouped.indices[name])
+                    group_style_kwds[key] = np.take(
+                        np.asarray(val), grouped.indices[name]
+                    )
                 else:
                     group_style_kwds[key] = val
 

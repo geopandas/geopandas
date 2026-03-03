@@ -18,7 +18,7 @@ from shapely.geometry import (
 )
 
 import geopandas._compat as compat
-from geopandas import GeoDataFrame, GeoSeries, read_file
+from geopandas import GeoDataFrame, GeoSeries, points_from_xy, read_file
 from geopandas.plotting import GeoplotAccessor
 
 import pytest
@@ -2654,4 +2654,20 @@ class TestStyleMapping:
         assert nan_handle.get_linewidth()[0] == 3
         np.testing.assert_array_equal(
             nan_handle.get_facecolor(), [[0.0, 0.0, 0.0, 1.0]]
+        )
+
+    def test_style_kwds_series(self):
+        gdf = GeoDataFrame(
+            {"col": ["a", "b", "a"]},
+            geometry=points_from_xy(range(3), range(3)).buffer(0.5),
+        )
+        ec = pd.Series(["k", "r", "b"])
+        ax = gdf.plot(column="col", edgecolor=ec)
+        np.testing.assert_array_equal(
+            ax.collections[0].get_edgecolor(),
+            np.array([[0.0, 0.0, 0.0, 1.0], [0.0, 0.0, 1.0, 1.0]]),
+        )
+        np.testing.assert_array_equal(
+            ax.collections[1].get_edgecolor(),
+            np.array([[1.0, 0.0, 0.0, 1.0]]),
         )
