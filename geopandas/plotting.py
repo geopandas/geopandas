@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
 import pandas as pd
+from matplotlib.colors import is_color_like
 from pandas import CategoricalDtype
 from pandas.plotting import PlotAccessor
 
@@ -980,7 +981,11 @@ def plot_dataframe(
             for key, val in style_kwds.items():
                 if isinstance(val, dict):
                     group_style_kwds[key] = val.get(name)
-                elif pd.api.types.is_list_like(val) and len(val) == len(df):
+                elif (
+                    pd.api.types.is_list_like(val)
+                    and len(val) == len(df)
+                    and not is_color_like(val)
+                ):
                     group_style_kwds[key] = np.take(
                         np.asarray(val), grouped.indices[name]
                     )

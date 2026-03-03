@@ -2671,3 +2671,16 @@ class TestStyleMapping:
             ax.collections[1].get_edgecolor(),
             np.array([[1.0, 0.0, 0.0, 1.0]]),
         )
+
+    def test_style_kwarg_colorlike(self):
+        """Do not subdivide color tuple"""
+        gdf = GeoDataFrame(
+            {"col": ["a", "b", "a"]},
+            geometry=points_from_xy(range(3), range(3)).buffer(0.5),
+        )
+        ax = gdf.plot(column="col", edgecolor=(0.2, 0.2, 0.2))
+        for col in ax.collections:
+            np.testing.assert_array_equal(
+                col.get_edgecolor(),
+                np.array([[0.2, 0.2, 0.2, 1.0]]),
+            )
