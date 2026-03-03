@@ -758,12 +758,6 @@ class TestPolygonPlotting:
         actual_colors = ax.collections[0].get_facecolors()
         np.testing.assert_array_equal(actual_colors[0], actual_colors[1])
 
-        # categorical
-        # TODO: this fails but I don't get why vmin, vmax shoudl apply to categorical
-        # ax = self.df.plot(column="values", categorical=True, vmin=0, vmax=0)
-        # actual_colors = ax.collections[0].get_facecolors()
-        # np.testing.assert_array_equal(actual_colors[0], actual_colors[1])
-
         # vmin vmax set correctly for array with NaN (GitHub issue 877)
         ax = self.df3.plot(column="values")
         actual_colors = ax.collections[0].get_facecolors()
