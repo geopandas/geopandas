@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 from matplotlib.colors import is_color_like
 from pandas import CategoricalDtype
+from pandas.core.dtypes.cast import coerce_indexer_dtype
 from pandas.plotting import PlotAccessor
 
 import shapely
@@ -1238,16 +1239,13 @@ def _check_invalid_categories(categories: Collection[Any], values) -> pd.Categor
     wrong = (codes == -1) & ~pd.isna(values)
     if wrong.any():
         missing = list(np.unique(values[wrong]))
-    else:
-        missing = []
-        codes_downcast = pd.core.dtypes.cast.coerce_indexer_dtype(codes, categories)
-        cat = pd.Categorical.from_codes(codes_downcast, categories)
-
-    if missing:
         raise ValueError(
             "Column contains values not listed in categories. "
             f"Missing categories: {missing}."
         )
+    else:
+        codes_downcast = coerce_indexer_dtype(codes, categories)
+        cat = pd.Categorical.from_codes(codes_downcast, categories)
     return cat
 
 

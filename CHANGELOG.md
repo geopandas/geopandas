@@ -9,6 +9,7 @@ New features and improvements:
 - Add ``grid_size`` parameter to ``union``, ``difference``, ``symmetric_difference``
   and ``intersection`` (#3593).
 - `read_parquet` now support direct reading from HTTP/HTTPS protocols (#3699)
+- Improved compatibility with pandas 3.0 Copy-on-Write feature, making use of deferred copies where possible (#3298).
 
 Deprecations and compatibility notes:
 
@@ -1092,7 +1093,7 @@ New features and improvements:
 - Addition of a ``GeoDataFrame.rename_geometry`` method to easily rename the active geometry column (#1053).
 - Addition of ``geopandas.show_versions()`` function, which can be used to give an overview of the installed libraries in bug reports (#899).
 - The ``legend_kwds`` keyword of the ``plot()`` method can now also be used to specify keywords for the color bar (#1102).
-- Performance improvement in the ``sjoin()`` operation by re-using existing spatial index of the input dataframes, if available (#789).
+- Performance improvement in the ``sjoin()`` operation by reusing existing spatial index of the input dataframes, if available (#789).
 - Updated documentation to work with latest version of geoplot and contextily (#1044, #1088).
 - A new ``geopandas.options`` configuration, with currently a single option to control the display precision of the coordinates (``options.display_precision``). The default is now to show less coordinates (3 for projected and 5 for geographic coordinates), but the default can be overridden with the option.
 
