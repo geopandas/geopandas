@@ -188,7 +188,6 @@ def df_mixed_none_geometry():
                 None,
                 MultiPolygon([[[[0, 0], [0, 1], [1, 1], [1, 0]]]]),
             ],
-            "id": [0, 1],
         },
         crs="epsg:4326",
     )
