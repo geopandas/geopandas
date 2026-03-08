@@ -22,8 +22,8 @@ Bug fixes:
 
 - Fix `GeoSeries.sample_points` not accepting list-like `size` when generating points using
   `pointpaterns` (#3710).
-- Using `loc` to assign column values to a new index now correctly preserves the column CRS, due to
-  an upstream bug fix in pandas 3.1 (#3741, Pandas #62523)
+- Using `loc` to assign column values to a new row index now correctly preserves the column CRS
+  on pandas 3.1, due to an upstream bug fix (#3741, Pandas #62523)
 
 Community:
 
