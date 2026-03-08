@@ -213,6 +213,9 @@ ignore = [
 
 ]
 
+allowed-confusables = ["−"]
+
+
 [tool.ruff.lint.per-file-ignores]
 # ignore pydocstyle errors in tests
 "**/tests/*" = ["D"]
