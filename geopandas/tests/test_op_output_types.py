@@ -1,3 +1,5 @@
+import contextlib
+
 import numpy as np
 import pandas as pd
 
@@ -5,6 +7,7 @@ from shapely.geometry import Point
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries
+from geopandas._compat import PANDAS_GE_31
 
 import pytest
 from geopandas.testing import assert_geodataframe_equal
@@ -147,30 +150,27 @@ def test_loc(df):
     assert_object(df.loc[:, "value1"], pd.Series)
 
 
-@pytest.mark.parametrize(
-    "geom_name",
-    [
-        "geometry",
-        pytest.param(
-            "geom",
-            marks=pytest.mark.xfail(
-                reason="pre-regression behaviour only works for geometry col geometry"
-            ),
-        ),
-    ],
-)
+@pytest.mark.parametrize("geom_name", ["geometry", "geom"])
 def test_loc_add_row(geom_name, nybb_filename):
     # https://github.com/geopandas/geopandas/issues/3119
 
     nybb = geopandas.read_file(nybb_filename)[["BoroCode", "geometry"]]
     if geom_name != "geometry":
         nybb = nybb.rename_geometry(geom_name)
-    # crs_orig = nybb.crs
-
     # add a new row
-    nybb.loc[5] = [6, nybb.geometry.iloc[0]]
-    assert nybb.geometry.dtype == "geometry"
-    assert nybb.crs is None  # TODO this should be crs_orig, regressed in #2373
+    if PANDAS_GE_31:
+        ctx = pytest.warns(UserWarning, match="CRS not set for some.*")
+        expected_crs = nybb.crs
+    else:
+        ctx = contextlib.nullcontext()
+        expected_crs = None  # this should be nybb.crs, regressed in #2373
+    with ctx:
+        nybb.loc[5] = [6, nybb.geometry.iloc[0]]
+    if PANDAS_GE_31 or geom_name == "geometry":
+        assert nybb.geometry.dtype == "geometry"
+        assert nybb.crs is expected_crs
+    else:
+        assert nybb.geometry.dtype == "object"
 
 
 def test_iloc(df):
