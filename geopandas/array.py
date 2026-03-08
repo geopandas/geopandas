@@ -219,6 +219,8 @@ def from_wkb(data, crs=None, on_invalid="raise"):
           without a warning. Requires GEOS >= 3.11 and shapely >= 2.1.
 
     """
+    if isinstance(data, ExtensionArray):
+        data = data.to_numpy(na_value=None)
     return GeometryArray(shapely.from_wkb(data, on_invalid=on_invalid), crs=crs)
 
 
@@ -251,6 +253,8 @@ def from_wkt(data, crs=None, on_invalid="raise"):
           without a warning. Requires GEOS >= 3.11 and shapely >= 2.1.
 
     """
+    if isinstance(data, ExtensionArray):
+        data = data.to_numpy(na_value=None)
     return GeometryArray(shapely.from_wkt(data, on_invalid=on_invalid), crs=crs)
 
 
@@ -423,6 +427,18 @@ class GeometryArray(ExtensionArray):
     def __getitem__(self, idx):
         if isinstance(idx, numbers.Integral):
             return self._data[idx]
+        elif (
+            isinstance(idx, slice)
+            and idx.start is None
+            and idx.stop is None
+            and idx.step is None
+        ):
+            # special case of a full slice -> preserve the sindex
+            # (to ensure view() preserves it as well)
+            result = GeometryArray(self._data[idx], crs=self.crs)
+            result._sindex = self._sindex
+            return result
+
         # array-like, slice
         # validate and convert IntegerArray/BooleanArray
         # to numpy array, pass-through non-array-like indexers
