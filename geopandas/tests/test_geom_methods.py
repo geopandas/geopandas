@@ -1,5 +1,6 @@
 import string
 import warnings
+from packaging.version import Version
 
 import numpy as np
 from pandas import DataFrame, Index, MultiIndex, Series, concat
@@ -28,6 +29,13 @@ from geopandas.testing import assert_geodataframe_equal
 from geopandas.tests.util import assert_geoseries_equal, geom_almost_equals, geom_equals
 from numpy.testing import assert_array_equal
 from pandas.testing import assert_frame_equal, assert_index_equal, assert_series_equal
+
+try:
+    import pointpats
+
+    POINTPATS_GE_253 = Version(pointpats.__version__) >= Version("2.5.3")
+except ImportError:
+    POINTPATS_GE_253 = False
 
 
 def assert_array_dtype_equal(a, b, *args, **kwargs):
@@ -2138,8 +2146,10 @@ class TestGeomMethods:
     @pytest.mark.parametrize("rng", [None, 1, np.random.default_rng(seed=2)])
     @pytest.mark.parametrize("size", [10, 20, 50])
     @pytest.mark.parametrize("method", ["cluster_poisson", "cluster_normal"])
+    @pytest.mark.skipif(
+        not POINTPATS_GE_253, reason="Requires pointpats>=2.5.3 for rng kwarg"
+    )
     def test_sample_points_pointpats(self, method, size, rng):
-        pytest.importorskip("pointpats")
         for gs in (
             self.g1,
             self.na,
@@ -2164,8 +2174,10 @@ class TestGeomMethods:
 
     @pytest.mark.parametrize("rng", [None, 1, np.random.default_rng(seed=2)])
     @pytest.mark.parametrize("method", ["cluster_poisson", "cluster_normal"])
+    @pytest.mark.skipif(
+        not POINTPATS_GE_253, reason="Requires pointpats>=2.5.3 for rng kwarg"
+    )
     def test_sample_points_pointpats_array(self, method, rng):
-        pytest.importorskip("pointpats")
         output = concat([self.g1, self.g1]).sample_points(
             [10, 15, 20, 25], method=method, rng=rng
         )
