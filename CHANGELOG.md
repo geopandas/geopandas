@@ -1,6 +1,6 @@
 # Changelog
 
-## Version 1.1.3 (March 9, 2026)
+## Version 1.1.3 (March 10, 2026)
 
 Bug fixes:
 - Improved compatibility with pandas 3.0 Copy-on-Write feature, making use of deferred copies where possible (#3298, #3711).
@@ -8,7 +8,7 @@ Bug fixes:
   `pointpaterns` (#3710).
 - Fix `from_wkt/wkb` to correctly handle missing values with pandas 3 (where the new `str` dtype is used) (#3714).
 - Fix `to_postgis` to correctly handle missing values with pandas 3 (where the new `str` dtype is used) (#3722).
-- Using `loc` to assign column values to a new row index now correctly preserves the column CRS
+- Using `loc` to assign column values to a new row index now correctly preserves the column CRS and geometry dtype
   on pandas 3.1, due to an upstream bug fix (#3741, Pandas #62523)
 - Random states in ``pointpats`` methods of ``sample_points`` can now be fixed with ``rng`` (#3737).
 
