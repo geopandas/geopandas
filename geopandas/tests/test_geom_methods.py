@@ -2220,29 +2220,41 @@ class TestGeomMethods:
         )
         assert_series_equal(shapely.get_num_geometries(output), expected)
 
+    @pytest.mark.parametrize("rng", [None, 1, np.random.default_rng(seed=2)])
     @pytest.mark.parametrize("size", [10, 20, 50])
-    def test_sample_points_pointpats(self, size):
+    @pytest.mark.parametrize("method", ["cluster_poisson", "cluster_normal"])
+    def test_sample_points_pointpats(self, method, size, rng):
         pytest.importorskip("pointpats")
         for gs in (
             self.g1,
             self.na,
             self.a1,
         ):
-            output = gs.sample_points(size, method="cluster_poisson")
-            assert_index_equal(gs.index, output.index)
+            output1 = gs.sample_points(size, method=method, rng=rng)
+            assert_index_equal(gs.index, output1.index)
             assert (
-                len(output.explode(ignore_index=True)) == len(gs[~gs.is_empty]) * size
+                len(output1.explode(ignore_index=True)) == len(gs[~gs.is_empty]) * size
             )
+
+            if rng is not None:
+                output2 = gs.sample_points(size, method=method, rng=rng)
+                if rng == 1:
+                    assert_geoseries_equal(output1, output2)
+                else:
+                    with pytest.raises(AssertionError, match="2 out of"):
+                        assert_geoseries_equal(output1, output2)
 
         with pytest.raises(
             AttributeError, match=re.escape("pointpats.random module has no")
         ):
             gs.sample_points(10, method="nonexistent")
 
-    def test_sample_points_pointpats_array(self):
+    @pytest.mark.parametrize("rng", [None, 1, np.random.default_rng(seed=2)])
+    @pytest.mark.parametrize("method", ["cluster_poisson", "cluster_normal"])
+    def test_sample_points_pointpats_array(self, method, rng):
         pytest.importorskip("pointpats")
         output = concat([self.g1, self.g1]).sample_points(
-            [10, 15, 20, 25], method="cluster_poisson"
+            [10, 15, 20, 25], method=method, rng=rng
         )
         expected = Series(
             [10, 15, 20, 25], index=[0, 1, 0, 1], name="sampled_points", dtype="int32"

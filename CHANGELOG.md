@@ -10,6 +10,7 @@ New features and improvements:
   and ``intersection`` (#3593).
 - `read_parquet` now support direct reading from HTTP/HTTPS protocols (#3699)
 - Improved compatibility with pandas 3.0 Copy-on-Write feature, making use of deferred copies where possible (#3298).
+- Random states in ``pointpats`` methods of ``sample_points`` can now be fixed with ``rng`` (#3737).
 
 Deprecations and compatibility notes:
 
@@ -22,6 +23,8 @@ Bug fixes:
 
 - Fix `GeoSeries.sample_points` not accepting list-like `size` when generating points using
   `pointpaterns` (#3710).
+- Using `loc` to assign column values to a new row index now correctly preserves the column CRS
+  on pandas 3.1, due to an upstream bug fix (#3741, Pandas #62523)
 
 Community:
 
