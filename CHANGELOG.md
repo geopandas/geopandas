@@ -9,8 +9,6 @@ New features and improvements:
 - Add ``grid_size`` parameter to ``union``, ``difference``, ``symmetric_difference``
   and ``intersection`` (#3593).
 - `read_parquet` now support direct reading from HTTP/HTTPS protocols (#3699)
-- Improved compatibility with pandas 3.0 Copy-on-Write feature, making use of deferred copies where possible (#3298).
-- Random states in ``pointpats`` methods of ``sample_points`` can now be fixed with ``rng`` (#3737).
 
 Deprecations and compatibility notes:
 
@@ -20,11 +18,6 @@ Deprecations and compatibility notes:
   `seed` keyword in sample_points (replaced by `rng`) (#3613)
 
 Bug fixes:
-
-- Fix `GeoSeries.sample_points` not accepting list-like `size` when generating points using
-  `pointpaterns` (#3710).
-- Using `loc` to assign column values to a new row index now correctly preserves the column CRS
-  on pandas 3.1, due to an upstream bug fix (#3741, Pandas #62523)
 
 Community:
 
@@ -38,6 +31,20 @@ Notes on dependencies:
   fiona 1.8.21, scipy 1.9, matplotlib 3.9, mapclassify 2.7 folium 0.15, pyarrow 15.0 and
   SQLAlchemy 2.0. Older versions of these libraries may continue to work, but are no longer
   considered supported (#3371, #3581).
+
+## Version 1.1.3 (March 10, 2026)
+
+This release addresses a handful of small compatibility issues with pandas 3.0 and backports some bugfixes.
+
+Bug fixes:
+- Improved compatibility with pandas 3.0 Copy-on-Write feature, making use of deferred copies where possible (#3298, #3711).
+- Fix `GeoSeries.sample_points` not accepting list-like `size` when generating points using
+  `pointpaterns` (#3710).
+- Fix `from_wkt/wkb` to correctly handle missing values with pandas 3 (where the new `str` dtype is used) (#3714).
+- Fix `to_postgis` to correctly handle missing values with pandas 3 (where the new `str` dtype is used) (#3722).
+- Using `loc` to assign column values to a new row index now correctly preserves the column CRS and geometry dtype
+  on pandas 3.1, due to an upstream bug fix (#3741, Pandas #62523)
+- Random states in `pointpats` methods of `sample_points`` can now be fixed with `rng` (#3737).
 
 ## Version 1.1.2 (December 22, 2025)
 
