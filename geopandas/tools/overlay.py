@@ -1,5 +1,6 @@
 import warnings
 from functools import reduce
+from typing import Literal
 
 import numpy as np
 import pandas as pd
@@ -169,7 +170,15 @@ def _overlay_union(df1, df2):
     return dfunion.reindex(columns=columns)
 
 
-def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
+def overlay(
+    df1: GeoDataFrame,
+    df2: GeoDataFrame,
+    how: Literal[
+        "intersection", "union", "identity", "symmetric_difference", "difference"
+    ] = "intersection",
+    keep_geom_type: bool | None = None,
+    make_valid: bool = True,
+):
     """Perform spatial overlay between two GeoDataFrames.
 
     Currently only supports data GeoDataFrames with uniform geometry types,
@@ -333,7 +342,15 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
 
     # Determine the geometry type before make_valid, as make_valid may change it
     if keep_geom_type:
-        geom_type = df1.geom_type.iloc[0]
+        if len(df1) == 0:
+            msg = (
+                "`keep_geom_type=True` is invalid when df1 is empty as "
+                "there is no geom type to keep. Setting `keep_geom_type=False`"
+            )
+            warnings.warn(msg, stacklevel=3)
+            keep_geom_type = False
+        else:
+            geom_type = df1.geom_type.iloc[0]
 
     df1 = _make_valid(df1)
     df2 = _make_valid(df2)
