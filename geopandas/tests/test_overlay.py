@@ -846,13 +846,22 @@ def test_zero_len():
         crs=4326,
     )
     # overlay with empty geodataframe shouldn't throw
-    gdf2 = GeoDataFrame({"geometry": []}, crs=4326)
-    res = gdf1.overlay(gdf2, how="union")
+    empty = GeoDataFrame({"geometry": []}, crs=4326)
+    res = gdf1.overlay(empty, how="union")
     assert_geodataframe_equal(res, gdf1)
+    res = gdf1.overlay(empty, how="union")
+    assert_geodataframe_equal(res, gdf1)
+    res = empty.overlay(gdf1, how="union", keep_geom_type=False)
+    assert_geodataframe_equal(res, gdf1)
+    res = empty.overlay(gdf1, how="difference", keep_geom_type=False)
+    assert_geodataframe_equal(res, empty)
 
-    gdf2 = GeoDataFrame(geometry=[], crs=4326)
-    res = gdf1.overlay(gdf2, how="union")
-    assert_geodataframe_equal(res, gdf1)
+    # keep_geom_type should warn gracefully with an empty input
+    # https://github.com/geopandas/geopandas/discussions/3738
+    with pytest.warns(
+        UserWarning, match="`keep_geom_type=True` is invalid when df1 is empty"
+    ):
+        empty.overlay(gdf1, how="union", keep_geom_type=True)
 
 
 class TestOverlayWikiExample:
