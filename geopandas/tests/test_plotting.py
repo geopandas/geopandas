@@ -2687,3 +2687,46 @@ class TestStyleMapping:
                 col.get_edgecolor(),
                 np.array([[0.2, 0.2, 0.2, 1.0]]),
             )
+
+
+class TestAxisLabels:
+    def setup_method(self, nybb_filename):
+        from geodatasets import get_path
+
+        self.nybb = read_file(get_path("geoda nyc"))
+
+    def test_feet(self):
+        ax = self.nybb.plot()
+        assert ax.get_xlabel() == "Easting\n[US survey foot]"
+        assert ax.get_ylabel() == "Northing\n[US survey foot]"
+
+    def test_metres(self):
+        utm = self.nybb.to_crs(self.nybb.estimate_utm_crs())
+        ax = utm.plot()
+        assert ax.get_xlabel() == "Easting\n[metre]"
+        assert ax.get_ylabel() == "Northing\n[metre]"
+
+    def test_4326(self):
+        geog = self.nybb.to_crs(4326)
+        ax = geog.plot()
+        assert ax.get_xlabel() == "Geodetic longitude\n[degree]"
+        assert ax.get_ylabel() == "Geodetic latitude\n[degree]"
+
+    def test_naive(self):
+        naive = self.nybb.set_crs(None, allow_override=True)
+        ax = naive.plot()
+        assert ax.get_xlabel() == "x"
+        assert ax.get_ylabel() == "y"
+
+    def test_passed_ax(self):
+        import matplotlib.pyplot as plt
+
+        _, ax = plt.subplots()
+        ax = self.nybb.plot(ax=ax)
+        assert ax.get_xlabel() == "Easting\n[US survey foot]"
+        assert ax.get_ylabel() == "Northing\n[US survey foot]"
+
+    def test_series(self):
+        ax = self.nybb.geometry.plot()
+        assert ax.get_xlabel() == "Easting\n[US survey foot]"
+        assert ax.get_ylabel() == "Northing\n[US survey foot]"
