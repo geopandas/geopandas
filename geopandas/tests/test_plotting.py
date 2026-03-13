@@ -19,6 +19,7 @@ from shapely.geometry import (
 
 import geopandas._compat as compat
 from geopandas import GeoDataFrame, GeoSeries, points_from_xy, read_file
+from geopandas._compat import HAS_PYPROJ
 from geopandas.plotting import GeoplotAccessor, _check_invalid_categories
 
 import pytest
@@ -2689,6 +2690,7 @@ class TestStyleMapping:
             )
 
 
+@pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not installed")
 class TestAxisLabels:
     def setup_method(self, nybb_filename):
         from geodatasets import get_path
