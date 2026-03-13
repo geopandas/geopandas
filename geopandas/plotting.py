@@ -1264,8 +1264,10 @@ def _set_axis_labels(ax, crs):
     else:
         x_label, y_label = "x", "y"
 
-    ax.set_xlabel(x_label, fontsize="small")
-    ax.set_ylabel(y_label, fontsize="small")
+    if ax.get_xlabel() == "":
+        ax.set_xlabel(x_label, fontsize="small")
+    if ax.get_ylabel() == "":
+        ax.set_ylabel(y_label, fontsize="small")
 
 
 @doc(plot_dataframe)

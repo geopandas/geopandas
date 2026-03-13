@@ -2735,3 +2735,12 @@ class TestAxisLabels:
         ax = self.nybb.geometry.plot()
         assert ax.get_xlabel() == "Easting [US survey foot]"
         assert ax.get_ylabel() == "Northing [US survey foot]"
+
+    def test_preservation(self):
+        import matplotlib.pyplot as plt
+
+        _, ax = plt.subplots()
+        ax.set_xlabel("xlabel")
+        ax = self.nybb.plot(ax=ax)
+        assert ax.get_xlabel() == "xlabel"
+        assert ax.get_ylabel() == "Northing [US survey foot]"
