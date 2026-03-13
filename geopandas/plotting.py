@@ -537,6 +537,8 @@ def plot_series(
     if ax is None:
         _, ax = plt.subplots(figsize=figsize)
 
+    _set_axis_labels(ax, s.crs)
+
     if s.empty:
         warnings.warn(
             "The GeoSeries you are attempting to plot is "
@@ -861,6 +863,8 @@ def plot_dataframe(
         if cax is not None:
             raise ValueError("'ax' can not be None if 'cax' is not.")
         _fig, ax = plt.subplots(figsize=figsize)
+
+    _set_axis_labels(ax, df.crs)
 
     # set correct aspect to preserve proportions in geographic CRS
     _set_aspect(aspect, df, ax)
@@ -1247,6 +1251,23 @@ def _check_invalid_categories(categories: Collection[Any], values) -> pd.Categor
         codes_downcast = coerce_indexer_dtype(codes, categories)
         cat = pd.Categorical.from_codes(codes_downcast, categories)
     return cat
+
+
+def _set_axis_labels(ax, crs):
+    """Set labels for Axes based on CRS."""
+    # taken from xarray-contrib/xvec
+    if crs:
+        x_label = f"{crs.axis_info[0].name} [{crs.axis_info[0].unit_name}]"
+        y_label = f"{crs.axis_info[1].name} [{crs.axis_info[1].unit_name}]"
+        if crs.equals(4326):
+            x_label, y_label = y_label, x_label
+    else:
+        x_label, y_label = "x", "y"
+
+    if ax.get_xlabel() == "":
+        ax.set_xlabel(x_label, fontsize="small")
+    if ax.get_ylabel() == "":
+        ax.set_ylabel(y_label, fontsize="small")
 
 
 @doc(plot_dataframe)

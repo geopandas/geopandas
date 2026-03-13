@@ -1,5 +1,6 @@
 import itertools
 import warnings
+from packaging.version import Version
 
 import numpy as np
 import pandas as pd
@@ -19,18 +20,24 @@ from shapely.geometry import (
 
 import geopandas._compat as compat
 from geopandas import GeoDataFrame, GeoSeries, points_from_xy, read_file
+from geopandas._compat import HAS_PYPROJ
 from geopandas.plotting import GeoplotAccessor, _check_invalid_categories
 
 import pytest
 
 matplotlib = pytest.importorskip("matplotlib")
 matplotlib.use("Agg")
+
 import matplotlib.pyplot as plt
 
 try:  # skipif and importorskip do not work for decorators
     from matplotlib.testing.decorators import check_figures_equal, image_comparison
 
     MPL_DECORATORS = True
+
+    # fixme: image comparison tests fail under 3.11.0 dev as of 2026-03-13
+    if Version(matplotlib.__version__) >= Version("3.11.0.dev"):
+        MPL_DECORATORS = False
 except ImportError:
     MPL_DECORATORS = False
 
@@ -1001,11 +1008,8 @@ class TestPolygonPlotting:
             multipoly = MultiPolygon([poly1, poly2])
             _df = GeoDataFrame(geometry=[multipoly])
             ax = _df.plot()
-            plotted_vertices = np.append(
-                ax.collections[0].get_paths()[0].vertices,
-                ax.collections[0].get_paths()[1].vertices,
-                axis=0,
-            )
+            plotted_vertices = ax.collections[0].get_paths()[0].vertices
+
             expected_vertices = _df.normalize().get_coordinates().to_numpy()
             np.testing.assert_array_equal(plotted_vertices, expected_vertices)
 
@@ -2687,3 +2691,56 @@ class TestStyleMapping:
                 col.get_edgecolor(),
                 np.array([[0.2, 0.2, 0.2, 1.0]]),
             )
+
+
+@pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not installed")
+class TestAxisLabels:
+    def setup_method(self, nybb_filename):
+        from geodatasets import get_path
+
+        self.nybb = read_file(get_path("geoda nyc"))
+
+    def test_feet(self):
+        ax = self.nybb.plot()
+        assert ax.get_xlabel() == "Easting [US survey foot]"
+        assert ax.get_ylabel() == "Northing [US survey foot]"
+
+    def test_metres(self):
+        utm = self.nybb.to_crs(self.nybb.estimate_utm_crs())
+        ax = utm.plot()
+        assert ax.get_xlabel() == "Easting [metre]"
+        assert ax.get_ylabel() == "Northing [metre]"
+
+    def test_4326(self):
+        geog = self.nybb.to_crs(4326)
+        ax = geog.plot()
+        assert ax.get_xlabel() == "Geodetic longitude [degree]"
+        assert ax.get_ylabel() == "Geodetic latitude [degree]"
+
+    def test_naive(self):
+        naive = self.nybb.set_crs(None, allow_override=True)
+        ax = naive.plot()
+        assert ax.get_xlabel() == "x"
+        assert ax.get_ylabel() == "y"
+
+    def test_passed_ax(self):
+        import matplotlib.pyplot as plt
+
+        _, ax = plt.subplots()
+        ax = self.nybb.plot(ax=ax)
+        assert ax.get_xlabel() == "Easting [US survey foot]"
+        assert ax.get_ylabel() == "Northing [US survey foot]"
+
+    def test_series(self):
+        ax = self.nybb.geometry.plot()
+        assert ax.get_xlabel() == "Easting [US survey foot]"
+        assert ax.get_ylabel() == "Northing [US survey foot]"
+
+    def test_preservation(self):
+        import matplotlib.pyplot as plt
+
+        _, ax = plt.subplots()
+        ax.set_xlabel("xlabel")
+        ax = self.nybb.plot(ax=ax)
+        assert ax.get_xlabel() == "xlabel"
+        assert ax.get_ylabel() == "Northing [US survey foot]"
