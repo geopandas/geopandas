@@ -409,7 +409,8 @@ def _write_postgis(
 
     # Build dtype with Geometry
     if dtype is not None:
-        dtype[geom_name] = Geometry(geometry_type=geometry_type, srid=srid)
+        if geom_name not in dtype:
+            dtype[geom_name] = Geometry(geometry_type=geometry_type, srid=srid)
     else:
         dtype = {geom_name: Geometry(geometry_type=geometry_type, srid=srid)}
 
