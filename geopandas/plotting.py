@@ -1257,8 +1257,8 @@ def _set_axis_labels(ax, crs):
     """Set labels for Axes based on CRS."""
     # taken from xarray-contrib/xvec
     if crs:
-        x_label = f"{crs.axis_info[0].name}\n[{crs.axis_info[0].unit_name}]"
-        y_label = f"{crs.axis_info[1].name}\n[{crs.axis_info[1].unit_name}]"
+        x_label = f"{crs.axis_info[0].name} [{crs.axis_info[0].unit_name}]"
+        y_label = f"{crs.axis_info[1].name} [{crs.axis_info[1].unit_name}]"
         if crs.equals(4326):
             x_label, y_label = y_label, x_label
     else:

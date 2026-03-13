@@ -2697,20 +2697,20 @@ class TestAxisLabels:
 
     def test_feet(self):
         ax = self.nybb.plot()
-        assert ax.get_xlabel() == "Easting\n[US survey foot]"
-        assert ax.get_ylabel() == "Northing\n[US survey foot]"
+        assert ax.get_xlabel() == "Easting [US survey foot]"
+        assert ax.get_ylabel() == "Northing [US survey foot]"
 
     def test_metres(self):
         utm = self.nybb.to_crs(self.nybb.estimate_utm_crs())
         ax = utm.plot()
-        assert ax.get_xlabel() == "Easting\n[metre]"
-        assert ax.get_ylabel() == "Northing\n[metre]"
+        assert ax.get_xlabel() == "Easting [metre]"
+        assert ax.get_ylabel() == "Northing [metre]"
 
     def test_4326(self):
         geog = self.nybb.to_crs(4326)
         ax = geog.plot()
-        assert ax.get_xlabel() == "Geodetic longitude\n[degree]"
-        assert ax.get_ylabel() == "Geodetic latitude\n[degree]"
+        assert ax.get_xlabel() == "Geodetic longitude [degree]"
+        assert ax.get_ylabel() == "Geodetic latitude [degree]"
 
     def test_naive(self):
         naive = self.nybb.set_crs(None, allow_override=True)
@@ -2723,10 +2723,10 @@ class TestAxisLabels:
 
         _, ax = plt.subplots()
         ax = self.nybb.plot(ax=ax)
-        assert ax.get_xlabel() == "Easting\n[US survey foot]"
-        assert ax.get_ylabel() == "Northing\n[US survey foot]"
+        assert ax.get_xlabel() == "Easting [US survey foot]"
+        assert ax.get_ylabel() == "Northing [US survey foot]"
 
     def test_series(self):
         ax = self.nybb.geometry.plot()
-        assert ax.get_xlabel() == "Easting\n[US survey foot]"
-        assert ax.get_ylabel() == "Northing\n[US survey foot]"
+        assert ax.get_xlabel() == "Easting [US survey foot]"
+        assert ax.get_ylabel() == "Northing [US survey foot]"
