@@ -1,5 +1,6 @@
 import itertools
 import warnings
+from packaging.version import Version
 
 import numpy as np
 import pandas as pd
@@ -26,12 +27,17 @@ import pytest
 
 matplotlib = pytest.importorskip("matplotlib")
 matplotlib.use("Agg")
+
 import matplotlib.pyplot as plt
 
 try:  # skipif and importorskip do not work for decorators
     from matplotlib.testing.decorators import check_figures_equal, image_comparison
 
     MPL_DECORATORS = True
+
+    # fixme: image comparison tests fail under 3.11.0 dev as of 2026-03-13
+    if Version(matplotlib.__version__) >= Version("3.11.0.dev"):
+        MPL_DECORATORS = False
 except ImportError:
     MPL_DECORATORS = False
 
