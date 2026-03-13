@@ -1008,11 +1008,8 @@ class TestPolygonPlotting:
             multipoly = MultiPolygon([poly1, poly2])
             _df = GeoDataFrame(geometry=[multipoly])
             ax = _df.plot()
-            plotted_vertices = np.append(
-                ax.collections[0].get_paths()[0].vertices,
-                ax.collections[0].get_paths()[1].vertices,
-                axis=0,
-            )
+            plotted_vertices = ax.collections[0].get_paths()[0].vertices
+
             expected_vertices = _df.normalize().get_coordinates().to_numpy()
             np.testing.assert_array_equal(plotted_vertices, expected_vertices)
 
