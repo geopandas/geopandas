@@ -5454,7 +5454,7 @@ GeometryCollection
         2    POLYGON ((2.8 -1, 2.8 1, 2.80096 1.0196, 2.803...
         dtype: geometry
 
-        ``Further specification as ``join_style`` and ``cap_style`` are shown in the
+        Further specification as ``join_style`` and ``cap_style`` are shown in the
         following illustration:
 
         .. plot:: _static/code/buffer.py
