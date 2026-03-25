@@ -25,8 +25,8 @@ for ax in axs.flatten():
 s.buffer(0.2).plot(ax=axs[0, 0], alpha=0.6)
 axs[0, 0].set_title("s.buffer(0.2)")
 
-s.buffer(0.2, resolution=2).plot(ax=axs[0, 1], alpha=0.6)
-axs[0, 1].set_title("s.buffer(0.2, resolution=2)")
+s.buffer(0.2, quad_segs=2).plot(ax=axs[0, 1], alpha=0.6)
+axs[0, 1].set_title("s.buffer(0.2, quad_segs=2)")
 
 s.buffer(-0.2).plot(ax=axs[0, 2], color="white", alpha=0.4)
 axs[0, 2].set_title("s.buffer(-0.2)")
