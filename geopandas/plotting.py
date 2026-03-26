@@ -1259,7 +1259,7 @@ def _set_axis_labels(ax, crs):
     if crs:
         x_label = f"{crs.axis_info[0].name} [{crs.axis_info[0].unit_name}]"
         y_label = f"{crs.axis_info[1].name} [{crs.axis_info[1].unit_name}]"
-        if crs.equals(4326):
+        if crs.axis_info[0].direction == "north":
             x_label, y_label = y_label, x_label
     else:
         x_label, y_label = "x", "y"
