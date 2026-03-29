@@ -21,6 +21,7 @@ dependencies:
   # - fiona  # no 3.14 build yet
   - matplotlib
   - mapclassify
+  - libpysal
   - folium
   - xyzservices
   - scipy

@@ -1894,6 +1894,7 @@ class TestMapclassifyPlotting:
         assert labels == expected_labels
 
     def test_greedy_scheme(self, nybb):
+        pytest.importorskip("libpysal")
         ax = nybb.plot(scheme="greedy", legend=True)
 
         expected_lengths = [2, 1, 1, 1]
@@ -1904,6 +1905,7 @@ class TestMapclassifyPlotting:
         assert lengths == expected_lengths
 
     def test_greedy_scheme_kwds(self, nybb):
+        pytest.importorskip("libpysal")
         ax = nybb.plot(
             scheme="greedy", legend=True, classification_kwds={"balance": "area"}
         )

@@ -21,6 +21,7 @@ dependencies:
   - fiona
   - matplotlib
   - mapclassify
+  - libpysal
   - folium
   - xyzservices
   - scipy
