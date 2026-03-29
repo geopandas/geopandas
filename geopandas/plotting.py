@@ -479,7 +479,7 @@ def plot_series(
     figsize: tuple[float, float] | None = None,
     aspect: float | Literal["auto", "equal", None] = "auto",
     autolim: bool = True,
-    tiles: str | TileProvider | os.PathLike | MemoryFile | None = None,
+    tiles: bool | str | TileProvider | os.PathLike | MemoryFile = False,
     **style_kwds,
 ) -> Axes:
     """
@@ -518,15 +518,18 @@ def plot_series(
         also be set manually (float) as the ratio of y-unit to x-unit.
     autolim : bool (default True)
         Update axes data limits to contain the new geometries.
-    tiles : str, xyzservices.TileProvider, os.PathLike, file-like, or rasterio.io.MemoryFile (default None)
-        Contetual background tiles. Can be either a :class:`xyzservices.TileProvider`,
-        any string that can be resolved by :func:`xyzservices.providers.query_name`,
-        URL, or a path to a local file. The placeholders for the XYZ
-        in the URL need to be `{x}`, `{y}`, `{z}`, respectively. For local file paths,
-        the file is read with `rasterio` and all bands are loaded into the basemap. The
-        tiles are automatically warped to the CRS of the geometry. Note that this can
-        result in suboptimal rendering. To avoid warping, geometry needs to be in
-        EPSG:3857 (Web Mercator) or a CRS of the tiles if other projection is used.
+    tiles : bool, str, xyzservices.TileProvider, os.PathLike, file-like, or rasterio.io.MemoryFile (default False)
+        Add contextual background tiles. Can be either a boolean,
+        :class:`xyzservices.TileProvider`, any string that can be resolved by
+        :func:`xyzservices.providers.query_name`, URL, or a path to a local file. The
+        placeholders for the XYZ in the URL need to be `{x}`, `{y}`, `{z}`,
+        respectively. For local file paths, the file is read with `rasterio` and all
+        bands are loaded into the basemap. The tiles are automatically warped to the CRS
+        of the geometry. Note that this can result in suboptimal rendering. To avoid
+        warping, geometry needs to be in EPSG:3857 (Web Mercator) or a CRS of the tiles
+        if other projection is used. Default basemap when `True` follows the defualt
+        of the underlying :func:`contextily.add_basemap`, which is OpenStreetMap
+        Humanitarian.
     **style_kwds : dict
         Color options to be passed on to the actual plot function, such
         as ``edgecolor``, ``facecolor``, ``linewidth``, ``markersize``,
@@ -691,7 +694,7 @@ def plot_dataframe(
     missing_kwds: dict | None = None,
     aspect: float | Literal["auto", "equal", None] = "auto",
     autolim: bool = True,
-    tiles: str | TileProvider | os.PathLike | MemoryFile | None = None,
+    tiles: bool | str | TileProvider | os.PathLike | MemoryFile = False,
     **style_kwds,
 ) -> Axes:
     """
@@ -810,15 +813,18 @@ def plot_dataframe(
         y-unit to x-unit.
     autolim : ``bool`` (default ``True``)
         Update axes data limits to contain the new geometries.
-    tiles : str, xyzservices.TileProvider, os.PathLike, file-like, or rasterio.io.MemoryFile (default None)
-        Contetual background tiles. Can be either a :class:`xyzservices.TileProvider`,
-        any string that can be resolved by :func:`xyzservices.providers.query_name`,
-        URL, or a path to a local file. The placeholders for the XYZ
-        in the URL need to be `{x}`, `{y}`, `{z}`, respectively. For local file paths,
-        the file is read with `rasterio` and all bands are loaded into the basemap. The
-        tiles are automatically warped to the CRS of the geometry. Note that this can
-        result in suboptimal rendering. To avoid warping, geometry needs to be in
-        EPSG:3857 (Web Mercator) or a CRS of the tiles if other projection is used.
+    tiles : bool, str, xyzservices.TileProvider, os.PathLike, file-like, or rasterio.io.MemoryFile (default False)
+        Add contextual background tiles. Can be either a boolean,
+        :class:`xyzservices.TileProvider`, any string that can be resolved by
+        :func:`xyzservices.providers.query_name`, URL, or a path to a local file. The
+        placeholders for the XYZ in the URL need to be `{x}`, `{y}`, `{z}`,
+        respectively. For local file paths, the file is read with `rasterio` and all
+        bands are loaded into the basemap. The tiles are automatically warped to the CRS
+        of the geometry. Note that this can result in suboptimal rendering. To avoid
+        warping, geometry needs to be in EPSG:3857 (Web Mercator) or a CRS of the tiles
+        if other projection is used. Default basemap when `True` follows the defualt
+        of the underlying :func:`contextily.add_basemap`, which is OpenStreetMap
+        Humanitarian.
     **style_kwds : dict
         Style options to be passed on to the actual plot function, such as
         ``edgecolor``, ``facecolor``, ``linewidth``, ``markersize``, ``alpha``. These
@@ -882,6 +888,7 @@ def plot_dataframe(
             figsize=figsize,
             aspect=aspect,
             autolim=autolim,
+            tiles=tiles,
             **style_kwds,
         )
 
@@ -1283,7 +1290,7 @@ def _check_invalid_categories(categories: Collection[Any], values) -> pd.Categor
 
 def _add_basemap(ax, tiles, crs):
     """Optionally add basemap via contextily."""
-    if tiles is not None:
+    if tiles:
         try:
             import contextily
         except ImportError:
@@ -1292,6 +1299,9 @@ def _add_basemap(ax, tiles, crs):
                 "You can install it using 'conda install -c conda-forge contextily' or "
                 "'pip install contextily'."
             )
+        if tiles is True:
+            tiles = None
+
         contextily.add_basemap(source=tiles, ax=ax, crs=crs)
 
 
