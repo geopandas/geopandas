@@ -32,6 +32,7 @@ from .sindex import SpatialIndex
 
 if typing.TYPE_CHECKING:
     import numpy.typing as npt
+    from numpy._typing import ArrayLike
 
     from .base import GeoPandasBase
 
@@ -1619,6 +1620,40 @@ class GeometryArray(ExtensionArray):
         if isinstance(scalars, BaseGeometry):
             scalars = [scalars]
         return from_shapely(scalars)
+
+    def _cast_pointwise_result(self, values) -> ArrayLike:
+        """
+        Construct an ExtensionArray after a pointwise operation.
+
+        Cast the result of a pointwise operation (e.g. Series.map) to an
+        array. This is not required to return an ExtensionArray of the same
+        type as self or of the same dtype. It can also return another
+        ExtensionArray of the same "family" if you implement multiple
+        ExtensionArrays/Dtypes that are interoperable (e.g. if you have float
+        array with units, this method can return an int array with units).
+
+        If converting to your own ExtensionArray is not possible, this method
+        falls back to returning an array with the default type inference.
+        If you only need to cast to `self.dtype`, it is recommended to override
+        `_from_scalars` instead of this method.
+
+        Parameters
+        ----------
+        values : sequence
+
+        Returns
+        -------
+        ExtensionArray or ndarray
+        """
+        # If crs was part of the dtype, could take above advice and
+        #  override _from_scalars instead
+        try:
+            if isinstance(values, self.__class__):
+                return GeometryArray(values, crs=self.crs)
+            else:  # pd.Series setitem boxes scalar into a list
+                return from_shapely(values, crs=self.crs)
+        except (ValueError, TypeError):
+            return super()._cast_pointwise_result(values)
 
     @classmethod
     def _from_sequence_of_strings(cls, strings, *, dtype=None, copy=False):
