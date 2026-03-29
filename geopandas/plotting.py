@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import warnings
 from collections.abc import Collection, Iterable, Sequence
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias
 
 import numpy as np
 import pandas as pd
+from numpy.typing import NDArray
 from pandas import CategoricalDtype
 from pandas.core.dtypes.cast import coerce_indexer_dtype
 from pandas.plotting import PlotAccessor
@@ -27,6 +28,11 @@ if TYPE_CHECKING:
     from matplotlib.markers import MarkerStyle
     from matplotlib.patches import PathPatch
     from matplotlib.path import Path
+
+
+ColumnLike: TypeAlias = (
+    str | NDArray | pd.Series | pd.Index | pd.Categorical | Sequence | None
+)
 
 
 def _set_aspect(
@@ -656,7 +662,7 @@ def plot_series(
 
 def plot_dataframe(
     df: geopandas.GeoDataFrame,
-    column: str | np.ndarray | pd.Series | pd.Index | None = None,
+    column: ColumnLike = None,
     cmap: str | Colormap | dict | None = None,
     color: str | Sequence | None = None,
     ax: Axes | None = None,
@@ -743,6 +749,11 @@ def plot_dataframe(
         continuous plot where bins are used to define
         :class:`matplotlib.colors.BoundaryNorm`. The latter can be enabled by specifying
         ``colorbar=True`` within ``legend_kwds`` and yields colorbar legend.
+
+        In addition, ``scheme='greedy'`` uses :func:`mapclassify.greedy` to derive
+        greedy (topological) coloring which attempts to color a GeoDataFrame using as
+        few colors as possible, where no neighbours can have same color as the feature
+        itself.
     k : ``int`` (default ``5``)
         Number of classes (ignored if ``scheme`` is ``None``)
     vmin : ``None`` or ``float`` (default ``None``)
@@ -846,6 +857,22 @@ def plot_dataframe(
     if markersize is not None:
         style_kwds["markersize"] = markersize
 
+    if classification_kwds is None:
+        classification_kwds = {}
+
+    if scheme == "greedy":
+        try:
+            import mapclassify
+        except ImportError:
+            raise ImportError(
+                "The 'mapclassify' package is required to use the 'scheme' keyword."
+            )
+        categorical = True
+        scheme = None
+
+        codes = mapclassify.greedy(df, **classification_kwds)
+        column = pd.Categorical(codes)
+
     # if column is not set, we're showing just geometries -> plot_series
     if column is None:
         return plot_series(
@@ -870,19 +897,17 @@ def plot_dataframe(
     _set_aspect(aspect, df, ax)
 
     # Process polymorphic column argument (column name or array-like)
-    if isinstance(column, np.ndarray | pd.Series | pd.Index):
-        if column.shape[0] != df.shape[0]:
+    if not isinstance(column, str) and pd.api.types.is_list_like(column):
+        if len(column) != df.shape[0]:
             raise ValueError(
                 "The dataframe and given column have different number of rows."
             )
+        elif isinstance(column, pd.Series):
+            values = column.reindex(df.index)
         elif isinstance(column, pd.Index):
             values = column.values
         else:
-            values = column
-
-            # Make sure index of a Series matches index of df
-            if isinstance(values, pd.Series):
-                values = values.reindex(df.index)
+            values = np.asarray(column)
     else:
         values = df[column]
 
@@ -917,8 +942,6 @@ def plot_dataframe(
                 "The 'mapclassify' package is required to use the 'scheme' keyword."
             )
 
-        if classification_kwds is None:
-            classification_kwds = {}
         if "k" not in classification_kwds:
             classification_kwds["k"] = k
 

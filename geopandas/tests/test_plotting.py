@@ -1893,6 +1893,28 @@ class TestMapclassifyPlotting:
         labels = [label.get_text() for label in cbar.get_yticklabels()]
         assert labels == expected_labels
 
+    def test_greedy_scheme(self, nybb):
+        ax = nybb.plot(scheme="greedy", legend=True)
+
+        expected_lengths = [2, 1, 1, 1]
+        expected_labels = ["0", "1", "2", "3"]
+        labels = [t.get_text() for t in ax.get_legend().get_texts()]
+        assert labels == expected_labels
+        lengths = [len(col.get_paths()) for col in ax.collections]
+        assert lengths == expected_lengths
+
+    def test_greedy_scheme_kwds(self, nybb):
+        ax = nybb.plot(
+            scheme="greedy", legend=True, classification_kwds={"balance": "area"}
+        )
+
+        expected_lengths = [1, 2, 1, 1]
+        expected_labels = ["0", "1", "2", "3"]
+        labels = [t.get_text() for t in ax.get_legend().get_texts()]
+        assert labels == expected_labels
+        lengths = [len(col.get_paths()) for col in ax.collections]
+        assert lengths == expected_lengths
+
 
 class TestPlotCollections:
     def setup_method(self):
@@ -2237,7 +2259,7 @@ class TestGeoplotAccessor:
 def test_column_values():
     """
     Check that the dataframe plot method returns same values with an
-    input string (column in df), pd.Series, or np.array
+    input string (column in df), pd.Series, np.array, or other 1D list-like
     """
     # Build test data
     t1 = Polygon([(0, 0), (1, 0), (1, 1)])
@@ -2256,6 +2278,12 @@ def test_column_values():
     ax = df.plot(column=df["values"].values)
     colors_array = ax.collections[0].get_facecolors()
     np.testing.assert_array_equal(colors, colors_array)
+    ax = df.plot(column=[0, 1])
+    colors_list = ax.collections[0].get_facecolors()
+    np.testing.assert_array_equal(colors, colors_list)
+    ax = df.plot(column=pd.Series([1, 0], index=["B", "A"]))
+    colors_list = ax.collections[0].get_facecolors()
+    np.testing.assert_array_equal(colors, colors_list)
 
     # Test with categorical values
     ax = df.plot(column="values", categorical=True)
@@ -2266,6 +2294,9 @@ def test_column_values():
     ax = df.plot(column=df["values"].values, categorical=True)
     colors_array = ax.collections[0].get_facecolors()
     np.testing.assert_array_equal(colors, colors_array)
+    ax = df.plot(column=(0, 1), categorical=True)
+    colors_tuple = ax.collections[0].get_facecolors()
+    np.testing.assert_array_equal(colors, colors_tuple)
 
     # Test with pd.Index
     ax = numeric_index_df.plot(column=numeric_index_df.index, categorical=True)
