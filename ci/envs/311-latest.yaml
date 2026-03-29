@@ -22,6 +22,7 @@ dependencies:
   - mapclassify
   - folium
   - xyzservices
+  - contextily
   - scipy
   - geopy
   - pointpats

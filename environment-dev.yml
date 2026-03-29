@@ -28,6 +28,7 @@ dependencies:
     - fiona
     - folium
     - xyzservices
+    - contextily
     - scipy
     - libspatialite
     - geoalchemy2

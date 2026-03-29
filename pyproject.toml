@@ -41,6 +41,7 @@ all = [
     "pyarrow>=15.0.0",
     "scipy",
     "pointpats>=2.5.3",
+    'contextily',
 ]
 
 # Minimum supported additional deps, not installed as part of `all` extra
