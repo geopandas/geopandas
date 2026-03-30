@@ -70,7 +70,7 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Install Conda environment with Micromamba
-        uses: mamba-org/setup-micromamba@v2
+        uses: mamba-org/setup-micromamba@v3
         with:
           environment-file: ${{ matrix.env }}
 
