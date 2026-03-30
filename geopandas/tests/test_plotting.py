@@ -2754,8 +2754,6 @@ class TestTilesPlotting:
         self.nybb = read_file(get_path("nybb"))
 
     def test_tiles_series(self):
-        pytest.importorskip("contextily")
-
         ax = self.nybb.geometry.plot(tiles=True)
         im = next(iter(ax.images))
         assert im.get_array().shape == (1023, 1030, 4)
