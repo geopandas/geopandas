@@ -480,6 +480,7 @@ def plot_series(
     aspect: float | Literal["auto", "equal", None] = "auto",
     autolim: bool = True,
     tiles: bool | str | TileProvider | os.PathLike | MemoryFile = False,
+    attr: str | None = None,
     **style_kwds,
 ) -> Axes:
     """
@@ -530,6 +531,10 @@ def plot_series(
         if other projection is used. Default basemap when `True` follows the defualt
         of the underlying :func:`contextily.add_basemap`, which is OpenStreetMap
         Humanitarian.
+    attr : str (default None)
+        Attribution text passed to :func:`contextily.add_basemap` as
+        ``attribution``. When not provided, the default attribution of the selected
+        tile source is used.
     **style_kwds : dict
         Color options to be passed on to the actual plot function, such
         as ``edgecolor``, ``facecolor``, ``linewidth``, ``markersize``,
@@ -666,7 +671,7 @@ def plot_series(
             ax, points, values_, color=color_, cmap=cmap, **points_kwds
         )
 
-    _add_basemap(ax, tiles, s.crs)
+    _add_basemap(ax, tiles, s.crs, attr=attr)
 
     ax.figure.canvas.draw_idle()
 
@@ -695,6 +700,7 @@ def plot_dataframe(
     aspect: float | Literal["auto", "equal", None] = "auto",
     autolim: bool = True,
     tiles: bool | str | TileProvider | os.PathLike | MemoryFile = False,
+    attr: str | None = None,
     **style_kwds,
 ) -> Axes:
     """
@@ -825,6 +831,10 @@ def plot_dataframe(
         if other projection is used. Default basemap when `True` follows the defualt
         of the underlying :func:`contextily.add_basemap`, which is OpenStreetMap
         Humanitarian.
+    attr : str (default None)
+        Attribution text passed to :func:`contextily.add_basemap` as
+        ``attribution``. When not provided, the default attribution of the selected
+        tile source is used.
     **style_kwds : dict
         Style options to be passed on to the actual plot function, such as
         ``edgecolor``, ``facecolor``, ``linewidth``, ``markersize``, ``alpha``. These
@@ -889,6 +899,7 @@ def plot_dataframe(
             aspect=aspect,
             autolim=autolim,
             tiles=tiles,
+            attr=attr,
             **style_kwds,
         )
 
@@ -1259,7 +1270,7 @@ def plot_dataframe(
         # if there is already a colorbar but we want a legend for missing data,
         # user can simply call `ax.legend()` with any custom keywords.
 
-    _add_basemap(ax, tiles, df.crs)
+    _add_basemap(ax, tiles, df.crs, attr=attr)
 
     ax.figure.canvas.draw_idle()
     return ax
@@ -1288,7 +1299,7 @@ def _check_invalid_categories(categories: Collection[Any], values) -> pd.Categor
     return cat
 
 
-def _add_basemap(ax, tiles, crs):
+def _add_basemap(ax, tiles, crs, attr=None):
     """Optionally add basemap via contextily."""
     if tiles:
         try:
@@ -1302,7 +1313,7 @@ def _add_basemap(ax, tiles, crs):
         if tiles is True:
             tiles = None
 
-        contextily.add_basemap(source=tiles, ax=ax, crs=crs)
+        contextily.add_basemap(source=tiles, ax=ax, crs=crs, attribution=attr)
 
 
 def _set_axis_labels(ax, crs):

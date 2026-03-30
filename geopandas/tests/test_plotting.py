@@ -2748,6 +2748,7 @@ class TestAxisLabels:
 
 class TestTilesPlotting:
     def setup_method(self):
+        pytest.importorskip("contextily")
         from geodatasets import get_path
 
         self.nybb = read_file(get_path("nybb"))
@@ -2766,8 +2767,6 @@ class TestTilesPlotting:
         )
 
     def test_tiles_dataframe(self):
-        pytest.importorskip("contextily")
-
         ax = self.nybb.plot(tiles=True)
         im = next(iter(ax.images))
         assert im.get_array().shape == (1023, 1030, 4)
@@ -2779,8 +2778,6 @@ class TestTilesPlotting:
         )
 
     def test_dataframe_choropleth(self):
-        pytest.importorskip("contextily")
-
         ax = self.nybb.plot("BoroCode", tiles=True)
         im = next(iter(ax.images))
         assert im.get_array().shape == (1023, 1030, 4)
@@ -2792,11 +2789,17 @@ class TestTilesPlotting:
         )
 
     def test_tiles_custom_xyzservices(self):
-        pytest.importorskip("contextily")
-
         ax = self.nybb.plot(tiles="CartoDBPositron")
         im = next(iter(ax.images))
         assert im.get_array().shape == (1023, 1030, 4)
 
         attr = next(iter(ax.texts)).get_text()
         assert attr == "(C) OpenStreetMap contributors (C) CARTO"
+
+    def test_tiles_custom_attribution(self):
+        ax = self.nybb.plot(tiles="CartoDBPositron", attr="Custom attribution")
+        im = next(iter(ax.images))
+        assert im.get_array().shape == (1023, 1030, 4)
+
+        attr = next(iter(ax.texts)).get_text()
+        assert attr == "Custom attribution"
