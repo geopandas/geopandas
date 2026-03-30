@@ -528,7 +528,7 @@ def plot_series(
         bands are loaded into the basemap. The tiles are automatically warped to the CRS
         of the geometry. Note that this can result in suboptimal rendering. To avoid
         warping, geometry needs to be in EPSG:3857 (Web Mercator) or a CRS of the tiles
-        if other projection is used. Default basemap when `True` follows the defualt
+        if other projection is used. Default basemap when `True` follows the default
         of the underlying :func:`contextily.add_basemap`, which is OpenStreetMap
         Humanitarian.
     attr : str (default None)
@@ -828,7 +828,7 @@ def plot_dataframe(
         bands are loaded into the basemap. The tiles are automatically warped to the CRS
         of the geometry. Note that this can result in suboptimal rendering. To avoid
         warping, geometry needs to be in EPSG:3857 (Web Mercator) or a CRS of the tiles
-        if other projection is used. Default basemap when `True` follows the defualt
+        if other projection is used. Default basemap when `True` follows the default
         of the underlying :func:`contextily.add_basemap`, which is OpenStreetMap
         Humanitarian.
     attr : str (default None)
