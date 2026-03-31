@@ -65,6 +65,14 @@ class SpatialIndex:
         and tree geometries where the bounding box of each input geometry
         intersects the bounding box of a tree geometry.
 
+        .. note::
+            When ``predicate`` is ``None`` (the default), matching is based on
+            **bounding-box intersection only** — the actual geometry shapes are not
+            compared.  When a predicate is provided the spatial index first filters
+            candidates by bounding box and then applies the predicate to the actual
+            geometries, so the result reflects the true spatial relationship. See the
+            ``predicate`` parameter description below for details.
+
         The result can be returned as an array of 'indices' or a boolean 'sparse' or
         'dense' array. This can be controlled using the ``output_format`` keyword.
         Options are as follows.
