@@ -313,10 +313,12 @@ def _plot_polygon_collection(
         [_PolygonPatch(poly) for poly in geoms], **kwargs
     )
 
+    if cmap:
+        collection.set_cmap(cmap)
+
     if values is not None:
         collection.set_array(np.asarray(values))
-        if cmap:
-            collection.set_cmap(cmap)
+
         if "norm" not in kwargs:
             collection.set_clim(vmin, vmax)
 
@@ -567,8 +569,18 @@ def plot_series(
     values = None
     color_given = False
 
+    # if color is specified as a list-like, ensure it is properly mapped to components
+    if color is not None:
+        color_given = pd.api.types.is_list_like(color) and len(color) == len(s)
+        # have colors been given for all geometries?
+        if color_given:
+            # ensure indexes are consistent
+            if isinstance(color, pd.Series):
+                color = color.reindex(s.index)
+            color = np.take(color, multiindex, axis=0)
+
     # if cmap is specified, create range of colors based on cmap
-    if cmap is not None:
+    elif cmap is not None:
         values = np.arange(len(s))
         if isinstance(cmap, Colormap) and hasattr(cmap, "N"):
             # repeat for cmap with limited number of colors
@@ -578,16 +590,6 @@ def plot_series(
 
         # ensure proper mapping of values to components of GeometryCollections
         values = np.take(values, multiindex, axis=0)
-
-    # if color is specified as a list-like, ensure it is properly mapped to components
-    elif color is not None:
-        color_given = pd.api.types.is_list_like(color) and len(color) == len(s)
-        # have colors been given for all geometries?
-        if color_given:
-            # ensure indexes are consistent
-            if isinstance(color, pd.Series):
-                color = color.reindex(s.index)
-            color = np.take(color, multiindex, axis=0)
 
     # subdivide by geometry type - each has its own collection
     geom_types = geoms.geom_type
@@ -1048,6 +1050,7 @@ def plot_dataframe(
                     group.geometry,
                     label=label,
                     color=_color(i, name, ngroups, cmap),
+                    cmap=cmap,
                     ax=ax,
                     aspect=None,
                     **group_style_kwds,
