@@ -293,9 +293,7 @@ def _convert_linearring_to_linestring(gdf, geom_name):
     # https://github.com/shapely/shapely/issues/1617
 
     mask = gdf.geom_type == "LinearRing"
-    gdf.loc[mask, geom_name] = gdf.loc[mask, geom_name].apply(
-        lambda geom: LineString(geom)
-    )
+    gdf.loc[mask, geom_name] = gdf.loc[mask, geom_name].apply(LineString)
     return gdf
 
 

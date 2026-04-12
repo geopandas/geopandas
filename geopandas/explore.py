@@ -316,9 +316,7 @@ def _explore(
     # convert LinearRing to LineString
     rings_mask = df.geom_type == "LinearRing"
     if rings_mask.any():
-        gdf.geometry[rings_mask] = gdf.geometry[rings_mask].apply(
-            lambda g: LineString(g)
-        )
+        gdf.geometry[rings_mask] = gdf.geometry[rings_mask].apply(LineString)
     if isinstance(gdf, geopandas.GeoSeries):
         gdf = gdf.to_frame()
 

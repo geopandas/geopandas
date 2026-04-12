@@ -485,4 +485,4 @@ def test_clip_sorting(point_gdf2):
 
     assert not (sorted(unsorted_clipped_gdf.index) == unsorted_clipped_gdf.index).all()
     assert (sorted(sorted_clipped_gdf.index) == sorted_clipped_gdf.index).all()
-    assert_index_equal(expected_sorted_index, sorted_clipped_gdf.index)
+    assert_index_equal(expected_sorted_index, sorted_clipped_gdf.index, exact="equiv")

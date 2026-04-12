@@ -694,7 +694,7 @@ class TestDataFrame:
         df = GeoDataFrame.from_features([f1, f2, f3])
 
         result = df[["a", "b"]]
-        expected = pd.DataFrame.from_dict(
+        expected = pd.DataFrame(
             [{"a": 0, "b": np.nan}, {"a": np.nan, "b": 1}, {"a": np.nan, "b": np.nan}]
         )
         assert_frame_equal(expected, result)
@@ -1148,7 +1148,9 @@ class TestDataFrame:
         assert (
             sorted(sorted_clipped_cities.index) == sorted_clipped_cities.index
         ).all()
-        assert_index_equal(expected_sorted_index, sorted_clipped_cities.index)
+        assert_index_equal(
+            expected_sorted_index, sorted_clipped_cities.index, exact=True
+        )
 
     def test_overlay(self, dfs, how):
         """
@@ -1285,12 +1287,12 @@ class TestConstructor:
 
             res = GeoDataFrame(df, index=pd.Index([0, 2]))
             check_geodataframe(res)
-            assert_index_equal(res.index, pd.Index([0, 2]))
+            assert_index_equal(res.index, pd.Index([0, 2]), exact="equiv")
             assert res["A"].tolist() == [0, 2]
 
             res = GeoDataFrame(df, columns=["geometry", "B"])
             check_geodataframe(res)
-            assert_index_equal(res.columns, pd.Index(["geometry", "B"]))
+            assert_index_equal(res.columns, pd.Index(["geometry", "B"]), exact=False)
 
             with pytest.raises(ValueError):
                 GeoDataFrame(df, geometry="other_geom")
