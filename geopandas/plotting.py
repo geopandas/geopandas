@@ -860,13 +860,15 @@ def plot_dataframe(
     if classification_kwds is None:
         classification_kwds = {}
 
-    if scheme == "greedy":
+    if scheme:
         try:
             import mapclassify
         except ImportError:
             raise ImportError(
                 "The 'mapclassify' package is required to use the 'scheme' keyword."
             )
+
+    if scheme == "greedy":
         categorical = True
         scheme = None
 
@@ -935,13 +937,6 @@ def plot_dataframe(
     nan_idx = np.asarray(pd.isna(values), dtype="bool")
 
     if scheme:
-        try:
-            import mapclassify
-        except ImportError:
-            raise ImportError(
-                "The 'mapclassify' package is required to use the 'scheme' keyword."
-            )
-
         if "k" not in classification_kwds:
             classification_kwds["k"] = k
 
