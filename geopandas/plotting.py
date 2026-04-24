@@ -475,6 +475,7 @@ def plot_series(
     figsize: tuple[float, float] | None = None,
     aspect: float | Literal["auto", "equal", None] = "auto",
     autolim: bool = True,
+    add_labels: bool = True,
     **style_kwds,
 ) -> Axes:
     """
@@ -513,6 +514,8 @@ def plot_series(
         also be set manually (float) as the ratio of y-unit to x-unit.
     autolim : bool (default True)
         Update axes data limits to contain the new geometries.
+    add_labels : bool (default True)
+        Use CRS metadata to label the axes.
     **style_kwds : dict
         Color options to be passed on to the actual plot function, such
         as ``edgecolor``, ``facecolor``, ``linewidth``, ``markersize``,
@@ -537,7 +540,8 @@ def plot_series(
     if ax is None:
         _, ax = plt.subplots(figsize=figsize)
 
-    _set_axis_labels(ax, s.crs)
+    if add_labels:
+        _set_axis_labels(ax, s.crs)
 
     if s.empty:
         warnings.warn(
@@ -675,6 +679,7 @@ def plot_dataframe(
     missing_kwds: dict | None = None,
     aspect: float | Literal["auto", "equal", None] = "auto",
     autolim: bool = True,
+    add_labels: bool = True,
     **style_kwds,
 ) -> Axes:
     """
@@ -793,6 +798,8 @@ def plot_dataframe(
         y-unit to x-unit.
     autolim : ``bool`` (default ``True``)
         Update axes data limits to contain the new geometries.
+    add_labels : bool (default True)
+        Use CRS metadata to label the axes.
     **style_kwds : dict
         Style options to be passed on to the actual plot function, such as
         ``edgecolor``, ``facecolor``, ``linewidth``, ``markersize``, ``alpha``. These
@@ -864,7 +871,8 @@ def plot_dataframe(
             raise ValueError("'ax' can not be None if 'cax' is not.")
         _fig, ax = plt.subplots(figsize=figsize)
 
-    _set_axis_labels(ax, df.crs)
+    if add_labels:
+        _set_axis_labels(ax, df.crs)
 
     # set correct aspect to preserve proportions in geographic CRS
     _set_aspect(aspect, df, ax)
