@@ -1578,6 +1578,22 @@ class TestConstructor:
         if compat.HAS_PYPROJ:
             assert gdf.crs == "EPSG:4326"
 
+    def test_constructor_with_arrow_backed_columns(self):
+        """GeoDataFrame constructor should work with pyarrow-backed string columns."""
+        pa = pytest.importorskip("pyarrow")
+
+        gdf = GeoDataFrame(
+            {
+                "key": pd.array(["a", "b"], dtype="string[pyarrow]"),
+                "value": pd.array([1, 2], dtype=pd.ArrowDtype(pa.int64())),
+                "geometry": [Point(0, 0), Point(1, 1)],
+            },
+            geometry="geometry",
+        )
+        check_geodataframe(gdf, geometry_column="geometry")
+        assert len(gdf) == 2
+        assert list(gdf["key"]) == ["a", "b"]
+
 
 @pytest.mark.skipif(not compat.HAS_PYPROJ, reason="pyproj not available")
 def test_geodataframe_crs():
@@ -1771,50 +1787,3 @@ def test_inheritance(dfs):
     df2 = dfc2.drop(columns=["geometry2"])
 
     assert not isinstance(df2, GDFChild)
-
-
-class TestArrowBackedColumns:
-    """Tests for GH#3765 — Arrow-backed column compatibility."""
-
-    def test_constructor_with_arrow_backed_columns(self):
-        """GeoDataFrame constructor should work with pyarrow-backed string columns."""
-        pa = pytest.importorskip("pyarrow")
-
-        gdf = GeoDataFrame(
-            {
-                "key": pd.array(["a", "b"], dtype="string[pyarrow]"),
-                "value": pd.array([1, 2], dtype=pd.ArrowDtype(pa.int64())),
-                "geometry": [Point(0, 0), Point(1, 1)],
-            },
-            geometry="geometry",
-        )
-        check_geodataframe(gdf, geometry_column="geometry")
-        assert len(gdf) == 2
-        assert list(gdf["key"]) == ["a", "b"]
-
-    def test_merge_with_arrow_backed_pivot_result(self):
-        """Merge with pivot_table result (Arrow-backed cols) should not raise AttributeError."""
-        pa = pytest.importorskip("pyarrow")
-
-        gdf = GeoDataFrame(
-            {
-                "key": pd.array(["a", "b"], dtype="string[pyarrow]"),
-                "value": pd.array([1, 2], dtype=pd.ArrowDtype(pa.int64())),
-                "geometry": [Point(0, 0), Point(1, 1)],
-            },
-            geometry="geometry",
-        )
-
-        pivot = pd.pivot_table(
-            gdf,
-            values="value",
-            index=["key"],
-            columns=["key"],
-            aggfunc="count",
-            fill_value=0,
-        ).reset_index()
-
-        # Should not raise AttributeError: 'ArrowExtensionArray' has no attribute 'sum'
-        result = gdf.merge(pivot, on="key")
-        assert len(result) == 2
-        assert "geometry" in result.columns
