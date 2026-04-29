@@ -313,7 +313,7 @@ def _plot_polygon_collection(
         [_PolygonPatch(poly) for poly in geoms], **kwargs
     )
 
-    if cmap:
+    if cmap and not isinstance(cmap, dict):
         collection.set_cmap(cmap)
 
     if values is not None:
