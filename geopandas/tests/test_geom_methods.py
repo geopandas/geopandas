@@ -2212,6 +2212,8 @@ class TestGeomMethods:
                 len(output.explode(ignore_index=True))
                 == len(gs[~(gs.is_empty | gs.isna())]) * size
             )
+            x = output.get_coordinates()["x"]
+            assert not x.equals(x.sort_values())
 
     def test_sample_points_array(self):
         output = concat([self.g1, self.g1]).sample_points([10, 15, 20, 25])
@@ -2243,6 +2245,9 @@ class TestGeomMethods:
                 else:
                     with pytest.raises(AssertionError, match="2 out of"):
                         assert_geoseries_equal(output1, output2)
+
+            x = output1.get_coordinates()["x"]
+            assert not x.equals(x.sort_values())
 
         with pytest.raises(
             AttributeError, match=re.escape("pointpats.random module has no")
