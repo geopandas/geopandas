@@ -7,10 +7,8 @@ from shapely.geometry import MultiPoint
 from geopandas.array import (
     LINE_GEOM_TYPES,
     POLYGON_GEOM_TYPES,
-    from_shapely,
     points_from_xy,
 )
-from geopandas.geoseries import GeoSeries
 
 
 def uniform(geom, size, rng=None):
@@ -67,7 +65,7 @@ def uniform(geom, size, rng=None):
 def _uniform_line(geom, size, generator):
     """Sample points from an input shapely linestring."""
     fracs = generator.uniform(size=size)
-    return from_shapely(geom.interpolate(fracs, normalized=True)).union_all()
+    return MultiPoint(geom.interpolate(fracs, normalized=True))
 
 
 def _uniform_polygon(geom, size, generator):
@@ -82,4 +80,4 @@ def _uniform_polygon(geom, size, generator):
         valid_samples = batch[batch.sindex.query(geom, predicate="contains")]
         candidates.extend(valid_samples)
     generator.shuffle(candidates)  # avoid the artifacts of STRTree ordering
-    return GeoSeries(candidates[:size]).union_all()
+    return MultiPoint(candidates[:size])

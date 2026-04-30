@@ -1,3 +1,4 @@
+import re
 import string
 import warnings
 from packaging.version import Version
@@ -2127,17 +2128,17 @@ class TestGeomMethods:
             self.a1,
             self.na_none,
         ):
-            output = gs.sample_points(size)
+            output = gs.sample_points(size, rng=0)
             assert_index_equal(gs.index, output.index)
             assert (
                 len(output.explode(ignore_index=True))
                 == len(gs[~(gs.is_empty | gs.isna())]) * size
             )
-        with pytest.warns(FutureWarning, match="The 'seed' keyword is deprecated"):
-            _ = gs.sample_points(size, seed=1)
+            x = output.get_coordinates()["x"]
+            assert not x.equals(x.sort_values())
 
     def test_sample_points_array(self):
-        output = concat([self.g1, self.g1]).sample_points([10, 15, 20, 25])
+        output = concat([self.g1, self.g1]).sample_points([10, 15, 20, 25], rng=0)
         expected = Series(
             [10, 15, 20, 25], index=[0, 1, 0, 1], name="sampled_points", dtype="int32"
         )
@@ -2169,7 +2170,12 @@ class TestGeomMethods:
                     with pytest.raises(AssertionError, match="2 out of"):
                         assert_geoseries_equal(output1, output2)
 
-        with pytest.raises(AttributeError, match="pointpats.random module has no"):
+            x = output1.get_coordinates()["x"]
+            assert not x.equals(x.sort_values())
+
+        with pytest.raises(
+            AttributeError, match=re.escape("pointpats.random module has no")
+        ):
             gs.sample_points(10, method="nonexistent")
 
     @pytest.mark.parametrize("rng", [None, 1, np.random.default_rng(seed=2)])
