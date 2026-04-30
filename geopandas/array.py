@@ -247,9 +247,10 @@ def from_wkb(
 
 def to_wkb(geoms: GeometryArray, hex: bool = False, **kwargs):
     """Convert GeometryArray to a numpy object array of WKB objects."""
+    # keeping for back compat for now, but dispatching to the array method
     if not isinstance(geoms, GeometryArray):
         raise ValueError("'geoms' must be a GeometryArray")
-    return shapely.to_wkb(geoms, hex=hex, **kwargs)
+    return geoms.to_wkb(hex=hex, **kwargs)
 
 
 def from_wkt(
@@ -518,7 +519,7 @@ class GeometryArray(ExtensionArray):
         #         )
 
     def __getstate__(self):
-        return (shapely.to_wkb(self._data), self._crs)
+        return (self.to_wkb(), self._crs)
 
     def __setstate__(self, state):
         if not isinstance(state, dict):
@@ -534,6 +535,10 @@ class GeometryArray(ExtensionArray):
             if "_crs" not in state:
                 state["_crs"] = None
             self.__dict__.update(state)
+
+    def to_wkb(self, hex: bool = False, **kwargs):
+        """Convert GeometryArray to a numpy object array of WKB objects."""
+        return shapely.to_wkb(self._data, hex=hex, **kwargs)
 
     # -------------------------------------------------------------------------
     # Geometry related methods
@@ -1528,7 +1533,7 @@ class GeometryArray(ExtensionArray):
         """
         # note ExtensionArray usage of value_counts only specifies dropna,
         # so sort, normalize and bins are not arguments
-        values = to_wkb(self)
+        values = self.to_wkb()
         from pandas import Index, Series
 
         result = Series(values).value_counts(dropna=dropna)
@@ -1693,7 +1698,7 @@ class GeometryArray(ExtensionArray):
             `na_sentinal` and not included in `uniques`. By default,
             ``np.nan`` is used.
         """
-        vals = to_wkb(self)
+        vals = self.to_wkb()
         return vals, None
 
     @classmethod
