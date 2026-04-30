@@ -490,35 +490,41 @@ def plot_series(
         The GeoSeries to be plotted. Currently Polygon,
         MultiPolygon, LineString, MultiLineString, Point and MultiPoint
         geometries can be plotted.
-    cmap : str (default None)
-        The name of a colormap recognized by matplotlib. Any
+    cmap : ``str`` | ``Colormap`` (default ``None``)
+        The name of a colormap recognized by matplotlib, or a
+        :class:`matplotlib.colors.Colormap`. Colors will be mapped to individual
+        geometries along their order of appearance in the GeoSeries. Any
         colormap will work, but categorical colormaps are
         generally recommended. Examples of useful discrete
         colormaps include:
 
-            tab10, tab20, Accent, Dark2, Paired, Pastel1, Set1, Set2
-
-    color : str, np.array, pd.Series, List (default None)
-        If specified, all objects will be colored uniformly.
-    ax : matplotlib.pyplot.Artist (default None)
-        axes on which to draw the plot
-    figsize : pair of floats (default None)
-        Size of the resulting matplotlib.figure.Figure. If the argument
-        ax is given explicitly, figsize is ignored.
-    aspect : 'auto', 'equal', None or float (default 'auto')
-        Set aspect of axis. If 'auto', the default aspect for map plots is 'equal'; if
-        however data are not projected (coordinates are long/lat), the aspect is by
-        default set to 1/cos(s_y * pi/180) with s_y the y coordinate of the middle of
-        the GeoSeries (the mean of the y range of bounding box) so that a long/lat
-        square appears square in the middle of the plot. This implies an
-        Equirectangular projection. If None, the aspect of `ax` won't be changed. It can
-        also be set manually (float) as the ratio of y-unit to x-unit.
-    autolim : bool (default True)
+            "tab10", "tab20", "Accent", "Dark2", "Paired", "Pastel1", "Set1", "Set2"
+    color : ``str``, ``np.array``, ``pd.Series`` (default ``None``)
+        Color of the geometry. If specified as scalar matplotlib understands as a color
+        (``str``, ``tuple`` or RGBA etc.), all objects will be colored uniformly. If
+        specifies as array-like of the same length as GeoDataFrame, individual colors
+        will be mapped to respective geometries..
+    ax : ``matplotlib.axes.Axes`` (default ``None``)
+        :class:`matplotlib.axes.Axes` axes on which to draw the plot
+    figsize : ``tuple`` of integers (default None)
+        Size of the resulting :class:`matplotlib.figure.Figure`. If the argument ``ax``
+        is given explicitly, ``figsize`` is ignored.
+    aspect : `'auto'`, `'equal'`, ``None`` or ``float`` (default ``'auto'``)
+        Set aspect of axis. If ``'auto'``, the default aspect for map plots is
+        ``'equal'``; if however data are not projected (coordinates are long/lat), the
+        aspect is by default set to ``1/cos(df_y * pi/180)`` with ``df_y`` the y
+        coordinate of the middle of the GeoDataFrame (the mean of the y range of
+        bounding box) so that a long/lat square appears square in the middle of the
+        plot. This implies an Equirectangular projection. If ``None``, the aspect of
+        ``ax`` won't be changed. It can also be set manually (float) as the ratio of
+        y-unit to x-unit.
+    autolim : ``bool`` (default ``True``)
         Update axes data limits to contain the new geometries.
     **style_kwds : dict
-        Color options to be passed on to the actual plot function, such
-        as ``edgecolor``, ``facecolor``, ``linewidth``, ``markersize``,
-        ``alpha``.
+        Style options to be passed on to the actual plot function, such as
+        ``edgecolor``, ``facecolor``, ``linewidth``, ``markersize``, ``alpha``. These
+        can be scalar, which are uniformly mapped to all geometries, or array-likes of
+        the same length as GeoSeries, which are mapped to their respective geometries.
 
     Returns
     -------
@@ -569,8 +575,10 @@ def plot_series(
     values = None
     color_given = False
 
-    # if color is specified as a list-like, ensure it is properly mapped to components
+    # the order here matters to ensure that categorical plots which specify both
+    # color and cmap are properly plotted - see #3763
     if color is not None:
+        # if color is as a list-like, ensure it is properly mapped to components
         color_given = pd.api.types.is_list_like(color) and len(color) == len(s)
         # have colors been given for all geometries?
         if color_given:
@@ -579,8 +587,8 @@ def plot_series(
                 color = color.reindex(s.index)
             color = np.take(color, multiindex, axis=0)
 
-    # if cmap is specified, create range of colors based on cmap
     elif cmap is not None:
+        # if cmap is specified, create range of colors based on cmap
         values = np.arange(len(s))
         if isinstance(cmap, Colormap) and hasattr(cmap, "N"):
             # repeat for cmap with limited number of colors
