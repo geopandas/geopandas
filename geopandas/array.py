@@ -286,9 +286,10 @@ def from_wkt(
 
 def to_wkt(geoms: GeometryArray, **kwargs):
     """Convert GeometryArray to a numpy object array of WKT objects."""
+    # keeping for back compat for now, but dispatching to the array method
     if not isinstance(geoms, GeometryArray):
         raise ValueError("'geoms' must be a GeometryArray")
-    return shapely.to_wkt(geoms, **kwargs)
+    return geoms.to_wkt(**kwargs)
 
 
 def points_from_xy(
@@ -539,6 +540,10 @@ class GeometryArray(ExtensionArray):
     def to_wkb(self, hex: bool = False, **kwargs):
         """Convert GeometryArray to a numpy object array of WKB objects."""
         return shapely.to_wkb(self._data, hex=hex, **kwargs)
+
+    def to_wkt(self, **kwargs):
+        """Convert GeometryArray to a numpy object array of WKT objects."""
+        return shapely.to_wkt(self._data, **kwargs)
 
     # -------------------------------------------------------------------------
     # Geometry related methods
@@ -1496,7 +1501,7 @@ class GeometryArray(ExtensionArray):
         elif pd.api.types.is_string_dtype(dtype) and not pd.api.types.is_object_dtype(
             dtype
         ):
-            string_values = to_wkt(self)
+            string_values = self.to_wkt()
             pd_dtype = pd.api.types.pandas_dtype(dtype)
             if isinstance(pd_dtype, pd.StringDtype):
                 # ensure to return a pandas string array instead of numpy array
