@@ -39,7 +39,7 @@ dependencies:
     # geodatabase access
     - psycopg2>=2.8.0
     - psycopg>=3.1.0
-    - SQLAlchemy>=2.0
+    - sqlalchemy>=2.0
     # plotting
     - matplotlib>=3.7
     - mapclassify

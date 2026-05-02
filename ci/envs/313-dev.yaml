@@ -19,7 +19,7 @@ dependencies:
 
   # optional
   #- geopy
-  - SQLalchemy<2.1 # test oldest support sqlalchemy version
+  - sqlalchemy<2.1 # test oldest support sqlalchemy version
   - libspatialite
   - pip
   - pip:
