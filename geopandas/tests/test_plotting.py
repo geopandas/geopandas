@@ -1917,6 +1917,13 @@ class TestMapclassifyPlotting:
         lengths = [len(col.get_paths()) for col in ax.collections]
         assert lengths == expected_lengths
 
+    def test_greedy_column_error(self, nybb):
+        with pytest.raises(
+            ValueError,
+            match=r"The `scheme='greedy'` cannot be specified together with `column`.",
+        ):
+            nybb.plot("vals", scheme="greedy")
+
 
 class TestPlotCollections:
     def setup_method(self):
@@ -2270,6 +2277,11 @@ def test_column_values():
     df = GeoDataFrame({"geometry": polys, "values": [0, 1]})
     numeric_index_polys = GeoSeries([t1, t2], index=[0, 1])
     numeric_index_df = GeoDataFrame({"geometry": numeric_index_polys, "values": [0, 1]})
+    mutliindex_column_df = GeoDataFrame(
+        {"geometry": numeric_index_polys, "values": [0, 1]}
+    )
+    mutliindex_column_df.columns = pd.MultiIndex.from_arrays([[1, 1], [1, 2]])
+    mutliindex_column_df = mutliindex_column_df.set_geometry((1, 1))
 
     # Test with continuous values
     ax = df.plot(column="values")
@@ -2286,6 +2298,9 @@ def test_column_values():
     ax = df.plot(column=pd.Series([1, 0], index=["B", "A"]))
     colors_list = ax.collections[0].get_facecolors()
     np.testing.assert_array_equal(colors, colors_list)
+    ax = mutliindex_column_df.plot(column=(1, 2))
+    colors_array = ax.collections[0].get_facecolors()
+    np.testing.assert_array_equal(colors, colors_array)
 
     # Test with categorical values
     ax = df.plot(column="values", categorical=True)
@@ -2299,6 +2314,9 @@ def test_column_values():
     ax = df.plot(column=(0, 1), categorical=True)
     colors_tuple = ax.collections[0].get_facecolors()
     np.testing.assert_array_equal(colors, colors_tuple)
+    ax = mutliindex_column_df.plot(column=(1, 2), categorical=True)
+    colors_array = ax.collections[0].get_facecolors()
+    np.testing.assert_array_equal(colors, colors_array)
 
     # Test with pd.Index
     ax = numeric_index_df.plot(column=numeric_index_df.index, categorical=True)

@@ -753,7 +753,8 @@ def plot_dataframe(
         In addition, ``scheme='greedy'`` uses :func:`mapclassify.greedy` to derive
         greedy (topological) coloring which attempts to color a GeoDataFrame using as
         few colors as possible, where no neighbours can have same color as the feature
-        itself.
+        itself. This cannot be specified together with ``column`` as each geometry
+        is treated as unique with no relation to its attributes.
     k : ``int`` (default ``5``)
         Number of classes (ignored if ``scheme`` is ``None``)
     vmin : ``None`` or ``float`` (default ``None``)
@@ -869,6 +870,11 @@ def plot_dataframe(
             )
 
     if scheme == "greedy":
+        if column is not None:
+            raise ValueError(
+                "The `scheme='greedy'` cannot be specified together with `column`."
+            )
+
         categorical = True
         scheme = None
 
@@ -899,8 +905,11 @@ def plot_dataframe(
     _set_aspect(aspect, df, ax)
 
     # Process polymorphic column argument (column name or array-like)
-    if not isinstance(column, str) and pd.api.types.is_list_like(column):
-        if len(column) != df.shape[0]:
+    if pd.api.types.is_list_like(column):
+        # column name is a tuple or similar
+        if pd.api.types.is_hashable(column) and column in df.columns:
+            values = df[column]
+        elif len(column) != df.shape[0]:
             raise ValueError(
                 "The dataframe and given column have different number of rows."
             )
@@ -1028,7 +1037,7 @@ def plot_dataframe(
 
         # looping over groups and adding them to the Axes one by one, each with its
         # own collection and label
-        for i, (name, group) in enumerate(grouped["geometry"]):
+        for i, (name, group) in enumerate(grouped):
             # this ensures that any style kwd can be mapped to a value and that
             # list-like kwds are properly split to groups
             group_style_kwds = {}
