@@ -2745,6 +2745,15 @@ class TestAxisLabels:
         assert ax.get_xlabel() == "xlabel"
         assert ax.get_ylabel() == "Northing [US survey foot]"
 
+    def test_no_labels(self):
+        ax = self.nybb.plot("forhis06", add_labels=False)
+        assert ax.get_xlabel() == ""
+        assert ax.get_ylabel() == ""
+
+        ax2 = self.nybb.geometry.plot(add_labels=False)
+        assert ax2.get_xlabel() == ""
+        assert ax2.get_ylabel() == ""
+
 
 class TestTilesPlotting:
     def setup_method(self):

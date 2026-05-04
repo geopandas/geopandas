@@ -481,6 +481,7 @@ def plot_series(
     autolim: bool = True,
     tiles: bool | str | TileProvider | os.PathLike | MemoryFile = False,
     attr: str | None = None,
+    add_labels: bool = True,
     **style_kwds,
 ) -> Axes:
     """
@@ -535,6 +536,8 @@ def plot_series(
         Attribution text passed to :func:`contextily.add_basemap` as
         ``attribution``. When not provided, the default attribution of the selected
         tile source is used.
+    add_labels : bool (default True)
+        Use CRS metadata to label the axes.
     **style_kwds : dict
         Color options to be passed on to the actual plot function, such
         as ``edgecolor``, ``facecolor``, ``linewidth``, ``markersize``,
@@ -559,7 +562,8 @@ def plot_series(
     if ax is None:
         _, ax = plt.subplots(figsize=figsize)
 
-    _set_axis_labels(ax, s.crs)
+    if add_labels:
+        _set_axis_labels(ax, s.crs)
 
     if s.empty:
         warnings.warn(
@@ -701,6 +705,7 @@ def plot_dataframe(
     autolim: bool = True,
     tiles: bool | str | TileProvider | os.PathLike | MemoryFile = False,
     attr: str | None = None,
+    add_labels: bool = True,
     **style_kwds,
 ) -> Axes:
     """
@@ -835,6 +840,8 @@ def plot_dataframe(
         Attribution text passed to :func:`contextily.add_basemap` as
         ``attribution``. When not provided, the default attribution of the selected
         tile source is used.
+    add_labels : bool (default True)
+        Use CRS metadata to label the axes.
     **style_kwds : dict
         Style options to be passed on to the actual plot function, such as
         ``edgecolor``, ``facecolor``, ``linewidth``, ``markersize``, ``alpha``. These
@@ -908,7 +915,8 @@ def plot_dataframe(
             raise ValueError("'ax' can not be None if 'cax' is not.")
         _fig, ax = plt.subplots(figsize=figsize)
 
-    _set_axis_labels(ax, df.crs)
+    if add_labels:
+        _set_axis_labels(ax, df.crs)
 
     # set correct aspect to preserve proportions in geographic CRS
     _set_aspect(aspect, df, ax)

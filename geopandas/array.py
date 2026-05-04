@@ -1435,6 +1435,13 @@ class GeometryArray(ExtensionArray):
         if method is not None:
             raise NotImplementedError("fillna with a method is not yet supported")
 
+        if isinstance(value, dict):
+            # to match upstream pandas specifically raising for dict
+            raise TypeError(
+                "ExtensionArray.fillna does not support filling with a dict. "
+                "Use Series.fillna instead."
+            )
+
         mask = self.isna()
         if copy:
             new_values = self.copy()
