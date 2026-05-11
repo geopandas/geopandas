@@ -14,8 +14,6 @@ Advanced topics can be found in the :doc:`Advanced Guide <advanced_guide>` and f
   Reading and writing files <user_guide/io>
   Indexing and selecting data <user_guide/indexing>
   Making maps and plots <user_guide/mapping>
-  Choropleth mapping <user_guide/choropleth>
-  Categorical mapping <user_guide/categorical>
   Interactive mapping <user_guide/interactive_mapping>
   Projections <user_guide/projections>
   Geometric manipulations <user_guide/geometric_manipulations>

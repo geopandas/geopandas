@@ -338,17 +338,17 @@ For example, ``hist``, can be used to plot histograms of population for two diff
 
 For more information, see `Chart visualization <https://pandas.pydata.org/pandas-docs/stable/user_guide/visualization.html>`_ in the pandas documentation.
 
-
-Other resources
------------------
-Links to Jupyter Notebooks for different mapping tasks:
-
-`Making Heat Maps <http://nbviewer.jupyter.org/gist/perrygeo/c426355e40037c452434>`_
-
-
-
 .. ipython:: python
     :suppress:
 
     import matplotlib.pyplot as plt
     plt.close('all')
+
+Other resources
+-----------------
+
+.. toctree::
+  :maxdepth: 2
+
+  Choropleth mapping <choropleth>
+  Categorical mapping <categorical>
