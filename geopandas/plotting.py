@@ -458,13 +458,19 @@ def _plot_point_collection(
 
     _expand_kwargs(kwargs, multiindex)
 
+    _cmap = cmap if values is not None else None
+
     # norm cannot be passed alongside vmin and vmax
     if "norm" not in kwargs:
         collection = ax.scatter(
-            xy[:, 0], xy[:, 1], vmin=vmin, vmax=vmax, cmap=cmap, **kwargs
+            xy[:, 0], xy[:, 1], vmin=vmin, vmax=vmax, cmap=_cmap, **kwargs
         )
     else:
         collection = ax.scatter(xy[:, 0], xy[:, 1], cmap=cmap, **kwargs)
+
+    # ensure that cmap is assigned when used categorical plotting for a reference
+    if values is None and cmap is not None:
+        collection.set_cmap(cmap)
 
     return collection
 
