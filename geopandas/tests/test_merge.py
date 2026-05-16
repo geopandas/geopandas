@@ -216,7 +216,7 @@ class TestMerging:
         # left metadata is set on the result. This is deliberate for now.
         assert type(result) is GeoDataFrame
         assert result._geometry_column_name is None
-        assert_index_equal(pd.Index([0, 1]), result.columns)
+        assert_index_equal(pd.Index([0, 1]), result.columns, exact="equiv")
 
         gseries2.name = "foo"
         result2 = pd.concat([gseries2, self.gseries], axis=1)

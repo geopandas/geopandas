@@ -282,8 +282,8 @@ def test_apply(df):
     assert_object(df["value1"].apply(identity), pd.Series)
 
     # axis = 0, Series, no longer geometry
-    assert_object(df[geo_name].apply(lambda x: str(x)), pd.Series)
-    assert_object(df["geometry2"].apply(lambda x: str(x)), pd.Series)
+    assert_object(df[geo_name].apply(str), pd.Series)
+    assert_object(df["geometry2"].apply(lambda x: str(x)), pd.Series)  # noqa: PLW0108
 
     # axis = 1
     assert_object(df[["value1", "value2"]].apply(identity, axis=1), pd.DataFrame)

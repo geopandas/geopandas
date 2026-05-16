@@ -21,15 +21,17 @@ dependencies:
   - fiona
   - matplotlib
   - mapclassify
+  - libpysal
   - folium
   - xyzservices
+  - contextily
   - scipy
   - geopy
   - pointpats
   - geodatasets
   # installed in tests.yaml, because not available on windows
   # - postgis
-  - SQLalchemy
+  - sqlalchemy
   - psycopg
   - psycopg2
   - libspatialite

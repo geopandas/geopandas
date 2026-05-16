@@ -31,7 +31,7 @@ jobs:
         env:
           - ci/envs/311-latest.yaml
           - ci/envs/311-minimal.yaml
-#          - ci/envs/311-pd22.yaml -> in postgis env below
+#          - ci/envs/311-pd23.yaml -> in postgis env below
 #          - ci/envs/312-latest.yaml -> in postgis env below
           - ci/envs/313-latest-no-pyogrio.yaml
           - ci/envs/313-latest-no-pyproj.yaml
@@ -41,7 +41,7 @@ jobs:
 #          - ci/envs/313-dev.yaml -> in dev env below
         include:
           # PostGIS envs
-          - env: ci/envs/311-pd22.yaml
+          - env: ci/envs/311-pd23.yaml
             postgis: true
             os: ubuntu-latest
           - env: ci/envs/312-latest.yaml
@@ -70,7 +70,7 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Install Conda environment with Micromamba
-        uses: mamba-org/setup-micromamba@v2
+        uses: mamba-org/setup-micromamba@v3
         with:
           environment-file: ${{ matrix.env }}
 
@@ -109,4 +109,4 @@ jobs:
         run: |
           pytest -v --color=yes --doctest-only geopandas --ignore=geopandas/datasets
 
-      - uses: codecov/codecov-action@v5
+      - uses: codecov/codecov-action@v6

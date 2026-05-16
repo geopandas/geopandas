@@ -22,7 +22,7 @@ dependencies:
   - matplotlib=3.9.1
   - mapclassify=2.7.0
   - geopy
-  - SQLalchemy
+  - sqlalchemy
   - libspatialite
   - pyarrow=15.0
   - geodatasets
