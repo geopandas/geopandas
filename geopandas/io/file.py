@@ -792,6 +792,89 @@ def _to_file_pyogrio(df, filename, driver, schema, crs, mode, metadata, **kwargs
 
     pyogrio.write_dataframe(df, filename, driver=driver, metadata=metadata, **kwargs)
 
+    if driver.upper() == "KML" and mode == "w":
+        _rewrite_kml_extended_data(filename, df)
+
+
+def _rewrite_kml_extended_data(filename, df):
+    """Repair GDAL KML field/value offsets in ExtendedData."""
+    import xml.etree.ElementTree as ET
+
+    try:
+        filename = os.fspath(filename)
+    except TypeError:
+        return
+
+    if filename.startswith("/vsi"):
+        return
+
+    try:
+        tree = ET.parse(filename)
+    except (FileNotFoundError, IsADirectoryError, OSError, ET.ParseError):
+        return
+
+    root = tree.getroot()
+    namespace = ""
+    if root.tag.startswith("{"):
+        namespace = root.tag.partition("}")[0][1:]
+        ET.register_namespace("", namespace)
+    ns = f"{{{namespace}}}" if namespace else ""
+
+    property_columns = [col for col in df.columns if col != df._geometry_column_name]
+    if not property_columns:
+        return
+
+    simple_field_types = {}
+    for field in root.findall(f".//{ns}SimpleField"):
+        field_name = field.get("name")
+        if field_name:
+            simple_field_types[field_name] = field.get("type", "string")
+
+    schema = root.find(f".//{ns}Schema")
+    if schema is not None:
+        for field in list(schema.findall(f"{ns}SimpleField")):
+            schema.remove(field)
+        for column in property_columns:
+            field = ET.SubElement(schema, f"{ns}SimpleField")
+            field.set("name", str(column))
+            field.set("type", simple_field_types.get(column, "string"))
+
+    placemarks = root.findall(f".//{ns}Placemark")
+    for placemark, (_, row) in zip(placemarks, df.iterrows()):
+        extended_data = placemark.find(f"{ns}ExtendedData")
+        if extended_data is None:
+            extended_data = ET.SubElement(placemark, f"{ns}ExtendedData")
+
+        schema_data = extended_data.find(f"{ns}SchemaData")
+        if schema_data is None:
+            schema_data = ET.SubElement(extended_data, f"{ns}SchemaData")
+            if schema is not None and schema.get("id"):
+                schema_data.set("schemaUrl", f"#{schema.get('id')}")
+
+        for simple_data in list(schema_data.findall(f"{ns}SimpleData")):
+            schema_data.remove(simple_data)
+
+        for column in property_columns:
+            value = row[column]
+            try:
+                if pd.isna(value):
+                    continue
+            except (TypeError, ValueError):
+                pass
+            if isinstance(value, pd.Timestamp):
+                value = value.isoformat()
+            elif hasattr(value, "isoformat"):
+                value = value.isoformat()
+            else:
+                value = str(value)
+            if value == "NaT":
+                continue
+            simple_data = ET.SubElement(schema_data, f"{ns}SimpleData")
+            simple_data.set("name", str(column))
+            simple_data.text = value
+
+    tree.write(filename, encoding="utf-8", xml_declaration=True)
+
 
 def infer_schema(df):
     from collections import OrderedDict
