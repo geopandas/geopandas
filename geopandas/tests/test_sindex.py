@@ -100,6 +100,7 @@ class TestSeriesSindex:
         assert sliced.sindex is not original_index
         # Select all rows
         sliced = s.iloc[:]
+        assert sliced.has_sindex
         assert sliced.sindex is original_index
         # Select all rows and flip
         sliced = s.iloc[::-1]

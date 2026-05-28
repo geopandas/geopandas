@@ -1176,7 +1176,7 @@ class GeoSeries(GeoPandasBase, Series):
                 "transform the geometries, use 'GeoSeries.to_crs' instead."
             )
         if not inplace:
-            result = self.copy()
+            result = self.copy(deep=not compat.PANDAS_GE_30)
         else:
             result = self
         result.array.crs = crs
