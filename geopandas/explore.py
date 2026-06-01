@@ -718,7 +718,7 @@ def _explore(
                 else:
                     fmt = legend_kwds.pop("fmt", "{:.2f}")
                     if "labels" in legend_kwds:
-                        categories = legend_kwds["labels"]
+                        categories = legend_kwds.pop("labels")
                     else:
                         categories = binning.get_legend_classes(fmt)
                         show_interval = legend_kwds.pop("interval", False)
