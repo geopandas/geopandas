@@ -812,6 +812,30 @@ class TestDataFrame:
         assert gdf.shape == (2, 1)
         assert "properties" not in gdf.columns
 
+    def test_from_features_empty(self):
+        # GH3777: an empty feature list should still produce a "geometry" column,
+        # so that a CRS can be assigned without raising. The result mirrors
+        # ``GeoDataFrame(geometry=[], crs=crs)`` (whose CRS value depends on pyproj).
+        expected_crs = GeoDataFrame(geometry=[], crs="EPSG:4326").crs
+
+        gdf = GeoDataFrame.from_features([], crs="EPSG:4326")
+        assert isinstance(gdf, GeoDataFrame)
+        assert len(gdf) == 0
+        assert list(gdf.columns) == ["geometry"]
+        assert gdf.crs == expected_crs
+
+        # without a CRS, an empty feature list still yields a "geometry" column
+        gdf_no_crs = GeoDataFrame.from_features([])
+        assert list(gdf_no_crs.columns) == ["geometry"]
+        assert gdf_no_crs.crs is None
+
+        # an empty FeatureCollection behaves the same as an empty list
+        gdf_fc = GeoDataFrame.from_features(
+            {"type": "FeatureCollection", "features": []}, crs="EPSG:4326"
+        )
+        assert list(gdf_fc.columns) == ["geometry"]
+        assert gdf_fc.crs == expected_crs
+
     def test_from_features_geom_interface_feature(self):
         class Placemark:
             def __init__(self, geom, val):
