@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import typing
 import warnings
-from typing import Any
+from typing import Any, overload
 
 import numpy as np
 import pandas as pd
@@ -802,12 +802,28 @@ class GeoSeries(GeoPandasBase, Series):
     def take(self, *args, **kwargs):
         return self._wrapped_pandas_method("take", *args, **kwargs)
 
+    @overload
+    def apply(
+        self,
+        func: Callable[..., BaseGeometry],
+        convert_dtype: bool | None = ...,
+        args: tuple = ...,
+        **kwargs: Any,
+    ) -> GeoSeries: ...
+
+    @overload
+    def apply(
+        self,
+        func: Callable[..., Any],
+        convert_dtype: bool | None = ...,
+        args: tuple = ...,
+        **kwargs: Any,
+    ) -> Series: ...
+
     @doc(pd.Series)
-    def apply(self, func, convert_dtype: bool | None = None, args=(), **kwargs):
+    def apply(self, func, convert_dtype: bool | None = None, args=(), **kwargs):  # type: ignore[override]
         if convert_dtype is not None:
             kwargs["convert_dtype"] = convert_dtype
-
-        # to avoid warning
         result = super().apply(func, args=args, **kwargs)
         if isinstance(result, GeoSeries):
             if self.crs is not None:
