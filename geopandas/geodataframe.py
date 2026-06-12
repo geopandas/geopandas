@@ -1286,6 +1286,15 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         -------
         DataFrame
             geometry columns are encoded to WKB
+
+        Notes
+        -----
+        The Well-Known Binary (WKB) specification does not support all variations
+        of geometry types that GeoPandas does, and some geometries may not be
+        serialised without information loss. Notably:
+
+        - LinearRing will be converted to LineString
+        - Point with NaN coordinates will be converted to Empty Point
         """
         df = DataFrame(self.copy(deep=not PANDAS_GE_30))
 
