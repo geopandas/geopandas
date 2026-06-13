@@ -518,12 +518,22 @@ class GeometryArray(ExtensionArray):
         #         )
 
     def __getstate__(self):
-        return (shapely.to_wkb(self._data), self._crs)
+        # include type ids so LinearRing (which WKB encodes as LineString) can
+        # be restored on unpickling -- see GH3785
+        return (shapely.to_wkb(self._data), self._crs,
+                shapely.get_type_id(self._data))
 
     def __setstate__(self, state):
         if not isinstance(state, dict):
             # pickle file saved with pygeos
             geoms = shapely.from_wkb(state[0])
+            # older pickles are a 2-tuple without type ids
+            if len(state) > 2:
+                ring_mask = state[2] == shapely.GeometryType.LINEARRING
+                if ring_mask.any():
+                    geoms[ring_mask] = [
+                        shapely.LinearRing(g.coords) for g in geoms[ring_mask]
+                    ]
             self._crs = state[1]
             self._sindex = None  # pygeos.STRtree could not be pickled yet
             self._data = geoms

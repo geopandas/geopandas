@@ -908,6 +908,16 @@ def test_pickle():
     assert T[:-2].geom_equals(T2[:-2]).all()
 
 
+def test_pickle_preserves_linearring():
+    import pickle
+    import shapely
+
+    ring = shapely.LinearRing([(0, 0), (1, 0), (1, 1), (0, 0)])
+    arr = from_shapely([ring])
+    result = pickle.loads(pickle.dumps(arr))
+    assert result[0].geom_type == 'LinearRing'
+
+
 def test_raise_on_bad_sizes():
     with pytest.raises(ValueError) as info:
         T.contains(P)
