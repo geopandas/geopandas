@@ -1064,6 +1064,28 @@ def test_parquet_read_partitioned_dataset_fsspec(tmpdir, naturalearth_lowres):
     assert_geodataframe_equal(result, df)
 
 
+def test_parquet_read_partitioned_dataset_partitioning_none(
+    tmpdir, naturalearth_lowres
+):
+    # https://github.com/geopandas/geopandas/issues/3459
+    # passing partitioning=None should omit the hive partition columns, also
+    # when geopandas auto-detects the columns to read (triggered here by the
+    # presence of a bbox covering column)
+    df = read_file(naturalearth_lowres)
+
+    # manually create hive-partitioned dataset with a bbox covering column
+    basedir = tmpdir / "partitioned_dataset"
+    basedir.mkdir()
+    (basedir / "key=1").mkdir()
+    (basedir / "key=2").mkdir()
+    df[:100].to_parquet(basedir / "key=1" / "data.parquet", write_covering_bbox=True)
+    df[100:].to_parquet(basedir / "key=2" / "data.parquet", write_covering_bbox=True)
+
+    result = read_parquet(basedir, partitioning=None)
+    assert "key" not in result.columns
+    assert len(result) == len(df)
+
+
 @pytest.mark.parametrize(
     "geometry_type",
     ["point", "linestring", "polygon", "multipoint", "multilinestring", "multipolygon"],
