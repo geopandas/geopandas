@@ -986,7 +986,10 @@ class TestIO:
 
         # Create GeoDataFrame with UNION-based SQL injection attempt
         gdf_malicious = df_nybb.copy()
-        malicious_geom_name = f"geometry')::text UNION SELECT password FROM {test_target_table} WHERE '1'='1'; --"  # noqa
+        malicious_geom_name = (
+            f"geometry')::text UNION SELECT password FROM {test_target_table}"
+            "WHERE '1'='1'; --"
+        )
         gdf_malicious = gdf_malicious.rename_geometry(malicious_geom_name)
 
         # Verify tables exist before injection attempt
