@@ -819,7 +819,7 @@ class TestIO:
 
         # Verify data was appended correctly
         sql = text(f'SELECT * FROM "{table}";')
-        df = read_postgis(sql, engine, geom_col="custom_geom")
+        df = read_postgis(sql, engine, geom_col="custom_geom_123")
         assert len(df) == len(gdf) * 2
 
     @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
