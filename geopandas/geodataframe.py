@@ -824,7 +824,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             row.update(properties)
             rows.append(row)
         if not rows:
-            return cls({"geometry": GeoSeries([], crs=crs)}, columns=columns)
+            return cls({"geometry": []}, columns=columns, crs=crs)
         return cls(rows, columns=columns, crs=crs)
 
     @classmethod
