@@ -165,11 +165,9 @@ def test_overlay_nybb(how, nybb_filename):
     # 24 is a full original circle overlapping with unioned geometries, and
     # 27 is a completely duplicated row)
     if how == "union":
-        expected = expected.drop([24, 27])
-        expected.reset_index(inplace=True, drop=True)
+        expected = expected.drop([24, 27]).reset_index(drop=True)
     # Eliminate observations without geometries (issue from QGIS)
-    expected = expected[expected.is_valid]
-    expected.reset_index(inplace=True, drop=True)
+    expected = expected[expected.is_valid].reset_index(drop=True)
 
     if how == "identity":
         expected = expected[expected.BoroCode.notnull()].copy()
