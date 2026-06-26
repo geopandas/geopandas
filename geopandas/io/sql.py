@@ -94,9 +94,9 @@ def _df_to_geodf(df, geom_col="geom", crs=None, con=None):
 
         df[geom_col] = geoms = geoms.apply(load_geom)
         if crs is None:
-            srid = shapely.get_srid(geoms.iat[0])
+            srid = int(shapely.get_srid(geoms.iat[0]))
             # if no defined SRID in geodatabase, returns SRID of 0
-            if isinstance(srid, int) and srid != 0:
+            if srid != 0:
                 try:
                     spatial_ref_sys_df = _get_spatial_ref_sys_df(con, srid)
                 except pd.errors.DatabaseError:
@@ -461,7 +461,7 @@ def _write_postgis(
 
 
 @lru_cache
-def _get_spatial_ref_sys_df(con, srid):
+def _get_spatial_ref_sys_df(con, srid: int):
     spatial_ref_sys_sql = (
         f"SELECT srid, auth_name FROM spatial_ref_sys WHERE srid = {srid}"
     )
