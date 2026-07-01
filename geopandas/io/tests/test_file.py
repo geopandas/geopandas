@@ -644,6 +644,43 @@ def test_read_file_url_flaky(engine, url):
     assert isinstance(gdf, geopandas.GeoDataFrame)
 
 
+def test_read_file_url_user_agent(monkeypatch, file_path, engine):
+    # regression test for GH3441: some servers reject the default urllib
+    # User-Agent with a 403, so read_file should send a geopandas User-Agent
+    from contextlib import contextmanager
+    from urllib.request import Request
+
+    import geopandas.io.file as gpd_file
+
+    with open(file_path, "rb") as f:
+        file_bytes = f.read()
+
+    captured = []
+
+    class FakeResponse:
+        # first call probes for range support; report that there is none so the
+        # code falls through to downloading the whole file on the second call
+        headers = {"Accept-Ranges": "none"}
+        status = None
+
+        def read(self):
+            return file_bytes
+
+    @contextmanager
+    def fake_urlopen(request, *args, **kwargs):
+        assert isinstance(request, Request)
+        captured.append(request)
+        yield FakeResponse()
+
+    monkeypatch.setattr(gpd_file.urllib.request, "urlopen", fake_urlopen)
+
+    read_file("https://example.com/null_geom.geojson", engine=engine)
+
+    assert captured, "expected read_file to open the URL"
+    for request in captured:
+        assert request.get_header("User-agent") == f"geopandas/{geopandas.__version__}"
+
+
 def test_read_file_local_uri(file_path, engine):
     local_uri = "file://" + file_path
     gdf = read_file(local_uri, engine=engine)
