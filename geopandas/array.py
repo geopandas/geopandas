@@ -518,12 +518,23 @@ class GeometryArray(ExtensionArray):
         #         )
 
     def __getstate__(self):
-        return (shapely.to_wkb(self._data), self._crs)
+        is_linearring = (
+            shapely.get_type_id(self._data) == shapely.GeometryType.LINEARRING
+        )
+        return (shapely.to_wkb(self._data), self._crs, is_linearring)
 
     def __setstate__(self, state):
         if not isinstance(state, dict):
             # pickle file saved with pygeos
             geoms = shapely.from_wkb(state[0])
+
+            if len(state) >= 3:
+                is_linearring = state[2]
+                if is_linearring.any():
+                    geoms = geoms.copy()
+                    for i in np.nonzero(is_linearring)[0]:
+                        geoms[i] = shapely.LinearRing(geoms[i].coords)
+
             self._crs = state[1]
             self._sindex = None  # pygeos.STRtree could not be pickled yet
             self._data = geoms
