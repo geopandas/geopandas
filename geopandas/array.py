@@ -535,15 +535,19 @@ class GeometryArray(ExtensionArray):
                     # per-geometry construction when empties are present,
                     # since get_coordinates drops empty geometries and
                     # would silently broadcast non-empty rings onto them
-                    if not shapely.is_empty(masked).any():
+                    has_z = shapely.has_z(masked)
+                    has_m = shapely.has_m(masked)
+                    if (
+                        not shapely.is_empty(masked).any()
+                        and not has_z.any()
+                        and not has_m.any()
+                    ):
                         coords, indices = shapely.get_coordinates(
                             masked, return_index=True
                         )
                         geoms[ring_mask] = shapely.linearrings(coords, indices=indices)
                     else:
-                        geoms[ring_mask] = [
-                            shapely.LinearRing(g.coords) for g in masked
-                        ]
+                        geoms[ring_mask] = [shapely.LinearRing(g.coords) for g in masked]
             self._crs = state[1]
             self._sindex = None  # pygeos.STRtree could not be pickled yet
             self._data = geoms
