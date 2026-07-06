@@ -532,9 +532,9 @@ class GeometryArray(ExtensionArray):
                 if ring_mask.any():
                     masked = geoms[ring_mask]
                     # vectorise via shapely.linearrings; fall back to
-                    # per-geometry construction when empties are present,
-                    # since get_coordinates drops empty geometries and
-                    # would silently broadcast non-empty rings onto them
+                    # per-geometry construction when empties or Z/M
+                    # dimensions are present, since get_coordinates
+                    # drops empty geometries and strips Z/M coordinates
                     has_z = shapely.has_z(masked)
                     has_m = shapely.has_m(masked)
                     if (
@@ -547,7 +547,9 @@ class GeometryArray(ExtensionArray):
                         )
                         geoms[ring_mask] = shapely.linearrings(coords, indices=indices)
                     else:
-                        geoms[ring_mask] = [shapely.LinearRing(g.coords) for g in masked]
+                        geoms[ring_mask] = [
+                            shapely.LinearRing(g.coords) for g in masked
+                        ]
             self._crs = state[1]
             self._sindex = None  # pygeos.STRtree could not be pickled yet
             self._data = geoms
