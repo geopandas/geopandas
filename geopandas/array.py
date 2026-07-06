@@ -524,7 +524,8 @@ class GeometryArray(ExtensionArray):
 
     def __setstate__(self, state):
         if not isinstance(state, dict):
-            # pickle file saved with pygeos
+            # tuple format: (wkb_bytes, crs) for legacy pygeos pickles,
+            # (wkb_bytes, crs, type_ids) for GeoPandas >= 1.2
             geoms = shapely.from_wkb(state[0])
             # older pickles are a 2-tuple without type ids
             if len(state) > 2:
