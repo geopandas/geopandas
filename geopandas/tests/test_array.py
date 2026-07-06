@@ -910,12 +910,27 @@ def test_pickle():
 
 def test_pickle_preserves_linearring():
     import pickle
+
     import shapely
 
     ring = shapely.LinearRing([(0, 0), (1, 0), (1, 1), (0, 0)])
     arr = from_shapely([ring])
     result = pickle.loads(pickle.dumps(arr))
-    assert result[0].geom_type == 'LinearRing'
+    assert result[0].geom_type == "LinearRing"
+
+
+def test_pickle_preserves_empty_linearring():
+    import pickle
+
+    import shapely
+
+    empty_ring = shapely.LinearRing([])
+    ring = shapely.LinearRing([(0, 0), (1, 0), (1, 1), (0, 0)])
+    arr = from_shapely([ring, empty_ring])
+    result = pickle.loads(pickle.dumps(arr))
+    assert result[0].geom_type == "LinearRing"
+    assert result[1].geom_type == "LinearRing"
+    assert result[1].wkt == "LINEARRING EMPTY"
 
 
 def test_raise_on_bad_sizes():

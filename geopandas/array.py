@@ -520,8 +520,7 @@ class GeometryArray(ExtensionArray):
     def __getstate__(self):
         # include type ids so LinearRing (which WKB encodes as LineString) can
         # be restored on unpickling -- see GH3785
-        return (shapely.to_wkb(self._data), self._crs,
-                shapely.get_type_id(self._data))
+        return (shapely.to_wkb(self._data), self._crs, shapely.get_type_id(self._data))
 
     def __setstate__(self, state):
         if not isinstance(state, dict):
@@ -531,9 +530,20 @@ class GeometryArray(ExtensionArray):
             if len(state) > 2:
                 ring_mask = state[2] == shapely.GeometryType.LINEARRING
                 if ring_mask.any():
-                    geoms[ring_mask] = [
-                        shapely.LinearRing(g.coords) for g in geoms[ring_mask]
-                    ]
+                    masked = geoms[ring_mask]
+                    # vectorise via shapely.linearrings; fall back to
+                    # per-geometry construction when empties are present,
+                    # since get_coordinates drops empty geometries and
+                    # would silently broadcast non-empty rings onto them
+                    if not shapely.is_empty(masked).any():
+                        coords, indices = shapely.get_coordinates(
+                            masked, return_index=True
+                        )
+                        geoms[ring_mask] = shapely.linearrings(coords, indices=indices)
+                    else:
+                        geoms[ring_mask] = [
+                            shapely.LinearRing(g.coords) for g in masked
+                        ]
             self._crs = state[1]
             self._sindex = None  # pygeos.STRtree could not be pickled yet
             self._data = geoms
