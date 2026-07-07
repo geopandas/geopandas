@@ -5418,7 +5418,7 @@ GeometryCollection
             linear segments in a quarter circle in the approximation of circular arcs.
         cap_style : {'round', 'square', 'flat'}, default 'round'
             Specifies the shape of buffered line endings. ``'round'`` results in
-            circular line endings (see ``resolution``). Both ``'square'`` and ``'flat'``
+            circular line endings (see ``quad_segs``). Both ``'square'`` and ``'flat'``
             result in rectangular line endings, ``'flat'`` will end at the original
             vertex, while ``'square'`` involves adding the buffer width.
         join_style : {'round', 'mitre', 'bevel'}, default 'round'
@@ -5454,7 +5454,7 @@ GeometryCollection
         2    POLYGON ((2.8 -1, 2.8 1, 2.80096 1.0196, 2.803...
         dtype: geometry
 
-        ``Further specification as ``join_style`` and ``cap_style`` are shown in the
+        Further specification as ``join_style`` and ``cap_style`` are shown in the
         following illustration:
 
         .. plot:: _static/code/buffer.py

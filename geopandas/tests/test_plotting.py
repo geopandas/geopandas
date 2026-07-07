@@ -2608,6 +2608,13 @@ class TestStyleMapping:
         cmap = ax.collections[0].get_cmap().name
         assert cmap == "Reds"
 
+    def test_categorical_points_cmap_no_warning(self, nybb):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", UserWarning)
+            ax = nybb.set_geometry(nybb.centroid).plot("BoroName")
+
+        assert ax.collections[0].get_cmap().name == "tab10"
+
     def test_empty_class_poly(self):
         df = GeoDataFrame(
             ["foo", "bar"],
