@@ -38,6 +38,7 @@ jobs:
 #          - ci/envs/313-latest.yaml -> in doctest env below
           - ci/envs/313-no-optional-deps.yaml
           - ci/envs/314-latest.yaml
+          - ci/envs/315-latest.yaml
 #          - ci/envs/313-dev.yaml -> in dev env below
         include:
           # PostGIS envs
