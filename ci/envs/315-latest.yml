@@ -2,7 +2,7 @@ name: test
 channels:
   - conda-forge
 dependencies:
-  - python=3.15
+  - python=3.15beta4
   # required
   - pandas
   - shapely
