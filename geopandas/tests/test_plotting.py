@@ -2603,6 +2603,18 @@ class TestStyleMapping:
         cbar = _get_ax(ax.get_figure(), "<colorbar>")
         assert len(cbar.get_yticklabels()) == 7
 
+    def test_scheme_categorical_cmap_passthrough(self):
+        ax = self.nyc.plot("forhis06", legend=True, scheme="quantiles", cmap="Reds")
+        cmap = ax.collections[0].get_cmap().name
+        assert cmap == "Reds"
+
+    def test_categorical_points_cmap_no_warning(self, nybb):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", UserWarning)
+            ax = nybb.set_geometry(nybb.centroid).plot("BoroName")
+
+        assert ax.collections[0].get_cmap().name == "tab10"
+
     def test_empty_class_poly(self):
         df = GeoDataFrame(
             ["foo", "bar"],

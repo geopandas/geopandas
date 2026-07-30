@@ -1434,6 +1434,6 @@ def test_read_parquet_from_https():
     _ = pytest.importorskip("fsspec")
     _ = pytest.importorskip("requests")
     _ = pytest.importorskip("aiohttp")
-    path = "https://github.com/opengeospatial/geoparquet/raw/refs/heads/main/test_data/data-polygon-encoding_wkb.parquet"
+    path = "https://github.com/opengeospatial/geoparquet/raw/refs/tags/v1.1.0/test_data/data-polygon-encoding_wkb.parquet"
     df = geopandas.read_parquet(path)
     assert df.shape == (4, 2)
