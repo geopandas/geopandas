@@ -913,7 +913,7 @@ def test_write_iso_wkb_old_geos(tmpdir):
 
 @pytest.mark.parametrize(
     "format,schema_version",
-    product(["feather", "parquet"], [None] + SUPPORTED_VERSIONS),
+    list(product(["feather", "parquet"], [None] + SUPPORTED_VERSIONS)),
 )
 def test_write_spec_version(tmpdir, format, schema_version):
     if format == "feather":
