@@ -1,0 +1,50 @@
+cff-version: "1.2.0"
+message: If you use this software, please cite the article below.
+title: GeoPandas
+authors:
+- family-names: Fleischmann
+  given-names: Martin
+  orcid: "https://orcid.org/0000-0003-3319-3366"
+- family-names: Van Den Bossche
+  given-names: Joris
+- family-names: Jordahl
+  given-names: Kelsey
+- family-names: Richards
+  given-names: Matthew John
+- family-names: McBride
+  given-names: James
+- family-names: Wasserman
+  given-names: Jacob
+- family-names: Ward
+  given-names: Brendan
+- family-names: Wolf
+  given-names: Levi John
+preferred-citation:
+  type: article
+  title: "GeoPandas: Fundamental Data Structures for Vector Spatial Data in Python"
+  authors:
+  - family-names: Fleischmann
+    given-names: Martin
+  - family-names: Van Den Bossche
+    given-names: Joris
+  - family-names: Jordahl
+    given-names: Kelsey
+  - family-names: Richards
+    given-names: Matthew John
+  - family-names: McBride
+    given-names: James
+  - family-names: Wasserman
+    given-names: Jacob
+  - family-names: Ward
+    given-names: Brendan
+  - family-names: Wolf
+    given-names: Levi John
+  year: 2026
+  month: 12
+  journal: Computers, Environment and Urban Systems
+  volume: 130
+  start: 102495
+  issn: "0198-9715"
+  doi: 10.1016/j.compenvurbsys.2026.102495
+  languages:
+  - en
