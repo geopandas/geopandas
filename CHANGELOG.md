@@ -23,6 +23,9 @@ Bug fixes:
   x-axis (#3773).
 - Fix ``GeoDataFrame.explore()`` ignoring custom ``legend_kwds={"labels": ...}``
   for categorical and boolean columns (#3496).
+- Document that WKB serialization (used by ``to_wkb``/``from_wkb`` and internally
+  when pickling a ``GeoSeries``/``GeoDataFrame``) converts ``LinearRing``
+  geometries to ``LineString``, as WKB cannot represent a ``LinearRing`` (#3785).
 
 
 Community:

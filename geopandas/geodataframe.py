@@ -1286,6 +1286,16 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         -------
         DataFrame
             geometry columns are encoded to WKB
+
+        Notes
+        -----
+        The WKB specification cannot represent ``LinearRing`` geometries, so a
+        ``LinearRing`` is exported as an equivalent ``LineString`` (see the note in
+        :func:`shapely.to_wkb`). GeoPandas also uses WKB internally when a
+        ``GeoDataFrame`` is pickled, so a ``LinearRing`` that is round-tripped
+        through WKB or through ``pickle`` comes back as a ``LineString``. Use a
+        format that preserves the ring type, such as WKT, if that distinction
+        matters.
         """
         df = DataFrame(self.copy(deep=not PANDAS_GE_30))
 
