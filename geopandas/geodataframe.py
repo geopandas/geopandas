@@ -530,7 +530,12 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 return self.rename(columns={geometry_col: col}).set_geometry(
                     col, inplace=inplace
                 )
-            self.rename(columns={geometry_col: col}, inplace=inplace)
+            with warnings.catch_warnings():
+                # TODO: pandas >= 3.1 triggers a warning for inplace rename here
+                # suppresing this for now, but we have to replace this with our own
+                # warning specifically for rename_geometry
+                warnings.filterwarnings("ignore", ".*inplace keyword.*")
+                self.rename(columns={geometry_col: col}, inplace=inplace)
             self.set_geometry(col, inplace=inplace)
 
     @property
@@ -2027,7 +2032,10 @@ default 'snappy'
                 pass
             else:
                 if self.crs is not None and result.crs is None:
-                    result.set_crs(self.crs, inplace=True)
+                    if PANDAS_GE_30:
+                        result = result.set_crs(self.crs)
+                    else:
+                        result.set_crs(self.crs, inplace=True)
         elif isinstance(result, Series) and result.dtype == "object":
             # Try reconstruct series GeometryDtype if lost by apply
             # If all none and object dtype assert list of nones is more likely
@@ -2415,7 +2423,10 @@ default 'snappy'
         df = df.set_geometry(self._geometry_column_name).__finalize__(self)
 
         if ignore_index:
-            df.reset_index(inplace=True, drop=True)
+            if PANDAS_GE_30:
+                df = df.reset_index(drop=True)
+            else:
+                df.reset_index(inplace=True, drop=True)
         elif index_parts:
             # reset to MultiIndex, otherwise df index is only first level of
             # exploded GeoSeries index.
