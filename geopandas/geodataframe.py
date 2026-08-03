@@ -473,6 +473,12 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         # update _geometry_column_name prior to assignment
         # to avoid default is None warning
         frame._geometry_column_name = geo_column_name
+        if isinstance(frame.columns, pd.MultiIndex) and not isinstance(
+            geo_column_name, tuple
+        ):
+            # when setting a single column to dataframe with multi-index columns,
+            # pandas does not like setting it with only the first level name
+            geo_column_name = (geo_column_name,) + ("",) * (frame.columns.nlevels - 1)
         frame[geo_column_name] = level
 
         if not inplace:
