@@ -1402,6 +1402,15 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         2    0103000000010000000400000000000000000000000000...
         3                                                  NaN
         dtype: str
+
+        Notes
+        -----
+        The Well-Known Binary (WKB) specification does not support all variations
+        of geometry types that GeoPandas does, and some geometries may not be
+        serialised without information loss. Notably:
+
+        - LinearRing will be converted to LineString
+        - Point with NaN coordinates will be converted to Empty Point
         """
         return Series(to_wkb(self.array, hex=hex, **kwargs), index=self.index)
 
