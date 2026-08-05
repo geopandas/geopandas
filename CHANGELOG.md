@@ -23,6 +23,8 @@ Bug fixes:
   x-axis (#3773).
 - Fix ``GeoDataFrame.explore()`` ignoring custom ``legend_kwds={"labels": ...}``
   for categorical and boolean columns (#3496).
+- Fix ``GeoDataFrame.explode()`` raising a cryptic error when passing multiple
+  (non-geometry) columns; it now falls back to the pandas multi-column explode (#2753).
 
 
 Community:
