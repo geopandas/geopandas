@@ -9,6 +9,8 @@ New features and improvements:
 - Add ``grid_size`` parameter to ``union``, ``difference``, ``symmetric_difference``
   and ``intersection`` (#3593).
 - `read_parquet` now support direct reading from HTTP/HTTPS protocols (#3699)
+- Added `geopandas.read_file_info` to expose information about file layers, including layer
+  metadata (this is an alias for `pyogrio.read_info`)
 
 Deprecations and compatibility notes:
 
