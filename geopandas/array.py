@@ -73,6 +73,23 @@ class GeometryDtype(ExtensionDtype):
     type = BaseGeometry
     name = "geometry"
     na_value = None
+    _metadata: tuple[str, ...] = ("crs",)
+
+    def __init__(self, crs: CRS | None, **kwargs):
+        self.crs = crs
+
+    def __str__(self):
+        return "geometry"
+
+    def __eq__(self, other):
+        if other == "geometry":
+            return True  # legacy compat TODO this is going to be a mess
+        super().__eq__(other)
+
+    def __hash__(self):
+        # This is here because python requires __hash__ to be defined
+        # if __eq__ is overwritten for something to be hashable
+        return hash(self.crs)
 
     @classmethod
     def construct_from_string(cls, string):
@@ -81,7 +98,7 @@ class GeometryDtype(ExtensionDtype):
                 f"'construct_from_string' expects a string, got {type(string)}"
             )
         elif string == cls.name:
-            return cls()
+            return cls(None)  # TODO, is this a bad idea?
         else:
             raise TypeError(f"Cannot construct a '{cls.__name__}' from '{string}'")
 
@@ -349,7 +366,9 @@ class GeometryArray(ExtensionArray):
     It also holds the array-based implementations.
     """
 
-    _dtype = GeometryDtype()
+    @property
+    def _dtype(self):
+        return GeometryDtype(self.crs)
 
     def __init__(self, data, crs: Any | None = None):
         if isinstance(data, self.__class__):

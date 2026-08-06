@@ -17,14 +17,14 @@ import pytest
 @pytest.fixture
 def s():
     return pd.Series(
-        [Point(x, y) for x, y in zip(range(3), range(3))], dtype=GeometryDtype()
+        [Point(x, y) for x, y in zip(range(3), range(3))], dtype=GeometryDtype(None)
     )
 
 
 @pytest.fixture
 def s2():
     return pd.Series(
-        [Point(x, y + 1) for x, y in zip(range(3), range(3))], dtype=GeometryDtype()
+        [Point(x, y + 1) for x, y in zip(range(3), range(3))], dtype=GeometryDtype(None)
     )
 
 
