@@ -113,9 +113,26 @@ io_engine = Option(
 )
 
 
+def _validate_geodesic_calculation(value):
+    if not isinstance(value, bool):
+        raise ValueError("geodesic_calculation must be a boolean value")
+
+geodesic_calculation = Option(
+    key="geodesic_calculation",
+    default_value=False,
+    doc=(
+        "Whether to use geodesic calculations for area computations when the CRS "
+        "is geographic. If False, will use planar calculations."
+    ),
+    validator=_validate_geodesic_calculation,
+    callback=None,
+)
+
+
 options = Options(
     {
         "display_precision": display_precision,
         "io_engine": io_engine,
+        "geodesic_calculation":geodesic_calculation
     }
 )
