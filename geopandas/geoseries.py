@@ -26,8 +26,6 @@ from .array import (
     from_wkb,
     from_wkt,
     points_from_xy,
-    to_wkb,
-    to_wkt,
 )
 from .base import is_geometry_type
 
@@ -1403,7 +1401,7 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         3                                                  NaN
         dtype: str
         """
-        return Series(to_wkb(self.array, hex=hex, **kwargs), index=self.index)
+        return Series(self.array.to_wkb(hex=hex, **kwargs), index=self.index)
 
     def to_wkt(self, **kwargs) -> Series:
         """Convert GeoSeries geometries to WKT.
@@ -1438,7 +1436,7 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         --------
         GeoSeries.to_wkb
         """
-        return Series(to_wkt(self.array, **kwargs), index=self.index)
+        return Series(self.array.to_wkt(**kwargs), index=self.index)
 
     def to_arrow(self, geometry_encoding="WKB", interleaved=True, include_z=None):
         """Encode a GeoSeries to GeoArrow format.

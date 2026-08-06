@@ -14,7 +14,7 @@ from shapely.geometry import mapping, shape
 from shapely.geometry.base import BaseGeometry
 
 import geopandas
-from geopandas.array import GeometryArray, GeometryDtype, from_shapely, to_wkb, to_wkt
+from geopandas.array import GeometryArray, GeometryDtype, from_shapely
 from geopandas.base import GeoPandasBase, is_geometry_type
 from geopandas.explore import _explore
 from geopandas.geoseries import GeoSeries
@@ -1296,7 +1296,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
 
         # Encode all geometry columns to WKB
         for col in df.columns[df.dtypes == "geometry"]:
-            df[col] = to_wkb(df[col].values, hex=hex, **kwargs)
+            df[col] = df[col].values.to_wkb(hex=hex, **kwargs)
 
         return df
 
@@ -1318,7 +1318,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
 
         # Encode all geometry columns to WKT
         for col in df.columns[df.dtypes == "geometry"]:
-            df[col] = to_wkt(df[col].values, **kwargs)
+            df[col] = df[col].values.to_wkt(**kwargs)
 
         return df
 
