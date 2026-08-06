@@ -449,6 +449,13 @@ class GeoSeries(GeoPandasBase, Series):
         --------
         GeoSeries.from_wkt
 
+        Notes
+        -----
+        The WKB specification cannot represent ``LinearRing`` geometries, so a
+        ``LinearRing`` encoded to WKB is stored as a ``LineString`` and is read
+        back here as a ``LineString`` (see :func:`shapely.from_wkb`). Use a format
+        that preserves the ring type, such as WKT, if that distinction matters.
+
         Examples
         --------
         >>> wkbs = [
@@ -1376,6 +1383,15 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         See Also
         --------
         GeoSeries.to_wkt
+
+        Notes
+        -----
+        The WKB specification cannot represent ``LinearRing`` geometries, so a
+        ``LinearRing`` is exported as an equivalent ``LineString`` (see the note in
+        :func:`shapely.to_wkb`). GeoPandas also uses WKB internally when a
+        ``GeoSeries`` is pickled, so a ``LinearRing`` that is round-tripped through
+        WKB or through ``pickle`` comes back as a ``LineString``. Use a format that
+        preserves the ring type, such as WKT, if that distinction matters.
 
         Examples
         --------
