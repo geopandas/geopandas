@@ -40,11 +40,13 @@ try:
     PYOGRIO_GE_0121 = Version(Version(pyogrio.__version__).base_version) >= Version(
         "0.12.1"
     )
+    PYOGRIO_HAS_KML = "KML" in pyogrio.list_drivers()
 except ImportError:
     pyogrio = False
     PYOGRIO_GE_090 = False
     PYOGRIO_GE_012 = False
     PYOGRIO_GE_0121 = False
+    PYOGRIO_HAS_KML = False
 
 
 try:
@@ -57,6 +59,9 @@ except ImportError:
 
 
 PYOGRIO_MARK = pytest.mark.skipif(not pyogrio, reason="pyogrio not installed")
+PYOGRIO_KML_MARK = pytest.mark.skipif(
+    not PYOGRIO_HAS_KML, reason="KML driver not available in pyogrio"
+)
 FIONA_MARK = pytest.mark.skipif(not fiona, reason="fiona not installed")
 
 
@@ -514,6 +519,43 @@ def test_to_file_column_len(tmpdir, df_points, engine):
         and "Column names longer than 10 characters will be truncated" in str(w.message)
     ]
     assert len(column_names_warning) == 1
+
+
+@PYOGRIO_KML_MARK
+def test_to_file_kml_pyogrio_keeps_extended_data_aligned(tmp_path):
+    df = GeoDataFrame(
+        {
+            "text_a": ["foo", "bar"],
+            "text_b": ["lorem", "ipsum"],
+            "int_val": [1, 2],
+            "float_val": [0.1, 0.2],
+            "geometry": [Point(-105, 40), Point(-110, 45)],
+        },
+        crs="EPSG:4326",
+    )
+    filename = tmp_path / "test.kml"
+
+    df.to_file(filename, driver="kml", engine="pyogrio")
+
+    import xml.etree.ElementTree as ET
+
+    root = ET.parse(filename).getroot()
+    ns = {"kml": "http://www.opengis.net/kml/2.2"}
+    simple_fields = root.findall(".//kml:SimpleField", ns)
+    simple_data = root.findall(".//kml:Placemark[1]//kml:SimpleData", ns)
+
+    assert [field.get("name") for field in simple_fields] == [
+        "text_a",
+        "text_b",
+        "int_val",
+        "float_val",
+    ]
+    assert [(data.get("name"), data.text) for data in simple_data] == [
+        ("text_a", "foo"),
+        ("text_b", "lorem"),
+        ("int_val", "1"),
+        ("float_val", "0.1"),
+    ]
 
 
 def test_to_file_with_duplicate_columns(tmpdir, engine):
