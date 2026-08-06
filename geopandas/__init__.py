@@ -13,6 +13,7 @@ from geopandas.tools import sjoin, sjoin_nearest
 from geopandas.tools import overlay
 from geopandas.tools._show_versions import show_versions
 from geopandas.tools import clip
+from geopandas.tools import make_grid
 
 
 import geopandas.datasets

@@ -6,6 +6,7 @@ Tools
 .. autosummary::
    :toctree: api/
 
+   make_grid
    sjoin
    sjoin_nearest
    overlay
