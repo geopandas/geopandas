@@ -43,6 +43,12 @@ class TestSeries:
         for f, s in self.pts.groupby(lambda x: x % 2):
             assert type(s) is GeoSeries
 
+    def test_apply_geometry_returning_callback(self):
+        # GH-3698: GeoSeries.apply should return GeoSeries when the callback
+        # returns a geometry, not a plain Series
+        result = self.pts.apply(lambda geom: geom)
+        assert type(result) is GeoSeries
+
 
 class TestDataFrame:
     def setup_method(self):
