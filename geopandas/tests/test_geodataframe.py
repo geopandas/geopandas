@@ -854,6 +854,23 @@ class TestDataFrame:
         res = GeoDataFrame.from_features(gdf)
         assert_frame_equal(res, expected)
 
+    def test_from_features_empty_list_with_crs(self):
+        # GH-3777: from_features([], crs=...) raised ValueError
+        result = GeoDataFrame.from_features([], crs="EPSG:4326")
+        assert isinstance(result, GeoDataFrame)
+        assert result.shape == (0, 1)
+        assert list(result.columns) == ["geometry"]
+        if compat.HAS_PYPROJ:
+            assert result.crs.to_epsg() == 4326
+        else:
+            assert result.crs is None
+
+        # Also works with no CRS
+        result_no_crs = GeoDataFrame.from_features([])
+        assert isinstance(result_no_crs, GeoDataFrame)
+        assert result_no_crs.shape == (0, 1)
+        assert result_no_crs.crs is None
+
     def test_dataframe_to_geodataframe(self):
         df = pd.DataFrame(
             {"A": range(len(self.df)), "location": np.array(self.df.geometry)},
