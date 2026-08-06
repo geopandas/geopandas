@@ -183,9 +183,11 @@ def construct_wkb_array(
     wkb_arr = shapely.to_wkb(shapely_arr, **kwargs)
     extension_metadata = {"ARROW:extension:name": "geoarrow.wkb"}
     if crs is not None:
-        extension_metadata["ARROW:extension:metadata"] = json.dumps(
-            {"crs": crs.to_json_dict()}
-        )
+        from geopandas.io.arrow import _remove_id_from_member_of_ensembles
+
+        crs_json = crs.to_json_dict()
+        _remove_id_from_member_of_ensembles(crs_json)
+        extension_metadata["ARROW:extension:metadata"] = json.dumps({"crs": crs_json})
     else:
         # In theory this should not be needed, but otherwise pyarrow < 17
         # crashes on receiving such data through C Data Interface
@@ -299,9 +301,11 @@ def construct_geometry_array(
 
     extension_metadata: dict[str, str] = {}
     if crs is not None:
-        extension_metadata["ARROW:extension:metadata"] = json.dumps(
-            {"crs": crs.to_json_dict()}
-        )
+        from geopandas.io.arrow import _remove_id_from_member_of_ensembles
+
+        crs_json = crs.to_json_dict()
+        _remove_id_from_member_of_ensembles(crs_json)
+        extension_metadata["ARROW:extension:metadata"] = json.dumps({"crs": crs_json})
     else:
         # In theory this should not be needed, but otherwise pyarrow < 17
         # crashes on receiving such data through C Data Interface

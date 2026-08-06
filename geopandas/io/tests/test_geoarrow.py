@@ -250,6 +250,27 @@ def test_geoarrow_series_name_crs(encoding):
     assert field.name == ""
 
 
+@pytest.mark.parametrize("encoding", ["WKB", "geoarrow"])
+def test_geoarrow_crs_metadata_datum_ensemble(encoding):
+    # The field-level "ARROW:extension:metadata" crs must be sanitized the
+    # same way as the top-level GeoParquet/GeoFeather "geo" metadata crs, or
+    # readers that only understand the older PROJ datum ensemble member
+    # format will fail to parse it (see test_crs_metadata_datum_ensemble in
+    # test_arrow.py and https://github.com/geopandas/geopandas/pull/2453)
+    pyproj = pytest.importorskip("pyproj")
+
+    gdf = GeoDataFrame(geometry=[box(0, 0, 10, 10)], crs="epsg:4326")
+    result = pa_table(gdf.to_arrow(geometry_encoding=encoding))
+    meta = json.loads(
+        result.schema.field("geometry").metadata[b"ARROW:extension:metadata"]
+    )
+    crs_json = meta["crs"]
+    if "datum_ensemble" in crs_json:
+        assert "id" not in crs_json["datum_ensemble"]["members"][0]
+    # ensure the sanitized crs still roundtrips to an equivalent CRS
+    assert pyproj.CRS(crs_json) == gdf.crs
+
+
 def test_geoarrow_unsupported_encoding():
     gdf = GeoDataFrame(geometry=[box(0, 0, 10, 10)], crs="epsg:4326")
 
