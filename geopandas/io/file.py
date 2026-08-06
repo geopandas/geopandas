@@ -194,6 +194,20 @@ def _is_url(url):
         return False
 
 
+def _urlopen_geopandas(url, headers=None):
+    """Open *url* with a geopandas User-Agent.
+
+    Some servers reject the default Python urllib User-Agent with a 403
+    (https://github.com/geopandas/geopandas/issues/3441).
+    """
+    import geopandas
+
+    request_headers = {"User-Agent": f"geopandas/{geopandas.__version__}"}
+    if headers is not None:
+        request_headers.update(headers)
+    return urllib.request.urlopen(Request(url, headers=request_headers))
+
+
 def _read_file(
     filename, bbox=None, mask=None, columns=None, rows=None, engine=None, **kwargs
 ):
@@ -297,8 +311,8 @@ def _read_file(
         # otherwise still download manually because pyogrio/fiona don't support
         # all types of urls (https://github.com/geopandas/geopandas/issues/2908)
         try:
-            with urllib.request.urlopen(
-                Request(filename, headers={"Range": "bytes=0-1"})
+            with _urlopen_geopandas(
+                filename, headers={"Range": "bytes=0-1"}
             ) as response:
                 if (
                     response.headers.get("Accept-Ranges") == "none"
@@ -309,7 +323,7 @@ def _read_file(
             from_bytes = True
 
         if from_bytes:
-            with urllib.request.urlopen(filename) as response:
+            with _urlopen_geopandas(filename) as response:
                 filename = response.read()
 
     if engine == "pyogrio":
