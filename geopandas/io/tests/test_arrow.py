@@ -1069,17 +1069,12 @@ def test_parquet_read_partitioned_dataset_fsspec(tmpdir, naturalearth_lowres):
     ["point", "linestring", "polygon", "multipoint", "multilinestring", "multipolygon"],
 )
 def test_read_parquet_geoarrow(geometry_type):
+    data_dir = DATA_PATH / "arrow" / "geoparquet" / "1.1.0"
     result = geopandas.read_parquet(
-        DATA_PATH
-        / "arrow"
-        / "geoparquet"
-        / f"data-{geometry_type}-encoding_native.parquet"
+        data_dir / f"data-{geometry_type}-encoding_native.parquet"
     )
     expected = geopandas.read_parquet(
-        DATA_PATH
-        / "arrow"
-        / "geoparquet"
-        / f"data-{geometry_type}-encoding_wkb.parquet"
+        data_dir / f"data-{geometry_type}-encoding_wkb.parquet"
     )
     assert_geodataframe_equal(result, expected, check_crs=True)
 
@@ -1089,12 +1084,8 @@ def test_read_parquet_geoarrow(geometry_type):
     ["point", "linestring", "polygon", "multipoint", "multilinestring", "multipolygon"],
 )
 def test_geoarrow_roundtrip(tmp_path, geometry_type):
-    df = geopandas.read_parquet(
-        DATA_PATH
-        / "arrow"
-        / "geoparquet"
-        / f"data-{geometry_type}-encoding_wkb.parquet"
-    )
+    data_dir = DATA_PATH / "arrow" / "geoparquet" / "1.1.0"
+    df = geopandas.read_parquet(data_dir / f"data-{geometry_type}-encoding_wkb.parquet")
 
     df.to_parquet(tmp_path / "test.parquet", geometry_encoding="geoarrow")
     result = geopandas.read_parquet(tmp_path / "test.parquet")
@@ -1437,3 +1428,18 @@ def test_read_parquet_from_https():
     path = "https://github.com/opengeospatial/geoparquet/raw/refs/tags/v1.1.0/test_data/data-polygon-encoding_wkb.parquet"
     df = geopandas.read_parquet(path)
     assert df.shape == (4, 2)
+
+
+@pytest.mark.parametrize(
+    "geometry_type",
+    ["point", "linestring", "polygon", "multipoint", "multilinestring", "multipolygon"],
+)
+def test_read_parquet_2_0_native(geometry_type):
+    data_dir = DATA_PATH / "arrow" / "geoparquet"
+    result = geopandas.read_parquet(
+        data_dir / "2.0.0" / f"data-{geometry_type}-encoding_wkb.parquet"
+    )
+    expected = geopandas.read_parquet(
+        data_dir / "1.1.0" / f"data-{geometry_type}-encoding_wkb.parquet"
+    )
+    assert_geodataframe_equal(result, expected, check_crs=True)
