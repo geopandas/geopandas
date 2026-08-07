@@ -1428,3 +1428,18 @@ def test_read_parquet_from_https():
     path = "https://github.com/opengeospatial/geoparquet/raw/refs/tags/v1.1.0/test_data/data-polygon-encoding_wkb.parquet"
     df = geopandas.read_parquet(path)
     assert df.shape == (4, 2)
+
+
+@pytest.mark.parametrize(
+    "geometry_type",
+    ["point", "linestring", "polygon", "multipoint", "multilinestring", "multipolygon"],
+)
+def test_read_parquet_2_0_native(geometry_type):
+    data_dir = DATA_PATH / "arrow" / "geoparquet"
+    result = geopandas.read_parquet(
+        data_dir / "2.0.0" / f"data-{geometry_type}-encoding_wkb.parquet"
+    )
+    expected = geopandas.read_parquet(
+        data_dir / "1.1.0" / f"data-{geometry_type}-encoding_wkb.parquet"
+    )
+    assert_geodataframe_equal(result, expected, check_crs=True)
