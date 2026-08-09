@@ -438,7 +438,7 @@ def _frame_join(
     left_df : GeoDataFrame
     right_df : GeoDataFrame
     indices : tuple of ndarray
-        Indices returned by the geometric join. Tuple with with integer
+        Indices returned by the geometric join. Tuple with integer
         indices representing the matches from `left_df` and `right_df`
         respectively.
     distances : ndarray, optional
