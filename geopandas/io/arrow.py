@@ -417,6 +417,8 @@ def _geopandas_to_arrow(
         write_covering_bbox=write_covering_bbox,
     )
     if schema_version == "2.0.0":
+        # ensure `table` uses extension types and not just extension field metadata
+        # such that pyarrow.parquet will write the Geometry logical type
         with _ensure_geoarrow_wkb_ext_type_registered():
             for col, encoding in geometry_encoding_dict.items():
                 if encoding == "WKB":
