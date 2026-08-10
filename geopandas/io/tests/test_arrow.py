@@ -383,10 +383,11 @@ def test_pandas_parquet_roundtrip2(test_dataset, tmpdir, request):
     assert_frame_equal(df, pq_df)
 
 
+@pytest.mark.parametrize("schema_version", [None, "1.0.0", "1.1.0", "2.0.0"])
 @pytest.mark.parametrize(
     "test_dataset", ["naturalearth_lowres", "naturalearth_cities", "nybb_filename"]
 )
-def test_roundtrip(tmpdir, file_format, test_dataset, request):
+def test_roundtrip(tmpdir, file_format, test_dataset, schema_version, request):
     """Writing to parquet should not raise errors, and should not alter original
     GeoDataFrame
     """
@@ -398,7 +399,7 @@ def test_roundtrip(tmpdir, file_format, test_dataset, request):
 
     filename = os.path.join(str(tmpdir), "test.pq")
 
-    writer(df, filename)
+    writer(df, filename, schema_version=schema_version)
 
     assert os.path.exists(filename)
 
@@ -1437,3 +1438,48 @@ def test_read_parquet_from_https():
     path = "https://github.com/opengeospatial/geoparquet/raw/refs/tags/v1.1.0/test_data/data-polygon-encoding_wkb.parquet"
     df = geopandas.read_parquet(path)
     assert df.shape == (4, 2)
+
+
+@pytest.mark.skipif(
+    Version(pyarrow.__version__) < Version("21.0.0"),
+    reason="Writing GeoParquet 2.0 files requires pyarrow>=21.0",
+)
+def test_write_parquet_2_0(tmp_path):
+    gdf = GeoDataFrame(
+        {"col": [1, 2, 3]},
+        geometry=geopandas.points_from_xy([1, 2, 3], [1, 2, 3]),
+        crs="EPSG:4326",
+    )
+    gdf.to_parquet(tmp_path / "test-2_0.parquet", schema_version="2.0.0")
+
+    meta = pq.read_metadata(tmp_path / "test-2_0.parquet")
+    metadata = json.loads(meta.metadata[b"geo"])
+    assert metadata["version"] == "2.0.0"
+
+    # verify the Parquet file is indeed using the Parquet logical types
+    geo_col = meta.schema.column(1)
+    assert geo_col.name == "geometry"
+    assert geo_col.physical_type == "BYTE_ARRAY"
+    assert str(geo_col.logical_type).startswith("Geometry")
+
+    # also verify the statistics were written by default
+    col_chunk = meta.row_group(0).column(1)
+    assert col_chunk.is_geo_stats_set
+    assert col_chunk.geo_statistics is not None
+
+
+@pytest.mark.skipif(
+    Version(pyarrow.__version__) >= Version("21.0.0"),
+    reason="Writing GeoParquet 2.0 files requires pyarrow>=21.0",
+)
+def test_write_parquet_2_0_old_pyarrow(tmp_path):
+    gdf = GeoDataFrame(
+        {"col": [1, 2, 3]},
+        geometry=geopandas.points_from_xy([1, 2, 3], [1, 2, 3]),
+        crs="EPSG:4326",
+    )
+    with pytest.raises(
+        ValueError,
+        match=re.escape("Writing GeoParquet 2.0 files requires pyarrow>=21.0"),
+    ):
+        gdf.to_parquet(tmp_path / "test-2_0.parquet", schema_version="2.0.0")
