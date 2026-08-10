@@ -1,3 +1,4 @@
+import contextlib
 import json
 import os
 import pathlib
@@ -1446,17 +1447,34 @@ def test_read_parquet_from_https():
     assert df.shape == (4, 2)
 
 
+@contextlib.contextmanager
+def with_geoarrow_extension_types():
+    gp = pytest.importorskip("geoarrow.pyarrow")
+    gp.register_extension_types()
+    try:
+        yield
+    finally:
+        gp.unregister_extension_types()
+
+
 @pytest.mark.skipif(
     Version(pyarrow.__version__) < Version("21.0.0"),
     reason="Writing GeoParquet 2.0 files requires pyarrow>=21.0",
 )
-def test_write_parquet_2_0(tmp_path):
+@pytest.mark.parametrize("extension_type_registered", [False, True])
+def test_write_parquet_2_0(tmp_path, extension_type_registered):
+    if extension_type_registered:
+        context = with_geoarrow_extension_types
+    else:
+        context = contextlib.nullcontext
+
     gdf = GeoDataFrame(
         {"col": [1, 2, 3]},
         geometry=geopandas.points_from_xy([1, 2, 3], [1, 2, 3]),
         crs="EPSG:4326",
     )
-    gdf.to_parquet(tmp_path / "test-2_0.parquet", schema_version="2.0.0")
+    with context():
+        gdf.to_parquet(tmp_path / "test-2_0.parquet", schema_version="2.0.0")
 
     meta = pq.read_metadata(tmp_path / "test-2_0.parquet")
     metadata = json.loads(meta.metadata[b"geo"])

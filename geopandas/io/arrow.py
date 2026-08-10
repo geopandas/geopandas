@@ -369,6 +369,7 @@ def _ensure_geoarrow_wkb_ext_type_registered():
         pyarrow.register_extension_type(_WkbExtensionType())
     except Exception:
         # already registered by other package -> use that one
+        yield
         return
 
     # otherwise we have registered our dummy -> unregister at the end
