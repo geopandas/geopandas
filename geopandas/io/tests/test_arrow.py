@@ -1430,6 +1430,10 @@ def test_read_parquet_from_https():
     assert df.shape == (4, 2)
 
 
+@pytest.mark.skipif(
+    Version(pyarrow.__version__) < Version("20.0.0"),
+    reason="Reading GeoParquet 2.0 files requires pyarrow>=20.0.0",
+)
 @pytest.mark.parametrize(
     "geometry_type",
     ["point", "linestring", "polygon", "multipoint", "multilinestring", "multipolygon"],
@@ -1443,3 +1447,13 @@ def test_read_parquet_2_0_native(geometry_type):
         data_dir / "1.1.0" / f"data-{geometry_type}-encoding_wkb.parquet"
     )
     assert_geodataframe_equal(result, expected, check_crs=True)
+
+
+@pytest.mark.skipif(
+    Version(pyarrow.__version__) >= Version("20.0.0"),
+    reason="Reading GeoParquet 2.0 files requires pyarrow>=20.0.0",
+)
+def test_read_parquet_2_0_error_old_pyarrow():
+    data_dir = DATA_PATH / "arrow" / "geoparquet"
+    with pytest.raises(OSError, match=r"Reading GeoParquet 2\.0 files"):
+        geopandas.read_parquet(data_dir / "2.0.0" / "data-point-encoding_wkb.parquet")
