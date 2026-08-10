@@ -391,6 +391,9 @@ def test_roundtrip(tmpdir, file_format, test_dataset, schema_version, request):
     """Writing to parquet should not raise errors, and should not alter original
     GeoDataFrame
     """
+    if schema_version == "2.0.0" and Version(pyarrow.__version__) < Version("21.0.0"):
+        pytest.skip("Writing GeoParquet 2.0 files requires pyarrow>=21.0")
+
     path = request.getfixturevalue(test_dataset)
     reader, writer = file_format
 
@@ -921,6 +924,9 @@ def test_write_spec_version(tmpdir, format, schema_version):
         from pyarrow.feather import read_table
     else:
         from pyarrow.parquet import read_table
+
+    if schema_version == "2.0.0" and Version(pyarrow.__version__) < Version("21.0.0"):
+        pytest.skip("Writing GeoParquet 2.0 files requires pyarrow>=21.0")
 
     filename = os.path.join(str(tmpdir), f"test.{format}")
     gdf = geopandas.GeoDataFrame(geometry=[box(0, 0, 10, 10)], crs="EPSG:4326")
