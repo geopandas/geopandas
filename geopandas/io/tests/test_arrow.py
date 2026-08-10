@@ -1,3 +1,4 @@
+import contextlib
 import json
 import os
 import pathlib
@@ -1430,19 +1431,36 @@ def test_read_parquet_from_https():
     assert df.shape == (4, 2)
 
 
+@contextlib.contextmanager
+def with_geoarrow_extension_types():
+    gp = pytest.importorskip("geoarrow.pyarrow")
+    gp.register_extension_types()
+    try:
+        yield
+    finally:
+        gp.unregister_extension_types()
+
+
 @pytest.mark.skipif(
     Version(pyarrow.__version__) < Version("20.0.0"),
     reason="Reading GeoParquet 2.0 files requires pyarrow>=20.0.0",
 )
+@pytest.mark.parametrize("extension_type_registered", [False, True])
 @pytest.mark.parametrize(
     "geometry_type",
     ["point", "linestring", "polygon", "multipoint", "multilinestring", "multipolygon"],
 )
-def test_read_parquet_2_0_native(geometry_type):
+def test_read_parquet_2_0_native(geometry_type, extension_type_registered):
     data_dir = DATA_PATH / "arrow" / "geoparquet"
-    result = geopandas.read_parquet(
-        data_dir / "2.0.0" / f"data-{geometry_type}-encoding_wkb.parquet"
-    )
+    if extension_type_registered:
+        context = with_geoarrow_extension_types
+    else:
+        context = contextlib.nullcontext
+
+    with context():
+        result = geopandas.read_parquet(
+            data_dir / "2.0.0" / f"data-{geometry_type}-encoding_wkb.parquet"
+        )
     expected = geopandas.read_parquet(
         data_dir / "1.1.0" / f"data-{geometry_type}-encoding_wkb.parquet"
     )
