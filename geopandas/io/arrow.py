@@ -648,12 +648,22 @@ def _read_parquet_schema_and_metadata(path, filesystem):
     that the ParquetDataset interface doesn't allow passing the filters on read)
 
     """
+    import pyarrow
     from pyarrow import parquet
 
     try:
-        schema = parquet.ParquetDataset(path, filesystem=filesystem).schema
-    except Exception:
-        schema = parquet.read_schema(path, filesystem=filesystem)
+        try:
+            schema = parquet.ParquetDataset(path, filesystem=filesystem).schema
+        except Exception:
+            schema = parquet.read_schema(path, filesystem=filesystem)
+    except OSError as exc:
+        if "Thrift LogicalType that is not recognized" in str(exc):
+            raise OSError(
+                "Reading GeoParquet 2.0 files with Parquet Geometry/Geography logical "
+                "types requires pyarrow>=20.0, while pyarrow "
+                f"{pyarrow.__version__} is installed."
+            ) from exc
+        raise
 
     metadata = schema.metadata
 
@@ -690,7 +700,7 @@ def _read_parquet(
       columns, the first available geometry column will be set as the geometry
       column of the returned GeoDataFrame.
 
-    Supports versions 0.1.0, 0.4.0, 1.0.0, and 1.1.0 of the GeoParquet
+    Supports versions 0.1.0, 0.4.0, 1.0.0, 1.1.0 and 2.0.0 of the GeoParquet
     specification at: https://github.com/opengeospatial/geoparquet
 
     If 'crs' key is not present in the GeoParquet metadata associated with the
