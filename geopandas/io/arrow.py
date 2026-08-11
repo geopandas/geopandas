@@ -138,6 +138,12 @@ def _create_metadata(
             f"schema_version must be one of: {', '.join(SUPPORTED_VERSIONS)}"
         )
 
+    if write_covering_bbox and schema_version < "1.1.0":
+        raise ValueError(
+            "Writing a bounding box column is only supported since GeoParquet 1.1.0, "
+            f"while a {schema_version=} is specified."
+        )
+
     # Construct metadata for each geometry
     column_metadata = {}
     for col in df.columns[df.dtypes == "geometry"]:

@@ -89,6 +89,15 @@ def test_create_metadata(naturalearth_lowres):
     metadata = _create_metadata(df)
     assert metadata["columns"]["geometry"]["encoding"] == "WKB"
 
+    # specifying write_covering_bbox sets default schema to 1.1.0
+    metadata = _create_metadata(df, write_covering_bbox=True)
+    assert metadata["version"] == "1.1.0"
+
+    with pytest.raises(
+        ValueError, match="Writing a bounding box column is only supported since"
+    ):
+        _create_metadata(df, write_covering_bbox=True, schema_version="1.0.0")
+
 
 def test_create_metadata_with_z_geometries():
     geometry_types = [
