@@ -55,6 +55,31 @@ def check_available_postgis_drivers() -> list[str]:
 
 POSTGIS_DRIVERS = check_available_postgis_drivers()
 
+POSTGIS_AVAILABLE = None
+
+
+def check_postgis_available(driver) -> bool:
+    """
+    Check if a PostGIS database is available for testing.
+
+    Check this once and cache the result, because this can be slow on Windows.
+    """
+    global POSTGIS_AVAILABLE
+    if POSTGIS_AVAILABLE is not None:
+        return POSTGIS_AVAILABLE
+
+    psycopg = pytest.importorskip(driver)
+
+    try:
+        con = psycopg.connect(**prepare_database_credentials())
+    except psycopg.OperationalError:
+        POSTGIS_AVAILABLE = False
+    else:
+        con.close()
+        POSTGIS_AVAILABLE = True
+
+    return POSTGIS_AVAILABLE
+
 
 def prepare_database_credentials() -> dict:
     """Gather postgres connection credentials from environment variables."""
@@ -73,6 +98,9 @@ def connection_postgis(request):
 
     Use this as an indirect fixture, where the request parameter is POSTGIS_DRIVERS."""
     psycopg = pytest.importorskip(request.param)
+
+    if not check_postgis_available(request.param):
+        pytest.skip("Cannot connect with postgresql database")
 
     try:
         con = psycopg.connect(**prepare_database_credentials())
