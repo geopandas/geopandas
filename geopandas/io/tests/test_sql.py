@@ -70,6 +70,7 @@ def check_postgis_available(driver) -> bool:
 
     psycopg = pytest.importorskip(driver)
 
+    print("testing if PostGIS database is available for testing")
     try:
         con = psycopg.connect(**prepare_database_credentials())
     except psycopg.OperationalError:
@@ -123,6 +124,9 @@ def engine_postgis(request):
     """
     sqlalchemy = pytest.importorskip("sqlalchemy")
     from sqlalchemy.engine.url import URL
+
+    if not check_postgis_available(request.param):
+        pytest.skip("Cannot connect with postgresql database")
 
     credentials = prepare_database_credentials()
     try:
