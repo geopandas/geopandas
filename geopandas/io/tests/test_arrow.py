@@ -1507,3 +1507,24 @@ def test_write_parquet_2_0_old_pyarrow(tmp_path):
         match=re.escape("Writing GeoParquet 2.0 files requires pyarrow>=21.0"),
     ):
         gdf.to_parquet(tmp_path / "test-2_0.parquet", schema_version="2.0.0")
+
+
+@pytest.mark.filterwarnings("ignore:.*proxy.*:RuntimeWarning")
+@pytest.mark.skipif(
+    Version(pyarrow.__version__) < Version("21.0.0"),
+    reason="Writing GeoParquet 2.0 files requires pyarrow>=21.0",
+)
+def test_write_parquet_2_0_gdal_readable(tmp_path):
+    pyogrio = pytest.importorskip("pyogrio")
+    if "Parquet" not in pyogrio.list_drivers():
+        pytest.skip("Test needs pyogrio/GDAL with Parquet support")
+
+    gdf = GeoDataFrame(
+        {"col": [1, 2, 3]},
+        geometry=geopandas.points_from_xy([1, 2, 3], [1, 2, 3]),
+        crs="EPSG:4326",
+    )
+    gdf.to_parquet(tmp_path / "test-2_0.parquet", schema_version="2.0.0")
+
+    result = geopandas.read_file(tmp_path / "test-2_0.parquet")
+    assert_geodataframe_equal(result, gdf)
