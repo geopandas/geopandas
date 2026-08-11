@@ -647,6 +647,55 @@ class TestExplore:
         out_str = self._fetch_map_string(m)
         assert "red'></span>NaN" in out_str
 
+    def test_categorical_legend_custom_labels(self):
+        # GH3496: custom legend labels must be honored for categorical and
+        # boolean columns
+        labels = [
+            "Cat0",
+            "Cat1",
+            "Cat2",
+            "Cat3",
+            "Cat4",
+            "Cat5",
+            "Cat6",
+            "Cat7",
+        ]
+        m = self.world.explore("continent", legend=True, legend_kwds={"labels": labels})
+        out_str = self._fetch_map_string(m)
+        for label in labels:
+            assert label in out_str
+        # original category names must no longer appear as legend rows
+        assert "'></span>Africa" not in out_str
+        assert "'></span>SouthAmerica" not in out_str
+
+        # a length mismatch must raise a clear error
+        with pytest.raises(ValueError, match="number of legend labels"):
+            self.world.explore(
+                "continent", legend=True, legend_kwds={"labels": ["only", "two"]}
+            )
+
+        # custom labels combined with a missing (NaN) row: the NaN entry must
+        # still render after the custom labels and not consume a custom label
+        m = self.missing.explore(
+            "continent",
+            legend=True,
+            legend_kwds={"labels": labels},
+            missing_kwds={"color": "red"},
+        )
+        out_str = self._fetch_map_string(m)
+        assert "Cat0" in out_str
+        assert "red'></span>NaN" in out_str
+
+        # GH3496: also works for boolean columns (the original reporter's case)
+        nybb_bool = self.nybb.copy()
+        nybb_bool["is_manhattan"] = nybb_bool["BoroName"] == "Manhattan"
+        m = nybb_bool.explore(
+            "is_manhattan", legend=True, legend_kwds={"labels": ["Outer", "Core"]}
+        )
+        out_str = self._fetch_map_string(m)
+        assert "Outer" in out_str
+        assert "Core" in out_str
+
     def test_colorbar(self):
         def quoted_in(find, s):
             return find in s or find.replace("'", '"') in s

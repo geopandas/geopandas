@@ -193,8 +193,8 @@ class TestFrameSindex:
     def test_update_inplace_no_rebuild(self):
         gdf = self.df.copy()
         old_sindex = gdf.sindex
-        gdf.rename(columns={"A": "AA"}, inplace=True)
-        # a rename shouldn't invalidate the index
+        gdf.replace({"A": {1: 2}}, inplace=True)
+        # an inplace replace on another column shouldn't invalidate the index
         assert gdf.has_sindex
         # and the "new" should be the same
         new_sindex = gdf.sindex

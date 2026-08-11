@@ -19,8 +19,9 @@ dependencies:
 
   # optional
   #- geopy
-  - SQLalchemy<2.1 # test oldest support sqlalchemy version
+  - sqlalchemy<2.1 # test oldest support sqlalchemy version
   - libspatialite
+  - rasterio
   - pip
   - pip:
     - geopy
@@ -36,5 +37,6 @@ dependencies:
     - git+https://github.com/python-visualization/folium.git@main
     - git+https://github.com/python-visualization/branca.git@main
     - git+https://github.com/geopandas/xyzservices.git@main
+    - git+https://github.com/geopandas/contextily.git@main
     - git+https://github.com/geopandas/geodatasets.git@main
     - git+https://github.com/geopandas/pyogrio.git@main

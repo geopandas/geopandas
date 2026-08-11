@@ -609,6 +609,15 @@ class TestMethods(extension_tests.BaseMethodsTests):
     def test_argmax_argmin_no_skipna_notimplemented(self):
         pass
 
+    # https://github.com/geopandas/geopandas/issues/1906
+    @pytest.mark.xfail(reason="JSON serialization not yet working")
+    def test_values_for_json(self, data):
+        super().test_values_for_json(data)
+
+    @pytest.mark.xfail(reason="JSON serialization not yet working")
+    def test_json_roundtrip(self, data):
+        super().test_json_roundtrip(data)
+
 
 class TestCasting(extension_tests.BaseCastingTests):
     pass

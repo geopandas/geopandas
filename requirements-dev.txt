@@ -17,6 +17,7 @@ geopy
 matplotlib>=3.9
 mapclassify>=2.7
 xyzservices
+contextily
 folium
 
 # testing
