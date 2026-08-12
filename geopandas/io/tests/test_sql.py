@@ -70,7 +70,6 @@ def check_postgis_available(driver) -> bool:
 
     psycopg = pytest.importorskip(driver)
 
-    print("testing if PostGIS database is available for testing")
     try:
         con = psycopg.connect(**prepare_database_credentials())
     except psycopg.OperationalError:
