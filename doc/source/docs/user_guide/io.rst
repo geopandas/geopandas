@@ -171,6 +171,22 @@ Skip loading geometry from the file:
     )
 
 
+Accessing the feature ID (fid)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Some formats (e.g. GeoPackage) store a feature ID (``fid``) per feature that is
+not included in the GeoDataFrame's columns by default. Pass ``fid_as_index=True``
+to use it as the GeoDataFrame's index instead of the default integer index:
+
+.. note:: Requires the pyogrio engine.
+
+.. code-block:: python
+
+    gdf = geopandas.read_file(
+        geodatasets.get_path("nybb"),
+        fid_as_index=True,
+    )
+
 SQL WHERE filter
 ^^^^^^^^^^^^^^^^
 
