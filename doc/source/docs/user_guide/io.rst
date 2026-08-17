@@ -183,7 +183,7 @@ to use it as the GeoDataFrame's index instead of the default integer index:
 .. code-block:: python
 
     gdf = geopandas.read_file(
-        geodatasets.get_path("nybb"),
+        geodatasets.get_path("spdata.columbus"),
         fid_as_index=True,
     )
 
