@@ -9,6 +9,7 @@ New features and improvements:
 - Add ``grid_size`` parameter to ``union``, ``difference``, ``symmetric_difference``
   and ``intersection`` (#3593).
 - `read_parquet` now support direct reading from HTTP/HTTPS protocols (#3699)
+- Add overload to `GeoSeries.apply` to support callbacks returning `BaseGeometry` (#3698)
 
 Deprecations and compatibility notes:
 
