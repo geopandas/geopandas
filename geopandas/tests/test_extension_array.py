@@ -254,20 +254,48 @@ def invalid_scalar(data):
 # here instead of importing for compatibility
 
 
-@pytest.fixture(
-    params=["sum", "max", "min", "mean", "prod", "std", "var", "median", "kurt", "skew"]
-)
+_all_numeric_reductions = [
+    "count",
+    "sum",
+    "max",
+    "min",
+    "mean",
+    "prod",
+    "std",
+    "var",
+    "median",
+    "kurt",
+    "skew",
+    "sem",
+]
+
+
+@pytest.fixture(params=_all_numeric_reductions)
 def all_numeric_reductions(request):
     """
-    Fixture for numeric reduction names
+    Fixture for numeric reduction names.
     """
     return request.param
 
 
-@pytest.fixture(params=["all", "any"])
+_all_boolean_reductions = ["all", "any"]
+
+
+@pytest.fixture(params=_all_boolean_reductions)
 def all_boolean_reductions(request):
     """
-    Fixture for boolean reduction names
+    Fixture for boolean reduction names.
+    """
+    return request.param
+
+
+_all_reductions = _all_numeric_reductions + _all_boolean_reductions
+
+
+@pytest.fixture(params=_all_reductions)
+def all_reductions(request):
+    """
+    Fixture for all (boolean + numeric) reduction names.
     """
     return request.param
 
