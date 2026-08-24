@@ -90,6 +90,15 @@ def test_create_metadata(naturalearth_lowres):
     metadata = _create_metadata(df)
     assert metadata["columns"]["geometry"]["encoding"] == "WKB"
 
+    # specifying write_covering_bbox sets default schema to 1.1.0
+    metadata = _create_metadata(df, write_covering_bbox=True)
+    assert metadata["version"] == "1.1.0"
+
+    with pytest.raises(
+        ValueError, match="Writing a bounding box column is only supported since"
+    ):
+        _create_metadata(df, write_covering_bbox=True, schema_version="1.0.0")
+
 
 def test_create_metadata_with_z_geometries():
     geometry_types = [
@@ -1077,17 +1086,12 @@ def test_parquet_read_partitioned_dataset_fsspec(tmpdir, naturalearth_lowres):
     ["point", "linestring", "polygon", "multipoint", "multilinestring", "multipolygon"],
 )
 def test_read_parquet_geoarrow(geometry_type):
+    data_dir = DATA_PATH / "arrow" / "geoparquet" / "1.1.0"
     result = geopandas.read_parquet(
-        DATA_PATH
-        / "arrow"
-        / "geoparquet"
-        / f"data-{geometry_type}-encoding_native.parquet"
+        data_dir / f"data-{geometry_type}-encoding_native.parquet"
     )
     expected = geopandas.read_parquet(
-        DATA_PATH
-        / "arrow"
-        / "geoparquet"
-        / f"data-{geometry_type}-encoding_wkb.parquet"
+        data_dir / f"data-{geometry_type}-encoding_wkb.parquet"
     )
     assert_geodataframe_equal(result, expected, check_crs=True)
 
@@ -1097,12 +1101,8 @@ def test_read_parquet_geoarrow(geometry_type):
     ["point", "linestring", "polygon", "multipoint", "multilinestring", "multipolygon"],
 )
 def test_geoarrow_roundtrip(tmp_path, geometry_type):
-    df = geopandas.read_parquet(
-        DATA_PATH
-        / "arrow"
-        / "geoparquet"
-        / f"data-{geometry_type}-encoding_wkb.parquet"
-    )
+    data_dir = DATA_PATH / "arrow" / "geoparquet" / "1.1.0"
+    df = geopandas.read_parquet(data_dir / f"data-{geometry_type}-encoding_wkb.parquet")
 
     df.to_parquet(tmp_path / "test.parquet", geometry_encoding="geoarrow")
     result = geopandas.read_parquet(tmp_path / "test.parquet")
@@ -1455,6 +1455,42 @@ def with_geoarrow_extension_types():
         yield
     finally:
         gp.unregister_extension_types()
+
+
+@pytest.mark.skipif(
+    Version(pyarrow.__version__) < Version("20.0.0"),
+    reason="Reading GeoParquet 2.0 files requires pyarrow>=20.0.0",
+)
+@pytest.mark.parametrize("extension_type_registered", [False, True])
+@pytest.mark.parametrize(
+    "geometry_type",
+    ["point", "linestring", "polygon", "multipoint", "multilinestring", "multipolygon"],
+)
+def test_read_parquet_2_0_native(geometry_type, extension_type_registered):
+    data_dir = DATA_PATH / "arrow" / "geoparquet"
+    if extension_type_registered:
+        context = with_geoarrow_extension_types
+    else:
+        context = contextlib.nullcontext
+
+    with context():
+        result = geopandas.read_parquet(
+            data_dir / "2.0.0" / f"data-{geometry_type}-encoding_wkb.parquet"
+        )
+    expected = geopandas.read_parquet(
+        data_dir / "1.1.0" / f"data-{geometry_type}-encoding_wkb.parquet"
+    )
+    assert_geodataframe_equal(result, expected, check_crs=True)
+
+
+@pytest.mark.skipif(
+    Version(pyarrow.__version__) >= Version("20.0.0"),
+    reason="Reading GeoParquet 2.0 files requires pyarrow>=20.0.0",
+)
+def test_read_parquet_2_0_error_old_pyarrow():
+    data_dir = DATA_PATH / "arrow" / "geoparquet"
+    with pytest.raises(OSError, match=r"Reading GeoParquet 2\.0 files"):
+        geopandas.read_parquet(data_dir / "2.0.0" / "data-point-encoding_wkb.parquet")
 
 
 @pytest.mark.skipif(
