@@ -1879,6 +1879,24 @@ class GeometryArray(ExtensionArray):
 
         return result
 
+    def all(self, *, skipna: bool = True, keepdims: bool = False):
+        """Return whether all elements are truthy.
+
+        Returns
+        -------
+        bool
+        """
+        return self._data.all(keepdims=keepdims)
+
+    def any(self, *, skipna: bool = True, keepdims: bool = False):
+        """Return whether any element is truthy.
+
+        Returns
+        -------
+        bool
+        """
+        return self._data.any(keepdims=keepdims)
+
     def __array__(self, dtype=None, copy=None) -> np.ndarray:
         """Return the data as a numpy array.
 
