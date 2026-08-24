@@ -265,7 +265,7 @@ _all_numeric_reductions = [
     "var",
     "median",
     "kurt",
-    "skew",
+    # "skew",  # skew is defined as non-reduction geospatial method, so skipping here
     "sem",
 ]
 
@@ -297,6 +297,11 @@ def all_reductions(request):
     """
     Fixture for all (boolean + numeric) reduction names.
     """
+    return request.param
+
+
+@pytest.fixture(params=[True, False])
+def skipna(request):
     return request.param
 
 

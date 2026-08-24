@@ -1856,15 +1856,28 @@ class GeometryArray(ExtensionArray):
         data = np.concatenate([ga._data for ga in to_concat])
         return GeometryArray(data, crs=_get_common_crs(to_concat))
 
-    def _reduce(self, name: str, skipna: bool = True, keepdims: bool = False, **kwargs):
-        # including the base class version here (that raises by default)
-        # because this was not yet defined in pandas 0.23
-        if name in ("any", "all"):
-            return getattr(self._data, name)(keepdims=keepdims)
-        raise TypeError(
-            f"'{type(self).__name__}' with dtype {self.dtype} "
-            f"does not support reduction '{name}'"
-        )
+    def _reduce(
+        self, name: str, *, skipna: bool = True, keepdims: bool = False, **kwargs
+    ):
+        # including the base class version here to ensure it does not call
+        # our non-reduction skey method
+
+        meth = getattr(self, name, None)
+        if meth is None or name == "skew":
+            raise TypeError(
+                f"'{type(self).__name__}' with dtype {self.dtype} "
+                f"does not support operation '{name}'"
+            )
+        if name != "count":
+            kwargs["skipna"] = skipna
+        result = meth(**kwargs)
+        if keepdims:
+            if name in ["min", "max"]:
+                result = self._from_sequence([result], dtype=self.dtype)
+            else:
+                result = np.array([result])
+
+        return result
 
     def __array__(self, dtype=None, copy=None) -> np.ndarray:
         """Return the data as a numpy array.
