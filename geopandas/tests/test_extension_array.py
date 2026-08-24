@@ -521,9 +521,9 @@ from pandas.tests.extension.base import BaseReduceTests
 
 
 class TestReduce(BaseReduceTests):
-    @pytest.mark.skip("boolean reduce (any/all) tested in test_pandas_methods")
-    def test_reduce_series_boolean(self):
-        pass
+    def _supports_reduction(self, ser: pd.Series, op_name: str) -> bool:
+        # Specify if we expect this reduction to succeed.
+        return op_name in ("count", "any", "all")
 
 
 _all_arithmetic_operators = [
