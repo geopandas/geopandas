@@ -1859,25 +1859,13 @@ class GeometryArray(ExtensionArray):
     def _reduce(
         self, name: str, *, skipna: bool = True, keepdims: bool = False, **kwargs
     ):
-        # including the base class version here to ensure it does not call
-        # our non-reduction skey method
-
-        meth = getattr(self, name, None)
-        if meth is None or name == "skew":
+        # ensure the base class version does not call our non-reduction skew method
+        if name == "skew":
             raise TypeError(
                 f"'{type(self).__name__}' with dtype {self.dtype} "
                 f"does not support operation '{name}'"
             )
-        if name != "count":
-            kwargs["skipna"] = skipna
-        result = meth(**kwargs)
-        if keepdims:
-            if name in ["min", "max"]:
-                result = self._from_sequence([result], dtype=self.dtype)
-            else:
-                result = np.array([result])
-
-        return result
+        return super()._reduce(name, skipna=skipna, keepdims=keepdims, **kwargs)
 
     def all(self, *, skipna: bool = True, keepdims: bool = False):
         """Return whether all elements are truthy.
