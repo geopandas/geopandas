@@ -1867,23 +1867,25 @@ class GeometryArray(ExtensionArray):
             )
         return super()._reduce(name, skipna=skipna, keepdims=keepdims, **kwargs)
 
-    def all(self, *, skipna: bool = True, keepdims: bool = False):
+    def all(self, *, skipna: bool = True) -> bool:
         """Return whether all elements are truthy.
 
         Returns
         -------
         bool
         """
-        return self._data.all(keepdims=keepdims)
+        # TODO add handling for skipna
+        return self._data.all()
 
-    def any(self, *, skipna: bool = True, keepdims: bool = False):
+    def any(self, *, skipna: bool = True) -> bool:
         """Return whether any element is truthy.
 
         Returns
         -------
         bool
         """
-        return self._data.any(keepdims=keepdims)
+        # TODO add handling for skipna
+        return self._data.any()
 
     def __array__(self, dtype=None, copy=None) -> np.ndarray:
         """Return the data as a numpy array.
