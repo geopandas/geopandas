@@ -27,11 +27,12 @@ from geopandas.tests.util import (
 )
 
 try:
-    from sqlalchemy import text
+    from sqlalchemy import inspect, text
 except ImportError:
     # Avoid local imports for text in all sqlalchemy tests
     # all tests using text use engine_postgis, which ensures sqlalchemy is available
     text = str
+    inspect = None
 
 
 @pytest.fixture
@@ -836,6 +837,23 @@ class TestIO:
         write_postgis(df_nybb2, con=engine, name=table, if_exists="append")
 
     @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
+    def test_append_with_custom_geom_col(self, engine_postgis, df_nybb):
+        engine = engine_postgis
+        table = "test_custom_geom"
+
+        # Create GeoDataFrame with custom geometry column name
+        gdf = df_nybb.copy()
+        gdf = gdf.rename_geometry("custom_geom_123")
+
+        write_postgis(gdf, con=engine, name=table, if_exists="replace")
+        write_postgis(gdf, con=engine, name=table, if_exists="append")
+
+        # Verify data was appended correctly
+        sql = text(f'SELECT * FROM "{table}";')
+        df = read_postgis(sql, engine, geom_col="custom_geom_123")
+        assert len(df) == len(gdf) * 2
+
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
     def test_duplicate_geometry_column_fails(self, engine_postgis):
         """
         Tests that a ValueError is raised if an SQL query returns two geometry columns.
@@ -914,54 +932,26 @@ class TestIO:
         assert df.crs == "ESRI:54052"
 
     @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
-    def test_to_postgis_append_with_custom_geometry_column_name(
-        self, engine_postgis, df_nybb
-    ):
-        """
-        Tests that appending works correctly with custom geometry column names.
-        This ensures the SQL injection fix doesn't break normal functionality.
-        """
-        engine = engine_postgis
-        table = "test_custom_geom"
-
-        # Create GeoDataFrame with custom geometry column name
-        gdf = df_nybb.copy()
-        gdf = gdf.rename_geometry("custom_geom")
-
-        # Write initial data
-        write_postgis(gdf, con=engine, name=table, if_exists="replace")
-
-        # Append more data - this should work without SQL injection vulnerability
-        write_postgis(gdf, con=engine, name=table, if_exists="append")
-
-        # Verify data was appended correctly
-        sql = text(f'SELECT * FROM "{table}";')
-        df = read_postgis(sql, engine, geom_col="custom_geom")
-        assert len(df) == len(gdf) * 2
-
-    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
     def test_to_postgis_sql_injection_prevention_geometry_column(
         self, engine_postgis, df_nybb
     ):
         """
         Tests that SQL injection attempts via geometry column name are prevented.
         This test verifies that malicious geometry column names are treated as
-        literal strings and not executed as SQL code.
+        literal strings and not executed as SQL code in the Find_SRID query
+        when using to_postgis with if_exists='append'.
 
-        This test is based on issue #3679 which reported SQL injection vulnerability
-        in the Find_SRID query when using to_postgis with if_exists='append'.
+        https://github.com/geopandas/geopandas/issues/3679
         """
         engine = engine_postgis
         table = "test_sql_injection"
 
-        # Create a test table first to ensure append mode triggers
-        # the vulnerable code path
+        # Create a test table first to ensure append mode triggers potential issue
         gdf_normal = df_nybb.copy()
         write_postgis(gdf_normal, con=engine, name=table, if_exists="replace")
 
         # Create a test table that would be targeted by SQL injection
         # If SQL injection works, this table would be dropped
-        # Use random name to avoid conflicts with existing tables
         test_target_table = f"test_target_{uuid.uuid4().hex[:12]}"
         with engine.begin() as conn:
             conn.execute(
@@ -970,9 +960,8 @@ class TestIO:
             conn.execute(text(f"INSERT INTO {test_target_table} (id) VALUES (1);"))
 
         # Create GeoDataFrame with malicious geometry column name
-        # This simulates an attacker trying to inject SQL via geometry column name
         gdf_malicious = df_nybb.copy()
-        malicious_geom_name = f"geom'; DROP TABLE {test_target_table}; --"
+        malicious_geom_name = f"geometry'); DROP TABLE {test_target_table}; --"
         gdf_malicious = gdf_malicious.rename_geometry(malicious_geom_name)
 
         # First, verify both tables exist
@@ -980,38 +969,33 @@ class TestIO:
         sql_check_target = text(f"SELECT COUNT(*) FROM {test_target_table};")
         with engine.connect() as conn:
             initial_count = conn.execute(sql_check).fetchone()[0]
-            target_exists = conn.execute(sql_check_target).fetchone()[0] == 1
-
-        assert target_exists, "Target table should exist before SQL injection attempt"
+            assert conn.execute(sql_check_target).fetchone()[0] == 1
 
         # Attempt append - this should fail because the geometry column name
-        # doesn't match, but it should NOT execute the injected SQL
+        # doesn't exist, but it should NOT execute the injected SQL
         try:
             write_postgis(gdf_malicious, con=engine, name=table, if_exists="append")
-            # If it doesn't raise an error, that's also fine - the important
-            # thing is that SQL injection didn't occur
         except (ValueError, Exception):
-            # Expected - the geometry column name doesn't exist in the table
             pass
 
         # Verify both tables still exist and weren't dropped by SQL injection
-        with engine.connect() as conn:
-            final_count = conn.execute(sql_check).fetchone()[0]
-            target_still_exists = conn.execute(sql_check_target).fetchone()[0] == 1
-
-        assert final_count == initial_count, (
+        assert inspect(engine).has_table(table), (
             "Test table should still exist after SQL injection attempt"
         )
-        assert target_still_exists, (
+        assert inspect(engine).has_table(test_target_table), (
             f"Target table '{test_target_table}' should not be dropped by SQL injection"
         )
+
+        with engine.connect() as conn:
+            assert conn.execute(sql_check).fetchone()[0] == initial_count
+            assert conn.execute(sql_check_target).fetchone()[0] == 1
 
     @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
     def test_to_postgis_sql_injection_prevention_geometry_column_union(
         self, engine_postgis, df_nybb
     ):
         """
-        Tests another SQL injection pattern: UNION SELECT attack
+        Similar test as above, using another SQL injection pattern: UNION SELECT attack
         via geometry column name.
         """
         engine = engine_postgis
@@ -1022,7 +1006,6 @@ class TestIO:
         write_postgis(gdf_normal, con=engine, name=table, if_exists="replace")
 
         # Create a test table that would be targeted by UNION SELECT injection
-        # Use random name to avoid conflicts with existing tables
         test_target_table = f"test_target_{uuid.uuid4().hex[:12]}"
         with engine.begin() as conn:
             conn.execute(
@@ -1035,7 +1018,8 @@ class TestIO:
         # Create GeoDataFrame with UNION-based SQL injection attempt
         gdf_malicious = df_nybb.copy()
         malicious_geom_name = (
-            f"geom') UNION SELECT password FROM {test_target_table} WHERE '1'='1"
+            f"geometry')::text UNION SELECT password FROM {test_target_table}"
+            "WHERE '1'='1'; --"
         )
         gdf_malicious = gdf_malicious.rename_geometry(malicious_geom_name)
 
@@ -1044,126 +1028,26 @@ class TestIO:
         sql_check_target = text(f"SELECT COUNT(*) FROM {test_target_table};")
         with engine.connect() as conn:
             initial_count = conn.execute(sql_check).fetchone()[0]
-            target_exists = conn.execute(sql_check_target).fetchone()[0] == 1
+            assert conn.execute(sql_check_target).fetchone()[0] == 1
 
-        assert target_exists, "Target table should exist before SQL injection attempt"
-
-        # Attempt append - should not execute the UNION SELECT
-        try:
+        # Attempt append - should not execute the UNION SELECT (but will still fail
+        # not finding the SRID)
+        with pytest.raises(Exception) as excinfo:
             write_postgis(gdf_malicious, con=engine, name=table, if_exists="append")
-        except (ValueError, Exception):
-            # Expected - geometry column name mismatch
-            pass
+
+        assert "secret" not in str(excinfo.value), (
+            "SQL injection should not have been executed; "
+            "'secret' should not be in the error"
+        )
 
         # Verify table integrity maintained
-        with engine.connect() as conn:
-            final_count = conn.execute(sql_check).fetchone()[0]
-            target_still_exists = conn.execute(sql_check_target).fetchone()[0] == 1
-
-        assert final_count == initial_count, (
+        assert inspect(engine).has_table(table), (
             "Test table should still exist after SQL injection attempt"
         )
-        assert target_still_exists, (
-            f"Target table '{test_target_table}' should not be "
-            "affected by SQL injection"
+        assert inspect(engine).has_table(test_target_table), (
+            f"Target table '{test_target_table}' should not be dropped by SQL injection"
         )
 
-    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
-    def test_to_postgis_sql_injection_prevention_geometry_column_comment(
-        self, engine_postgis, df_nybb
-    ):
-        """
-        Tests SQL injection via comment syntax in geometry column name.
-        """
-        engine = engine_postgis
-        table = "test_sql_injection_comment"
-
-        # Create initial table
-        gdf_normal = df_nybb.copy()
-        write_postgis(gdf_normal, con=engine, name=table, if_exists="replace")
-
-        # Create GeoDataFrame with comment-based SQL injection
-        gdf_malicious = df_nybb.copy()
-        malicious_geom_name = "geom' -- DROP TABLE test_sql_injection_comment;"
-        gdf_malicious = gdf_malicious.rename_geometry(malicious_geom_name)
-
-        # Verify table exists
-        sql_check = text(f"SELECT COUNT(*) FROM {table};")
         with engine.connect() as conn:
-            initial_count = conn.execute(sql_check).fetchone()[0]
-
-        # Attempt append
-        try:
-            write_postgis(gdf_malicious, con=engine, name=table, if_exists="append")
-        except (ValueError, Exception):
-            pass
-
-        # Verify table still exists
-        with engine.connect() as conn:
-            final_count = conn.execute(sql_check).fetchone()[0]
-            assert final_count == initial_count
-
-    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
-    def test_to_postgis_sql_injection_prevention_geometry_column_semicolon(
-        self, engine_postgis, df_nybb
-    ):
-        """
-        Tests SQL injection via semicolon in geometry column name.
-        """
-        engine = engine_postgis
-        table = "test_sql_injection_semicolon"
-
-        # Create initial table
-        gdf_normal = df_nybb.copy()
-        write_postgis(gdf_normal, con=engine, name=table, if_exists="replace")
-
-        # Create GeoDataFrame with semicolon-based SQL injection
-        gdf_malicious = df_nybb.copy()
-        malicious_geom_name = "geom; DELETE FROM test_sql_injection_semicolon;"
-        gdf_malicious = gdf_malicious.rename_geometry(malicious_geom_name)
-
-        # Verify table exists
-        sql_check = text(f"SELECT COUNT(*) FROM {table};")
-        with engine.connect() as conn:
-            initial_count = conn.execute(sql_check).fetchone()[0]
-
-        # Attempt append
-        try:
-            write_postgis(gdf_malicious, con=engine, name=table, if_exists="append")
-        except (ValueError, Exception):
-            pass
-
-        # Verify table still exists and data is intact
-        with engine.connect() as conn:
-            final_count = conn.execute(sql_check).fetchone()[0]
-            assert final_count == initial_count
-
-    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
-    def test_to_postgis_append_with_special_characters_in_geometry_column(
-        self, engine_postgis, df_nybb
-    ):
-        """
-        Tests that legitimate geometry column names with special characters
-        (but not SQL injection) still work correctly.
-        This ensures the fix doesn't break normal functionality with valid
-        but unusual column names.
-        """
-        engine = engine_postgis
-        table = "test_special_chars"
-
-        # Create GeoDataFrame with geometry column name containing special characters
-        # (but not SQL injection patterns)
-        gdf = df_nybb.copy()
-        # Use a valid but unusual geometry column name
-        gdf = gdf.rename_geometry("geom_with_underscores_123")
-
-        # Write initial data
-        write_postgis(gdf, con=engine, name=table, if_exists="replace")
-
-        # Append more data - should work correctly
-        write_postgis(gdf, con=engine, name=table, if_exists="append")
-
-        # Verify data was appended correctly
-        sql = text(f'SELECT * FROM "{table}";')
-        df = read_postgis(sql, engine, geom_col="geom_with_underscores_123")
-        assert len(df) == len(gdf) * 2
+            assert conn.execute(sql_check).fetchone()[0] == initial_count
+            assert conn.execute(sql_check_target).fetchone()[0] == 1
