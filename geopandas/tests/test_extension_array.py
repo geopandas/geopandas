@@ -254,21 +254,54 @@ def invalid_scalar(data):
 # here instead of importing for compatibility
 
 
-@pytest.fixture(
-    params=["sum", "max", "min", "mean", "prod", "std", "var", "median", "kurt", "skew"]
-)
+_all_numeric_reductions = [
+    "count",
+    "sum",
+    "max",
+    "min",
+    "mean",
+    "prod",
+    "std",
+    "var",
+    "median",
+    "kurt",
+    # "skew",  # skew is defined as non-reduction geospatial method, so skipping here
+    "sem",
+]
+
+
+@pytest.fixture(params=_all_numeric_reductions)
 def all_numeric_reductions(request):
     """
-    Fixture for numeric reduction names
+    Fixture for numeric reduction names.
     """
     return request.param
 
 
-@pytest.fixture(params=["all", "any"])
+_all_boolean_reductions = ["all", "any"]
+
+
+@pytest.fixture(params=_all_boolean_reductions)
 def all_boolean_reductions(request):
     """
-    Fixture for boolean reduction names
+    Fixture for boolean reduction names.
     """
+    return request.param
+
+
+_all_reductions = _all_numeric_reductions + _all_boolean_reductions
+
+
+@pytest.fixture(params=_all_reductions)
+def all_reductions(request):
+    """
+    Fixture for all (boolean + numeric) reduction names.
+    """
+    return request.param
+
+
+@pytest.fixture(params=[True, False])
+def skipna(request):
     return request.param
 
 
@@ -488,9 +521,9 @@ from pandas.tests.extension.base import BaseReduceTests
 
 
 class TestReduce(BaseReduceTests):
-    @pytest.mark.skip("boolean reduce (any/all) tested in test_pandas_methods")
-    def test_reduce_series_boolean(self):
-        pass
+    def _supports_reduction(self, ser: pd.Series, op_name: str) -> bool:
+        # Specify if we expect this reduction to succeed.
+        return op_name in ("count", "any", "all")
 
 
 _all_arithmetic_operators = [
