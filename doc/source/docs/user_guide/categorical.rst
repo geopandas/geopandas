@@ -117,7 +117,7 @@ Other styles can be mapped in an analogous way.
         legend_kwds={"loc": "lower left"},
     );
 
- Another option is to pass an array of the same length as the GeoDataFrame to be mapped to individual geometries.
+Another option is to pass an array of the same length as the GeoDataFrame to be mapped to individual geometries.
 
 Maps with multiple layers
 -------------------------
