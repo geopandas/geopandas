@@ -5,8 +5,9 @@
 
    import geopandas
    import matplotlib.pyplot as plt
+   import matplotlib
    plt.close('all')
-
+   matplotlib.rcParams['savefig.bbox'] = 'tight'
 
 Mapping and plotting tools
 ==========================
@@ -162,10 +163,10 @@ However, passing ``missing_kwds`` one can specify the style and label of feature
     );
 
 Background tiles
-~~~~~~~~~~~~~~~~
+----------------
 
 Background tiles add contextual web (or local) map imagery below the plotted geometries. Pass
-``tiles=True`` to use the default provider (``OpenStreetMap.HOT``). Note that this requires ``contextily`` package to be installed.
+``tiles=True`` to use the default provider (``OpenStreetMap.HOT``). Note that this requires `contextily <https://contextily.readthedocs.io/en/latest/>`__ package to be installed.
 
 .. ipython:: python
 
@@ -173,12 +174,12 @@ Background tiles add contextual web (or local) map imagery below the plotted geo
     groceries.plot(tiles=True);
 
 Alternatively, pass the name of any provider
-available through ``xyzservices`` or anything else supported by ``contextily``.
+available through `xyzservices <https://xyzservices.readthedocs.io/en/latest/>`__ or anything else supported by ``contextily``.
 
 .. ipython:: python
 
     @savefig tiles_osm.png
-    groceries.plot(tiles="OpenStreetMap Mapnik");
+    groceries.plot(tiles="OpenStreetMap DE");
 
 
 Tile providers typically require attribution. GeoPandas adds provider attribution by
@@ -187,8 +188,8 @@ default when it is available, but you can customize it with ``attr`` or add your
 .. ipython:: python
 
     tiles = [
-        "CartoDB Voyager",
-        "CartoDB DarkMatter",
+        "OpenStreetMap CAT",
+        "OpenStreetMap DE",
     ]
 
     fig, axs = plt.subplots(1, 2)
@@ -197,7 +198,7 @@ default when it is available, but you can customize it with ``attr`` or add your
         ax.set_title(t)
         ax.set_axis_off()
     @savefig attr.png
-    fig.suptitle("(C) OpenStreetMap contributors (C) CARTO", y=0.05);
+    fig.suptitle("(C) OpenStreetMap contributors, Tiles courtesy of Breton OpenStreetMap Team", y=0.05);
 
 By default, GeoPandas forces ``contextily`` to warp the images to match the CRS of the data, which can occasionally result in blurred maps. To avoid that, re-project the data to Web Mercator (EPSG:3857) first.
 
@@ -209,9 +210,9 @@ By default, GeoPandas forces ``contextily`` to warp the images to match the CRS 
 Any other customisation of background tiles shall be done directly with ``contextily`` as illustrated in the :doc:`dedicated example <../../gallery/plotting_basemap_background>`.
 
 Other map customizations
-~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------
 
-GeoPandas uses an information stored in the coordinate reference system about units each axis represents and includes them as labels, as shown above. this can be turned off with the ``add_labels`` keyword.
+GeoPandas uses an information stored in the coordinate reference system about units each axis represents and includes them as labels, as shown above. This can be turned off with the ``add_labels`` keyword.
 
 .. ipython:: python
 
@@ -245,8 +246,8 @@ Before combining maps, however, remember to always ensure they share a common CR
 
     # Now you can overlay over the outlines
 
-Method 1
-~~~~~~~~
+Method 1: let GeoPandas create the matplotlib figure
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The simple way is to let the first call to ``plot`` define the ``Axes`` which can be consumed by subsequent ``plot`` calls via the ``ax`` keyword:
 
@@ -256,8 +257,8 @@ The simple way is to let the first call to ``plot`` define the ``Axes`` which ca
     @savefig groceries_over_chicago_1.png
     groceries.plot(ax=base, marker='o', color='red', markersize=5);
 
-Method 2: Using matplotlib objects
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Method 2: Create the matplotlib figure manually
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The other way is to define the ``Axes`` object before and pass it to both.
 
@@ -350,5 +351,5 @@ Other resources
 .. toctree::
   :maxdepth: 2
 
-  Choropleth mapping <choropleth>
-  Categorical mapping <categorical>
+  choropleth
+  categorical

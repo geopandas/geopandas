@@ -5,7 +5,9 @@
 
    import geopandas
    import matplotlib.pyplot as plt
+   import matplotlib
    plt.close('all')
+   matplotlib.rcParams['savefig.bbox'] = 'tight'
 
 
 Categorical maps
@@ -31,7 +33,7 @@ By default, when GeoPandas detects categorical data, it switches the default col
     @savefig guerry.png
     guerry.plot("Region");
 
-You can request a legend using ``legend=True``, which shows one legend item for each unique category, with a handle reflecting the style mapped to the class. Additional keywords to adapt the legend can be passed in a ``legend_kwds`` dictionary.
+You can request a legend using ``legend=True``, which shows one legend item for each unique category, with a label reflecting the style mapped to the class. Additional keywords to adapt the legend can be passed in a ``legend_kwds`` dictionary.
 
 .. ipython:: python
 
@@ -69,7 +71,7 @@ While GeoPandas uses a categorical colormap by default, any colormap understood 
 Mapping styles to categories
 ----------------------------
 
-However, a common use case is mapping custom colors to individual categories. This can be done using a dictionary with unique categories as keys and colors as values.
+However, a common use case is mapping custom colors to individual categories. This can be done using a dictionary with unique categories as keys and colors as values, where colors can be specified in any way understood by matplotlib.
 
 .. ipython:: python
 
@@ -84,7 +86,7 @@ However, a common use case is mapping custom colors to individual categories. Th
     @savefig guerry_custom_cmap.png
     guerry.plot("Region", cmap=colors, legend=True, legend_kwds={"loc": "lower left"});
 
-Other styles can be mapped in an analogous way. Another option is to pass an array of the same length as the GeoDataFrame to be mapped to individual geometries.
+Other styles can be mapped in an analogous way.
 
 .. ipython:: python
 
@@ -114,6 +116,8 @@ Other styles can be mapped in an analogous way. Another option is to pass an arr
         legend=True,
         legend_kwds={"loc": "lower left"},
     );
+
+ Another option is to pass an array of the same length as the GeoDataFrame to be mapped to individual geometries.
 
 Maps with multiple layers
 -------------------------

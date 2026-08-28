@@ -2834,10 +2834,17 @@ class TestAxisLabels:
         assert ax.get_ylabel() == "Northing [US survey foot]"
 
     def test_no_labels(self):
+        # gdf route
         ax = self.nybb.plot("forhis06", add_labels=False)
         assert ax.get_xlabel() == ""
         assert ax.get_ylabel() == ""
 
+        # gdf -> gs
+        ax = self.nybb.plot(add_labels=False)
+        assert ax.get_xlabel() == ""
+        assert ax.get_ylabel() == ""
+
+        # gs
         ax2 = self.nybb.geometry.plot(add_labels=False)
         assert ax2.get_xlabel() == ""
         assert ax2.get_ylabel() == ""

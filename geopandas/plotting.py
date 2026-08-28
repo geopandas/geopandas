@@ -958,6 +958,7 @@ def plot_dataframe(
             autolim=autolim,
             tiles=tiles,
             attr=attr,
+            add_labels=add_labels,
             **style_kwds,
         )
 

@@ -5,7 +5,9 @@
 
    import geopandas
    import matplotlib.pyplot as plt
+   import matplotlib
    plt.close('all')
+   matplotlib.rcParams['savefig.bbox'] = 'tight'
 
 
 Choropleth maps
@@ -31,32 +33,32 @@ The dataset contains counties in southern US states, with sociodemographic data 
 .. ipython:: python
 
     @savefig south.png
-    south.plot('FH90');
+    south.plot(column='FH90');
 
 If you would like to show a legend, pass ``legend=True``. By default, this will create a colorbar.
 
 .. ipython:: python
 
     @savefig south_legend.png
-    south.plot('FH90', legend=True);
+    south.plot(column='FH90', legend=True);
 
 The default color mapping stretches the colors from the minimum to the maximum of the observed values. These bounds can be customized with the ``vmin`` and ``vmax`` keywords, which specify the minimum and maximum values respectively. In that case, the colorbar indicates that some values go beyond the extremes.
 
 .. ipython:: python
 
     @savefig south_vmax.png
-    south.plot('FH90', legend=True, vmax=30);
+    south.plot(column='FH90', legend=True, vmax=30);
 
 Classification schemes
 ----------------------
 
-The default mapping of values to colors is linear, which may not provide an optimal cartographic visualization of the data. The mapping can be adjusted using the ``scheme`` keyword, which specifies a classification scheme. You can, for example, map colors to quantiles, where each color bin contains the same number of geometries. Note that using ``scheme`` requires the optional ``mapclassify`` dependency.
+The default mapping of values to colors is continuous and linear which may not provide an optimal cartographic visualization of the data. The mapping can be adjusted using the ``scheme`` keyword, which specifies a classification scheme. You can, for example, map colors to quantiles, where each color bin contains the same number of geometries. Note that using ``scheme`` requires the optional ``mapclassify`` dependency.
 
 
 .. ipython:: python
 
     @savefig south_quantiles.png
-    south.plot('FH90', legend=True, scheme='quantiles');
+    south.plot(column='FH90', legend=True, scheme='quantiles');
 
 This changes the mapping of colors but, by default, also changes the style of the legend. This default exists for legacy reasons and can be useful on its own. However, a more suitable option is often to keep the colorbar, which you can request with ``legend_kwds``.
 
@@ -64,7 +66,7 @@ This changes the mapping of colors but, by default, also changes the style of th
 
     @savefig south_scheme_cbar.png
     south.plot(
-        'FH90',
+        column='FH90',
         legend=True,
         scheme='quantiles',
         legend_kwds={"colorbar": True},
@@ -76,7 +78,7 @@ There are two options for spacing colors in the colorbar. The default is proport
 
     @savefig south_scheme_cbar_uniform.png
     south.plot(
-        'FH90',
+        column='FH90',
         legend=True,
         scheme='quantiles',
         legend_kwds={"colorbar": True, "spacing": "uniform"},
@@ -88,14 +90,14 @@ Most schemes support the ``k`` argument, which indicates the number of bins to u
 
     @savefig south_scheme_k.png
     south.plot(
-        'FH90',
+        column='FH90',
         legend=True,
         scheme='quantiles',
         k=10,
         legend_kwds={"colorbar": True},
     );
 
-Classification schemes are provided by the ``mapclassify`` package, and any of its supported schemes can be used here. The current options include:
+Classification schemes are provided by the `mapclassify <https://pysal.org/mapclassify>`__ package, and any of its supported schemes can be used here. The current options include:
 
 * ``"BoxPlot"``
 * ``"EqualInterval"``
@@ -124,7 +126,7 @@ Different classification schemes can emphasize different patterns in the same da
 
     for scheme, ax in zip(schemes, axs.flat):
         south.plot(
-            "FH90",
+            column="FH90",
             scheme=scheme,
             legend=True,
             legend_kwds={"colorbar": True},
@@ -147,7 +149,7 @@ Arguments for the classification scheme can be passed as a dictionary to ``class
 
     @savefig class_kwds.png
     south.plot(
-        "FH90",
+        column="FH90",
         legend=True,
         scheme="UserDefined",
         classification_kwds={
@@ -164,12 +166,12 @@ The colormap used in the choropleth map can be any string recognized by Matplotl
 
 .. ipython:: python
 
-    fig, axs = plt.subplots(2, 2)
+    fig, axs = plt.subplots(2, 2, sharex=True, sharey=True)
 
     cmaps = ["viridis", "cividis", "plasma", "managua"]
 
     for cmap, ax in zip(cmaps, axs.flat):
-        south.plot('FH90', cmap=cmap, ax=ax)
+        south.plot(column='FH90', cmap=cmap, ax=ax, add_labels=False)
         ax.set_title(cmap)
     @savefig cmaps.png
     plt.tight_layout()
