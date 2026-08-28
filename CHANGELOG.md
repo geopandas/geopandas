@@ -6,8 +6,8 @@ New features and improvements:
 
 - Static plotting in GeoPandas has been re-implemented. The new tooling shall be mostly
   backwards compatible while bringing a set of enhancements:
-    - Categorical plotting now allows dict-based mapping of colors and other styles 
-      to categories.
+    - Categorical plotting now allows dict-based mapping of categories to colors and 
+      other styles.
     - Legends now reflect the geometry type and complete set of styles, not just a 
       color.
     - Plotting of continuous variables with a classification scheme can now produce
