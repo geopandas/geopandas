@@ -824,11 +824,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             row.update(properties)
             rows.append(row)
         if not rows:
-            # GH#3777: an empty feature list yields no inferred "geometry" column,
-            # so assigning ``crs`` would fail. Return an empty GeoDataFrame that
-            # still has a "geometry" column, matching ``GeoDataFrame(geometry=[],
-            # crs=crs)``, so ``from_features`` always produces a valid geometry
-            # column for empty input.
             return cls(geometry=[], columns=columns, crs=crs)
         return cls(rows, columns=columns, crs=crs)
 

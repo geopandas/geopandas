@@ -814,8 +814,6 @@ class TestDataFrame:
 
     def test_from_features_empty(self):
         # GH3777: an empty feature list should still produce a "geometry" column,
-        # so that a CRS can be assigned without raising. The result mirrors
-        # ``GeoDataFrame(geometry=[], crs=crs)`` (whose CRS value depends on pyproj).
         expected_crs = GeoDataFrame(geometry=[], crs="EPSG:4326").crs
 
         gdf = GeoDataFrame.from_features([], crs="EPSG:4326")
