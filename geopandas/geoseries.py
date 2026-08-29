@@ -1410,7 +1410,8 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         serialised without information loss. Notably:
 
         - LinearRing will be converted to LineString
-        - Point with NaN coordinates will be converted to Empty Point
+        - Empty Points will be converted to Points with NaN as coordinates (but will be
+          read by :meth:`from_wkb` as empty Points).
         """
         return Series(to_wkb(self.array, hex=hex, **kwargs), index=self.index)
 

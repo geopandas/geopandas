@@ -1307,7 +1307,8 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         serialised without information loss. Notably:
 
         - LinearRing will be converted to LineString
-        - Point with NaN coordinates will be converted to Empty Point
+        - Empty Points will be converted to Points with NaN as coordinates (but will be
+          read by :meth:`~geopandas.GeoSeries.from_wkb` as empty Points).
         """
         df = DataFrame(self.copy(deep=not PANDAS_GE_30))
 
