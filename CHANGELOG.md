@@ -9,6 +9,8 @@ New features and improvements:
 - Add ``grid_size`` parameter to ``union``, ``difference``, ``symmetric_difference``
   and ``intersection`` (#3593).
 - `read_parquet` now support direct reading from HTTP/HTTPS protocols (#3699)
+- Document how to access the feature ID (`fid`) as the index when reading files
+  with `read_file` and the pyogrio engine, using `fid_as_index=True` (#3829)
 
 Deprecations and compatibility notes:
 
@@ -25,6 +27,9 @@ Bug fixes:
   for categorical and boolean columns (#3496).
 - Fix ``GeoDataFrame.explode()`` raising a cryptic error when passing multiple
   (non-geometry) columns; it now falls back to the pandas multi-column explode (#2753).
+- Fix `GeoDataFrame.from_features` raising a `ValueError` for an empty list of
+  features when a `crs` is provided; it now returns an empty `GeoDataFrame` with
+  a `geometry` column (#3777).
 
 
 Community:
