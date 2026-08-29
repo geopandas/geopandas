@@ -4,8 +4,8 @@ channels:
 dependencies:
   - python=3.11
   # required
-  - pandas=2.2
-  - numpy=1.26 # released 4 months before pandas 2.2
+  - pandas=2.3
+  - numpy=2.3 # released 3 days after pandas 2.3
   - shapely
   - pyogrio
   - pyproj
@@ -15,6 +15,8 @@ dependencies:
   - pytest-cov
   - pytest-xdist
   - fsspec
+  - requests
+  - aiohttp
   - pytz
   # optional
   - matplotlib
@@ -26,7 +28,7 @@ dependencies:
   - geodatasets
   # installed in tests.yaml, because not available on windows
   # - postgis
-  - SQLalchemy<2.1 # test oldest support sqlalchemy version
+  - sqlalchemy<2.1 # test oldest support sqlalchemy version
   - psycopg2
   - libspatialite
   - geoalchemy2

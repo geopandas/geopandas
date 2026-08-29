@@ -9,7 +9,7 @@ from shapely.geometry import MultiPoint, box
 from shapely.geometry.base import BaseGeometry
 
 from . import _compat as compat
-from .array import GeometryArray, GeometryDtype, points_from_xy
+from .array import GeometryArray, GeometryDtype
 
 
 def is_geometry_type(data):
@@ -233,7 +233,7 @@ class GeoPandasBase:
         0         Point
         1       Polygon
         2    LineString
-        dtype: object
+        dtype: str
         """
         return _delegate_property("geom_type", self)
 
@@ -367,11 +367,11 @@ GeometryCollection
         dtype: geometry
 
         >>> s.is_valid_reason()
-        0    Valid Geometry
+        0                Valid Geometry
         1    Self-intersection[0.5 0.5]
-        2    Valid Geometry
-        3    None
-        dtype: object
+        2                Valid Geometry
+        3                           NaN
+        dtype: str
 
         See Also
         --------
@@ -393,7 +393,7 @@ GeometryCollection
         it might be desirable to detect narrow gaps as invalidities in the coverage. The
         ``gap_width`` parameter allows to specify the maximum width of gaps to detect.
         When gaps are detected, this method will return ``False`` and the
-        :meth:`coverage_invalid_edges` method can be used to find the edges of those
+        :meth:`invalid_coverage_edges` method can be used to find the edges of those
         gaps.
 
         Geometries that are not Polygon or MultiPolygon are ignored and an empty
@@ -5423,7 +5423,7 @@ GeometryCollection
             linear segments in a quarter circle in the approximation of circular arcs.
         cap_style : {'round', 'square', 'flat'}, default 'round'
             Specifies the shape of buffered line endings. ``'round'`` results in
-            circular line endings (see ``resolution``). Both ``'square'`` and ``'flat'``
+            circular line endings (see ``quad_segs``). Both ``'square'`` and ``'flat'``
             result in rectangular line endings, ``'flat'`` will end at the original
             vertex, while ``'square'`` involves adding the buffer width.
         join_style : {'round', 'mitre', 'bevel'}, default 'round'
@@ -5459,7 +5459,7 @@ GeometryCollection
         2    POLYGON ((2.8 -1, 2.8 1, 2.80096 1.0196, 2.803...
         dtype: geometry
 
-        ``Further specification as ``join_style`` and ``cap_style`` are shown in the
+        Further specification as ``join_style`` and ``cap_style`` are shown in the
         following illustration:
 
         .. plot:: _static/code/buffer.py
@@ -5688,7 +5688,7 @@ GeometryCollection
         2    F11F00212
         3    F01FF0212
         4    F0FFFF212
-        dtype: object
+        dtype: str
 
         We can also check two GeoSeries against each other, row by row.
         The GeoSeries above have different indices. We can either align both GeoSeries
@@ -5699,13 +5699,13 @@ GeometryCollection
         .. image:: ../../../_static/binary_op-02.svg
 
         >>> s.relate(s2, align=True)
-        0         None
+        0          NaN
         1    212F11FF2
         2    0F1FF0102
         3    1FFF0FFF2
         4    FF0FFF0F2
-        5         None
-        dtype: object
+        5          NaN
+        dtype: str
 
         >>> s.relate(s2, align=False)
         0    212F11FF2
@@ -5713,7 +5713,7 @@ GeometryCollection
         2    0F1FF0102
         3    0F1FF0FF2
         4    0FFFFFFF2
-        dtype: object
+        dtype: str
 
         """
         return _binary_op("relate", self, other, align)
@@ -6462,15 +6462,27 @@ GeometryCollection
                     f" available random sampling methods."
                 )
             sample_function = getattr(pointpats.random, method)
-            result = self.geometry.apply(
-                lambda x: (
-                    points_from_xy(
-                        *sample_function(x, size=size, **kwargs).T
-                    ).union_all()
-                    if not (x.is_empty or x is None or "Polygon" not in x.geom_type)
-                    else MultiPoint()
-                ),
-            )
+            if pd.api.types.is_list_like(size):
+                result = [
+                    (
+                        shapely.multipoints(
+                            sample_function(x, size=s, rng=rng, **kwargs)
+                        )
+                        if not (x.is_empty or x is None or "Polygon" not in x.geom_type)
+                        else MultiPoint()
+                    )
+                    for x, s in zip(self.geometry, size)
+                ]
+            else:
+                result = self.geometry.apply(
+                    lambda x: (
+                        shapely.multipoints(
+                            sample_function(x, size=size, rng=rng, **kwargs)
+                        )
+                        if not (x.is_empty or x is None or "Polygon" not in x.geom_type)
+                        else MultiPoint()
+                    ),
+                )
 
         return GeoSeries(result, name="sampled_points", crs=self.crs, index=self.index)
 

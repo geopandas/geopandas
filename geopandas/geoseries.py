@@ -603,7 +603,7 @@ class GeoSeries(GeoPandasBase, Series):
                 data = data.reindex(index)
             else:
                 index = data.index
-            data = data.values
+            data = data.to_numpy(na_value=None)
         return cls(
             from_wkb_or_wkt_function(data, crs=crs, on_invalid=on_invalid),
             index=index,
@@ -1016,11 +1016,16 @@ class GeoSeries(GeoPandasBase, Series):
 
     def explode(self, ignore_index=False, index_parts=False) -> GeoSeries:
         """
-        Explode multi-part geometries into multiple single geometries.
+        Explode multi-part geometries into multiple component geometries.
 
         Single rows can become multiple rows.
         This is analogous to PostGIS's ST_Dump(). The 'path' index is the
         second level of the returned MultiIndex
+
+        GeometryCollections are split into their direct components. If a
+        GeometryCollection contains a multi-part geometry, that component is
+        returned as a multi-part geometry. To further split multi-part
+        geometries within a GeometryCollection, call ``explode`` a second time.
 
         Parameters
         ----------
@@ -1030,14 +1035,16 @@ class GeoSeries(GeoPandasBase, Series):
         index_parts : boolean, default False
             If True, the resulting index will be a multi-index (original
             index with an additional level indicating the multiple
-            geometries: a new zero-based index for each single part geometry
-            per multi-part geometry).
+            geometries: a new zero-based index for each component geometry
+            per input geometry).
 
         Returns
         -------
-        A GeoSeries with a MultiIndex. The levels of the MultiIndex are the
-        original index and a zero-based integer index that counts the
-        number of single geometries within a multi-part geometry.
+        GeoSeries
+            Exploded GeoSeries with each component geometry as a separate
+            entry. If ``index_parts`` is True, the resulting index will be a
+            MultiIndex with the original index and a zero-based integer index
+            that counts the component geometries within each input geometry.
 
         Examples
         --------
@@ -1176,7 +1183,7 @@ class GeoSeries(GeoPandasBase, Series):
                 "transform the geometries, use 'GeoSeries.to_crs' instead."
             )
         if not inplace:
-            result = self.copy()
+            result = self.copy(deep=not compat.PANDAS_GE_30)
         else:
             result = self
         result.array.crs = crs
@@ -1400,8 +1407,18 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         0           010100000000000000000000000000000000000000
         1                                   010300000000000000
         2    0103000000010000000400000000000000000000000000...
-        3                                                 None
-        dtype: object
+        3                                                  NaN
+        dtype: str
+
+        Notes
+        -----
+        The Well-Known Binary (WKB) specification does not support all variations
+        of geometry types that GeoPandas does, and some geometries may not be
+        serialised without information loss. Notably:
+
+        - LinearRing will be converted to LineString
+        - Empty Points will be converted to Points with NaN as coordinates (but will be
+          read by :meth:`from_wkb` as empty Points).
         """
         return Series(to_wkb(self.array, hex=hex, **kwargs), index=self.index)
 
@@ -1432,7 +1449,7 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         0    POINT (1 1)
         1    POINT (2 2)
         2    POINT (3 3)
-        dtype: object
+        dtype: str
 
         See Also
         --------

@@ -11,7 +11,7 @@ in upcoming releases.
 
 ## S2 geometry engine
 
-The geometry engine used in GeoPandas is `shapely`, which serves as a Python API for
+GeoPandas uses `shapely` as its geometry engine, which serves as a Python API for
 `GEOS`. It means that all geometry operations in GeoPandas are planar, using (possibly)
 projected coordinate reference systems. Some applications focusing on the global context
 may find planar operations limiting as they come with troubles around anti-meridian and
@@ -20,12 +20,12 @@ that should eliminate these limitations and offer an alternative to `GEOS`.
 
 The GeoPandas community is currently working together with the R-spatial community that
 has already exposed `S2` in an R counterpart of GeoPandas `sf` on Python bindings for
-`S2`, that should be used as a secondary geometry engine in GeoPandas.
+`S2`, which GeoPandas should use as a secondary geometry engine.
 
 ## Prepared geometries
 
-GeoPandas is using spatial indexing for the operations that may benefit from it. Further
-performance gains can be achieved using prepared geometries. Preparation creates a
+GeoPandas uses spatial indexing for the operations that may benefit from it. Developers
+can achieve further performance gains using prepared geometries. Preparation creates a
 spatial index of individual line segments of geometries, greatly enhancing the speed of
 spatial predicates like `intersects` or `contains`. Given that the preparation has
 become less computationally expensive in `shapely` 2.0, GeoPandas should expose the

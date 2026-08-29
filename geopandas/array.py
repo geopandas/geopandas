@@ -33,6 +33,7 @@ from .sindex import SpatialIndex
 
 if typing.TYPE_CHECKING:
     import numpy.typing as npt
+    from numpy._typing import ArrayLike
 
     from .base import GeoPandasBase
 
@@ -240,6 +241,8 @@ def from_wkb(
           without a warning. Requires GEOS >= 3.11 and shapely >= 2.1.
 
     """
+    if isinstance(data, ExtensionArray):
+        data = data.to_numpy(na_value=None)
     return GeometryArray(shapely.from_wkb(data, on_invalid=on_invalid), crs=crs)
 
 
@@ -276,6 +279,8 @@ def from_wkt(
           without a warning. Requires GEOS >= 3.11 and shapely >= 2.1.
 
     """
+    if isinstance(data, ExtensionArray):
+        data = data.to_numpy(na_value=None)
     return GeometryArray(shapely.from_wkt(data, on_invalid=on_invalid), crs=crs)
 
 
@@ -476,6 +481,18 @@ class GeometryArray(ExtensionArray):
     def __getitem__(self, idx) -> GeometryArray:
         if isinstance(idx, numbers.Integral):
             return self._data[idx]
+        elif (
+            isinstance(idx, slice)
+            and idx.start is None
+            and idx.stop is None
+            and idx.step is None
+        ):
+            # special case of a full slice -> preserve the sindex
+            # (to ensure view() preserves it as well)
+            result = GeometryArray(self._data[idx], crs=self.crs)
+            result._sindex = self._sindex
+            return result
+
         # array-like, slice
         # validate and convert IntegerArray/BooleanArray
         # to numpy array, pass-through non-array-like indexers
@@ -1528,6 +1545,13 @@ class GeometryArray(ExtensionArray):
         if method is not None:
             raise NotImplementedError("fillna with a method is not yet supported")
 
+        if isinstance(value, dict):
+            # to match upstream pandas specifically raising for dict
+            raise TypeError(
+                "ExtensionArray.fillna does not support filling with a dict. "
+                "Use Series.fillna instead."
+            )
+
         mask = self.isna()
         if copy:
             new_values = self.copy()
@@ -1713,6 +1737,40 @@ class GeometryArray(ExtensionArray):
         if isinstance(scalars, BaseGeometry):
             scalars = [scalars]
         return from_shapely(scalars)
+
+    def _cast_pointwise_result(self, values) -> ArrayLike:
+        """
+        Construct an ExtensionArray after a pointwise operation.
+
+        Cast the result of a pointwise operation (e.g. Series.map) to an
+        array. This is not required to return an ExtensionArray of the same
+        type as self or of the same dtype. It can also return another
+        ExtensionArray of the same "family" if you implement multiple
+        ExtensionArrays/Dtypes that are interoperable (e.g. if you have float
+        array with units, this method can return an int array with units).
+
+        If converting to your own ExtensionArray is not possible, this method
+        falls back to returning an array with the default type inference.
+        If you only need to cast to `self.dtype`, it is recommended to override
+        `_from_scalars` instead of this method.
+
+        Parameters
+        ----------
+        values : sequence
+
+        Returns
+        -------
+        ExtensionArray or ndarray
+        """
+        # If crs was part of the dtype, could take above advice and
+        #  override _from_scalars instead
+        try:
+            if isinstance(values, self.__class__):
+                return GeometryArray(values, crs=self.crs)
+            else:  # pd.Series setitem boxes scalar into a list
+                return from_shapely(values, crs=self.crs)
+        except (ValueError, TypeError):
+            return super()._cast_pointwise_result(values)
 
     @classmethod
     def _from_sequence_of_strings(cls, strings, *, dtype=None, copy=False):
@@ -1908,15 +1966,36 @@ class GeometryArray(ExtensionArray):
         data = np.concatenate([ga._data for ga in to_concat])
         return GeometryArray(data, crs=_get_common_crs(to_concat))
 
-    def _reduce(self, name: str, skipna: bool = True, keepdims: bool = False, **kwargs):
-        # including the base class version here (that raises by default)
-        # because this was not yet defined in pandas 0.23
-        if name in ("any", "all"):
-            return getattr(self._data, name)(keepdims=keepdims)
-        raise TypeError(
-            f"'{type(self).__name__}' with dtype {self.dtype} "
-            f"does not support reduction '{name}'"
-        )
+    def _reduce(
+        self, name: str, *, skipna: bool = True, keepdims: bool = False, **kwargs
+    ):
+        # ensure the base class version does not call our non-reduction skew method
+        if name == "skew":
+            raise TypeError(
+                f"'{type(self).__name__}' with dtype {self.dtype} "
+                f"does not support operation '{name}'"
+            )
+        return super()._reduce(name, skipna=skipna, keepdims=keepdims, **kwargs)
+
+    def all(self, *, skipna: bool = True) -> bool:
+        """Return whether all elements are truthy.
+
+        Returns
+        -------
+        bool
+        """
+        # TODO add handling for skipna
+        return self._data.all()
+
+    def any(self, *, skipna: bool = True) -> bool:
+        """Return whether any element is truthy.
+
+        Returns
+        -------
+        bool
+        """
+        # TODO add handling for skipna
+        return self._data.any()
 
     def __array__(self, dtype=None, copy=None) -> np.ndarray:
         """Return the data as a numpy array.

@@ -152,17 +152,19 @@ class TestDataFrame:
         df = GeoDataFrame(data)
         s = GeoSeries([Point(x, y + 1) for x, y in zip(range(5), range(5))])
 
+        expected = s.copy()
+
         # setting geometry column
         for vals in [s, s.values]:
             df["geometry"] = vals
-            assert_geoseries_equal(df["geometry"], s)
-            assert_geoseries_equal(df.geometry, s)
+            assert_geoseries_equal(df["geometry"], expected)
+            assert_geoseries_equal(df.geometry, expected)
 
         # non-aligned values
         s2 = GeoSeries([Point(x, y + 1) for x, y in zip(range(6), range(6))])
         df["geometry"] = s2
-        assert_geoseries_equal(df["geometry"], s)
-        assert_geoseries_equal(df.geometry, s)
+        assert_geoseries_equal(df["geometry"], expected)
+        assert_geoseries_equal(df.geometry, expected)
 
         # setting other column with geometry values -> preserve geometry type
         for vals in [s, s.values]:
@@ -254,10 +256,12 @@ class TestDataFrame:
     def test_set_geometry(self):
         geom = GeoSeries([Point(x, y) for x, y in zip(range(5), range(5))])
         original_geom = self.df.geometry
+        expected = geom.copy()
+        expected.crs = self.df.crs
 
         df2 = self.df.set_geometry(geom)
-        assert self.df is not df2
-        assert_geoseries_equal(df2.geometry, geom, check_crs=False)
+        assert df2 is not self.df
+        assert_geoseries_equal(df2.geometry, expected)
         assert_geoseries_equal(self.df.geometry, original_geom)
         assert_geoseries_equal(self.df["geometry"], self.df.geometry)
         # unknown column
@@ -290,7 +294,7 @@ class TestDataFrame:
     def test_set_geometry_col(self):
         g = self.df.geometry
         g_simplified = g.simplify(100)
-        self.df["simplified_geometry"] = g_simplified
+        self.df["simplified_geometry"] = g_simplified.copy()
         df2 = self.df.set_geometry("simplified_geometry")
 
         # Drop is false by default
@@ -690,7 +694,7 @@ class TestDataFrame:
         df = GeoDataFrame.from_features([f1, f2, f3])
 
         result = df[["a", "b"]]
-        expected = pd.DataFrame.from_dict(
+        expected = pd.DataFrame(
             [{"a": 0, "b": np.nan}, {"a": np.nan, "b": 1}, {"a": np.nan, "b": np.nan}]
         )
         assert_frame_equal(expected, result)
@@ -807,6 +811,28 @@ class TestDataFrame:
         gdf = GeoDataFrame.from_features(data)
         assert gdf.shape == (2, 1)
         assert "properties" not in gdf.columns
+
+    def test_from_features_empty(self):
+        # GH3777: an empty feature list should still produce a "geometry" column,
+        expected_crs = GeoDataFrame(geometry=[], crs="EPSG:4326").crs
+
+        gdf = GeoDataFrame.from_features([], crs="EPSG:4326")
+        assert isinstance(gdf, GeoDataFrame)
+        assert len(gdf) == 0
+        assert list(gdf.columns) == ["geometry"]
+        assert gdf.crs == expected_crs
+
+        # without a CRS, an empty feature list still yields a "geometry" column
+        gdf_no_crs = GeoDataFrame.from_features([])
+        assert list(gdf_no_crs.columns) == ["geometry"]
+        assert gdf_no_crs.crs is None
+
+        # an empty FeatureCollection behaves the same as an empty list
+        gdf_fc = GeoDataFrame.from_features(
+            {"type": "FeatureCollection", "features": []}, crs="EPSG:4326"
+        )
+        assert list(gdf_fc.columns) == ["geometry"]
+        assert gdf_fc.crs == expected_crs
 
     def test_from_features_geom_interface_feature(self):
         class Placemark:
@@ -1144,7 +1170,9 @@ class TestDataFrame:
         assert (
             sorted(sorted_clipped_cities.index) == sorted_clipped_cities.index
         ).all()
-        assert_index_equal(expected_sorted_index, sorted_clipped_cities.index)
+        assert_index_equal(
+            expected_sorted_index, sorted_clipped_cities.index, exact=True
+        )
 
     def test_overlay(self, dfs, how):
         """
@@ -1281,12 +1309,12 @@ class TestConstructor:
 
             res = GeoDataFrame(df, index=pd.Index([0, 2]))
             check_geodataframe(res)
-            assert_index_equal(res.index, pd.Index([0, 2]))
+            assert_index_equal(res.index, pd.Index([0, 2]), exact="equiv")
             assert res["A"].tolist() == [0, 2]
 
             res = GeoDataFrame(df, columns=["geometry", "B"])
             check_geodataframe(res)
-            assert_index_equal(res.columns, pd.Index(["geometry", "B"]))
+            assert_index_equal(res.columns, pd.Index(["geometry", "B"]), exact=False)
 
             with pytest.raises(ValueError):
                 GeoDataFrame(df, geometry="other_geom")
@@ -1512,7 +1540,7 @@ class TestConstructor:
 
         x_col = df["foo", "location", "x"]
         y_col = df["foo", "location", "y"]
-        df["geometry"] = GeoSeries.from_xy(x_col, y_col)
+        df[("geometry", "", "")] = GeoSeries.from_xy(x_col, y_col)
         df2 = df.copy()
         gdf = df.set_geometry("geometry", crs=crs)
         if compat.HAS_PYPROJ:
