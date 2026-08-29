@@ -1540,7 +1540,7 @@ class TestConstructor:
 
         x_col = df["foo", "location", "x"]
         y_col = df["foo", "location", "y"]
-        df["geometry"] = GeoSeries.from_xy(x_col, y_col)
+        df[("geometry", "", "")] = GeoSeries.from_xy(x_col, y_col)
         df2 = df.copy()
         gdf = df.set_geometry("geometry", crs=crs)
         if compat.HAS_PYPROJ:

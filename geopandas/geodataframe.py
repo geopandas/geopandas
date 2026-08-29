@@ -473,6 +473,12 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         # update _geometry_column_name prior to assignment
         # to avoid default is None warning
         frame._geometry_column_name = geo_column_name
+        if isinstance(frame.columns, pd.MultiIndex) and not isinstance(
+            geo_column_name, tuple
+        ):
+            # when setting a single column to dataframe with multi-index columns,
+            # pandas does not like setting it with only the first level name
+            geo_column_name = (geo_column_name,) + ("",) * (frame.columns.nlevels - 1)
         frame[geo_column_name] = level
 
         if not inplace:
@@ -530,7 +536,12 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 return self.rename(columns={geometry_col: col}).set_geometry(
                     col, inplace=inplace
                 )
-            self.rename(columns={geometry_col: col}, inplace=inplace)
+            with warnings.catch_warnings():
+                # TODO: pandas >= 3.1 triggers a warning for inplace rename here
+                # suppresing this for now, but we have to replace this with our own
+                # warning specifically for rename_geometry
+                warnings.filterwarnings("ignore", ".*inplace keyword.*")
+                self.rename(columns={geometry_col: col}, inplace=inplace)
             self.set_geometry(col, inplace=inplace)
 
     @property
@@ -1461,7 +1472,7 @@ default 'snappy'
             may not be supported by all readers.
         schema_version : {'0.1.0', '0.4.0', '1.0.0', '1.1.0', None}
             GeoParquet specification version; if not provided, will default to
-            latest supported stable version (1.0.0).
+            latest supported stable version (1.1.0).
         kwargs
             Additional keyword arguments passed to :func:`pyarrow.parquet.write_table`.
 
@@ -1527,7 +1538,7 @@ default 'snappy'
             compression. By default uses LZ4 if available, otherwise uncompressed.
         schema_version : {'0.1.0', '0.4.0', '1.0.0', '1.1.0' None}
             GeoParquet specification version; if not provided will default to
-            latest supported stable version (1.0.0).
+            latest supported stable version (1.1.0).
         kwargs
             Additional keyword arguments passed to
             :func:`pyarrow.feather.write_feather`.
@@ -2029,7 +2040,10 @@ default 'snappy'
                 pass
             else:
                 if self.crs is not None and result.crs is None:
-                    result.set_crs(self.crs, inplace=True)
+                    if PANDAS_GE_30:
+                        result = result.set_crs(self.crs)
+                    else:
+                        result.set_crs(self.crs, inplace=True)
         elif isinstance(result, Series) and result.dtype == "object":
             # Try reconstruct series GeometryDtype if lost by apply
             # If all none and object dtype assert list of nones is more likely
@@ -2417,7 +2431,10 @@ default 'snappy'
         df = df.set_geometry(self._geometry_column_name).__finalize__(self)
 
         if ignore_index:
-            df.reset_index(inplace=True, drop=True)
+            if PANDAS_GE_30:
+                df = df.reset_index(drop=True)
+            else:
+                df.reset_index(inplace=True, drop=True)
         elif index_parts:
             # reset to MultiIndex, otherwise df index is only first level of
             # exploded GeoSeries index.

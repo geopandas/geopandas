@@ -116,10 +116,9 @@ You may install the latest development version by cloning the
     cd geopandas
     pip install .
 
-Development dependencies can be installed using the dev optional
-dependency group::
+Development dependencies can be installed using the ``dev`` dependency group::
 
-    pip install '.[dev]'
+    pip install -e . --group dev
 
 It is also possible to install the latest development version
 directly from the GitHub repository with::

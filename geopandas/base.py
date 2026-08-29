@@ -388,7 +388,7 @@ GeometryCollection
         it might be desirable to detect narrow gaps as invalidities in the coverage. The
         ``gap_width`` parameter allows to specify the maximum width of gaps to detect.
         When gaps are detected, this method will return ``False`` and the
-        :meth:`coverage_invalid_edges` method can be used to find the edges of those
+        :meth:`invalid_coverage_edges` method can be used to find the edges of those
         gaps.
 
         Geometries that are not Polygon or MultiPolygon are ignored and an empty

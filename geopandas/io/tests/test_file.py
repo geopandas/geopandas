@@ -1419,7 +1419,7 @@ def test_write_index_to_file(tmpdir, df_points, driver, ext, engine):
     # named MultiIndex
     df_p = df_points.copy()
     df_p["value3"] = df_p["value2"] - df_p["value1"]
-    df_p.set_index(["value1", "value2"], inplace=True)
+    df_p = df_p.set_index(["value1", "value2"])
     df = GeoDataFrame(df_p, geometry=df_p.geometry)
     do_checks(df, index_is_used=True)
 
