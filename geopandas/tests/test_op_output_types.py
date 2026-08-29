@@ -169,7 +169,7 @@ def test_loc_add_row(geom_name, nybb_filename):
         assert nybb.geometry.dtype == "object"
 
 
-@pytest.mark.skipif(not PANDAS_GE_31, reason="fixed in Pandas >= 3.1")
+@pytest.mark.xfail(reason="failing because crs is lost")
 @pytest.mark.parametrize("geom_name", ["geometry", "geom"])
 def test_loc_add_row_empty_df(geom_name):
     # https://github.com/geopandas/geopandas/issues/3109

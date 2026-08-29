@@ -1078,7 +1078,8 @@ def plot_dataframe(
                     return cmap(i)
                 else:
                     # For continuous cmaps, stretch alongside whole range
-                    return cmap(i / (ngroups - 1))
+                    # (a single group has no range to stretch over)
+                    return cmap(i / (ngroups - 1) if ngroups > 1 else 0.0)
             elif isinstance(cmap, dict):
                 return cmap[name]
             else:

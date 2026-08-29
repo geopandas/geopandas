@@ -179,16 +179,16 @@ class TestFrameSindex:
     def test_rebuild_on_update_inplace(self):
         gdf = self.df.copy()
         old_sindex = gdf.sindex
-        # sorting in place
-        gdf.sort_values("A", ascending=False, inplace=True)
+        # updating geometry columns in place
+        gdf.replace({"geom": {Point(1, 1): Point(10, 10)}}, inplace=True)
         # spatial index should be invalidated
         assert not gdf.has_sindex
         new_sindex = gdf.sindex
         # and should be different
         assert new_sindex is not old_sindex
 
-        # sorting should still have happened though
-        assert gdf.index.tolist() == [4, 3, 2, 1, 0]
+        # update should still have happened though
+        assert gdf.geometry.x.tolist() == [0, 10, 2, 3, 4]
 
     def test_update_inplace_no_rebuild(self):
         gdf = self.df.copy()
