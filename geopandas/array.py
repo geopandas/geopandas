@@ -532,25 +532,28 @@ class GeometryArray(ExtensionArray):
                 ring_mask = state[2] == shapely.GeometryType.LINEARRING
                 if ring_mask.any():
                     masked = geoms[ring_mask]
-                    # vectorise via shapely.linearrings; fall back to
-                    # per-geometry construction when empties or Z/M
-                    # dimensions are present, since get_coordinates
-                    # drops empty geometries and strips Z/M coordinates
-                    has_z = shapely.has_z(masked)
-                    has_m = shapely.has_m(masked)
-                    if (
-                        not shapely.is_empty(masked).any()
-                        and not has_z.any()
-                        and not has_m.any()
-                    ):
-                        coords, indices = shapely.get_coordinates(
-                            masked, return_index=True
-                        )
-                        geoms[ring_mask] = shapely.linearrings(coords, indices=indices)
-                    else:
+                    # empty geometries produce no coordinates, and M
+                    # coordinates cannot be rebuilt by shapely.linearrings
+                    # (which only knows Z), so restore those per-geometry;
+                    # otherwise vectorise, grouping by has_z so a global
+                    # include_z cannot promote 2D rings to 3D with NaN
+                    # coordinates
+                    if shapely.is_empty(masked).any() or shapely.has_m(masked).any():
                         geoms[ring_mask] = [
                             shapely.LinearRing(g.coords) for g in masked
                         ]
+                    else:
+                        for z in (False, True):
+                            grp = ring_mask & (shapely.has_z(geoms) == z)
+                            if grp.any():
+                                coords, indices = shapely.get_coordinates(
+                                    geoms[grp],
+                                    include_z=z,
+                                    return_index=True,
+                                )
+                                geoms[grp] = shapely.linearrings(
+                                    coords, indices=indices
+                                )
             self._crs = state[1]
             self._sindex = None  # pygeos.STRtree could not be pickled yet
             self._data = geoms

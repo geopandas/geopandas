@@ -946,6 +946,23 @@ def test_pickle_preserves_3d_linearring():
     assert result[0].wkt == "LINEARRING Z (0 0 0, 1 0 0, 1 1 0, 0 0 0)"
 
 
+def test_pickle_preserves_mixed_2d_3d_linearring():
+    import pickle
+
+    import shapely
+
+    ring_2d = shapely.LinearRing([(0, 0), (1, 0), (1, 1), (0, 0)])
+    ring_3d = shapely.LinearRing([(0, 0, 0), (1, 0, 0), (1, 1, 0), (0, 0, 0)])
+    arr = from_shapely([ring_2d, ring_3d])
+    result = pickle.loads(pickle.dumps(arr))
+    assert result[0].geom_type == "LinearRing"
+    assert not result[0].has_z
+    assert result[0].wkt == "LINEARRING (0 0, 1 0, 1 1, 0 0)"
+    assert result[1].geom_type == "LinearRing"
+    assert result[1].has_z
+    assert result[1].wkt == "LINEARRING Z (0 0 0, 1 0 0, 1 1 0, 0 0 0)"
+
+
 def test_raise_on_bad_sizes():
     with pytest.raises(ValueError) as info:
         T.contains(P)
