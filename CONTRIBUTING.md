@@ -84,7 +84,9 @@ little to no engagement from the author may be closed without further review.
 Remember that maintainers volunteer to support GeoPandas, and low quality AI
 generated Pull Requests are not an effective use of that precious time - a
 contribution should be worth more to the project than the time it takes to
-review it.
+review it. Ultimately, the person submitting an issue or PR is responsible
+for its content, regardless of whether AI tools were used in its creation
+and they must ensure the contribution meets the GeoPandas guidelines.
 
 We are not opposed to the use of AI tools in writing PRs, but require the
 following:
@@ -93,8 +95,7 @@ following:
   review all generated code to understand every detail
 - Match the style and conventions used in the rest of the codebase, including PR
   titles and descriptions
-- Be upfront about AI usage (which provider and model) and summarise what was
-  AI-generated
+- Be upfront about AI usage and summarise what was AI-generated
 - If there are parts you don't fully understand, leave comments on your own PR
   explaining what steps you took to verify correctness
 - Watch for AI's tendency to generate overly verbose comments, unnecessary test
@@ -111,3 +112,5 @@ etc.) do not use AI to speak for you, except for translation or grammar editing.
 If the developers want to chat with a chatbot, they can do so themselves.
 Human-to-human communication is essential for an open source community to
 thrive.
+
+This policy is adapted in part from the Apache Arrow AI-generated code Contribution guidelines.
