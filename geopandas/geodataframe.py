@@ -834,6 +834,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             properties = feature.get("properties") or {}
             row.update(properties)
             rows.append(row)
+        if not rows:
+            return cls(geometry=[], columns=columns, crs=crs)
         return cls(rows, columns=columns, crs=crs)
 
     @classmethod
