@@ -94,7 +94,7 @@ def _df_to_geodf(df, geom_col="geom", crs=None, con=None):
 
         df[geom_col] = geoms = geoms.apply(load_geom)
         if crs is None:
-            srid = shapely.get_srid(geoms.iat[0])
+            srid = int(shapely.get_srid(geoms.iat[0]))
             # if no defined SRID in geodatabase, returns SRID of 0
             if srid != 0:
                 try:
@@ -322,12 +322,15 @@ def _psql_insert_copy(tbl, conn, keys, data_iter):
     writer.writerows(data_iter)
     s_buf.seek(0)
 
-    columns = ", ".join(f'"{k}"' for k in keys)
+    preparer = conn.dialect.identifier_preparer
+    columns = ", ".join(preparer.quote(k) for k in keys)
+
+    table_name = preparer.quote(tbl.table.name)
+    if tbl.table.schema:
+        table_name = f"{preparer.quote_schema(tbl.table.schema)}.{table_name}"
 
     dbapi_conn = conn.connection
-    sql = (
-        f'COPY "{tbl.table.schema}"."{tbl.table.name}" ({columns}) FROM STDIN WITH CSV'
-    )
+    sql = f"COPY {table_name} ({columns}) FROM STDIN WITH CSV"
     with dbapi_conn.cursor() as cur:
         # Use psycopg method if it's available
         if hasattr(cur, "copy") and callable(cur.copy):
@@ -458,7 +461,7 @@ def _write_postgis(
 
 
 @lru_cache
-def _get_spatial_ref_sys_df(con, srid):
+def _get_spatial_ref_sys_df(con, srid: int):
     spatial_ref_sys_sql = (
         f"SELECT srid, auth_name FROM spatial_ref_sys WHERE srid = {srid}"
     )
