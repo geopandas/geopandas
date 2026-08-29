@@ -68,6 +68,8 @@ type_mapping = {p.value: _names[p.name] for p in shapely.GeometryType}
 geometry_type_ids = list(type_mapping.keys())
 geometry_type_values = np.array(list(type_mapping.values()), dtype=object)
 
+CRS_UNINTIALISED = object()
+
 
 class GeometryDtype(ExtensionDtype):
     type = BaseGeometry
@@ -75,7 +77,7 @@ class GeometryDtype(ExtensionDtype):
     na_value = None
     _metadata: tuple[str, ...] = ("crs",)
 
-    def __init__(self, crs: CRS | None, **kwargs):
+    def __init__(self, crs: CRS | None = CRS_UNINTIALISED, **kwargs):
         self.crs = crs
 
     def __str__(self):
@@ -83,7 +85,8 @@ class GeometryDtype(ExtensionDtype):
 
     def __eq__(self, other):
         if other == "geometry":
-            return True  # legacy compat TODO this is going to be a mess
+            # comparison to geometry type without parametrised CRS is always true
+            return True
         super().__eq__(other)
 
     def __hash__(self):
@@ -98,7 +101,7 @@ class GeometryDtype(ExtensionDtype):
                 f"'construct_from_string' expects a string, got {type(string)}"
             )
         elif string == cls.name:
-            return cls(None)  # TODO, is this a bad idea?
+            return cls(CRS_UNINTIALISED)  # TODO, is this a bad idea?
         else:
             raise TypeError(f"Cannot construct a '{cls.__name__}' from '{string}'")
 
@@ -367,8 +370,8 @@ class GeometryArray(ExtensionArray):
     """
 
     @property
-    def _dtype(self):
-        return GeometryDtype(self.crs)
+    def _dtype(self) -> GeometryDtype:
+        return self._dtype_data
 
     def __init__(self, data, crs: Any | None = None):
         if isinstance(data, self.__class__):
@@ -389,6 +392,7 @@ class GeometryArray(ExtensionArray):
         self._crs = None
         self.crs = crs
         self._sindex = None
+        self._dtype_data = GeometryDtype(crs)
 
     @property
     def sindex(self) -> SpatialIndex:
@@ -450,6 +454,7 @@ class GeometryArray(ExtensionArray):
                     stacklevel=2,
                 )
             self._crs = None
+        self._dtype_data = GeometryDtype(self._crs)
 
     def check_geographic_crs(self, stacklevel: int) -> None:
         """Check CRS and warn if the planar operation is done in a geographic CRS."""
@@ -528,22 +533,22 @@ class GeometryArray(ExtensionArray):
         # invalidate spatial index
         self._sindex = None
 
-        # TODO: use this once pandas-dev/pandas#33457 is fixed
-        # if hasattr(value, "crs"):
-        #     if value.crs and (value.crs != self.crs):
-        #         raise ValueError(
-        #             "CRS mismatch between CRS of the passed geometries "
-        #             "and CRS of existing geometries."
-        #         )
+        if hasattr(value, "crs"):
+            if value.crs and (value.crs != self.crs):
+                raise ValueError(
+                    "CRS mismatch between CRS of the passed geometries "
+                    "and CRS of existing geometries."
+                )
 
     def __getstate__(self):
-        return (shapely.to_wkb(self._data), self._crs)
+        return shapely.to_wkb(self._data), self._crs
 
     def __setstate__(self, state):
         if not isinstance(state, dict):
             # pickle file saved with pygeos
             geoms = shapely.from_wkb(state[0])
             self._crs = state[1]
+            self._dtype_data = GeometryDtype(self._crs)
             self._sindex = None  # pygeos.STRtree could not be pickled yet
             self._data = geoms
             self.base = None
