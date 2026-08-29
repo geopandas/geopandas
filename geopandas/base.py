@@ -6638,9 +6638,9 @@ GeometryCollection
         cell_size: float,
         cell_type: Literal["square", "hexagon"] = "square",
         what: Literal["centers", "corners", "polygons"] = "polygons",
-        offset: tuple = (0, 0),
+        offset: tuple[float, float] | None = None,
         intersect: bool = True,
-        flat_topped: bool = True,
+        flat_topped: bool = False,
     ) -> "GeoSeries":
         """Provide the centers, corners, or polygons of a square or hexagonal grid.
 
@@ -6659,15 +6659,14 @@ GeometryCollection
             center of each grid cell. ``"corners"`` returns points at all unique
             vertices of the grid cells. ``"polygons"`` returns the grid cell
             polygons.
-        offset : tuple
-            x, y offset of the grid relative to lower-left corner of the
-            bounding box.
+        offset : tuple | None, default None
+            Lower left corner coordinates (x, y) of the grid.
         intersect : bool, default True
             If False, the grid is not filtered by the geometry and the full
             grid covering the bounding box is returned.
-        flat_topped : bool, default True
-            If False, the orientation of the hexagonal cells are rotated by
-            90 degrees such that a corner points upwards.
+        flat_topped : bool, default False
+            If True generate flat topped hexagons. If False, the orientation of the
+            hexagonal cells is such that a corner points upwards.
 
         Returns
         -------

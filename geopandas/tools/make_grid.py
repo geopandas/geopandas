@@ -15,9 +15,9 @@ def make_grid(
     cell_size: float,
     cell_type: Literal["square", "hexagon"] = "square",
     what: Literal["centers", "corners", "polygons"] = "polygons",
-    offset: tuple[float, float] = (0, 0),
+    offset: tuple[float, float] | None = None,
     intersect: bool = True,
-    flat_topped: bool = True,
+    flat_topped: bool = False,
 ) -> GeoSeries:
     """Provide the centers, corners, or polygons of a square or hexagonal grid.
 
@@ -30,30 +30,31 @@ def make_grid(
     If there are multiple geometries in a GeoSeries/GeoDataFrame, the grid will
     be created over the total bounds of the GeoSeries/GeoDataFrame. Subsequently,
     the grid is filtered to only include elements that spatially overlap with
-    any of the individual geometries.
+    any of the individual geometries when ``intersetcts`` is ``True``.
 
     Parameters
     ----------
     input_geometry : (Multi)Polygon, GeoSeries, GeoDataFrame
         Polygon within its boundaries the grid is made.
     cell_size : float
-        Side length of the square or hexagonal grid cell.
+        Side length of the square. For hexagonal cells the distance between opposite
+        edges (edge length is ``cellsize/sqrt(3)``).
     cell_type : str, one of "square", "hexagon", default "square"
-        Grid type that is returned.
+        Grid type that is returned. All cell types reflect naive tiling of a plane,
+        not a tiling of the globe (like H3 or S2).
     what : str, one of "centers", "corners", "polygons", default "polygons"
         Grid feature that is returned. ``"centers"`` returns points at the
         center of each grid cell. ``"corners"`` returns points at all unique
         vertices of the grid cells (i.e., the points where cell edges meet).
         ``"polygons"`` returns the grid cell polygons.
-    offset : tuple
-        x, y offset of the grid realtive to lower-left corner of the input
-        geometry's bounding box.
+    offset : tuple | None, default None
+        Lower left corner coordinates (x, y) of the grid.
     intersect : bool, default True
         If False, the grid is not filtered by the ``input_geometry`` and the
         full grid covering the bounding box is returned.
-    flat_topped : bool, default True
-        If False, the orientation of the hexagonal cells are rotated by 90 degree
-        such that a corner points upwards.
+    flat_topped : bool, default False
+        If True generate flat topped hexagons. If False, the orientation of the
+        hexagonal cells is such that a corner points upwards.
 
     Returns
     -------
@@ -101,21 +102,20 @@ def make_grid(
     else:
         bounds = np.array(input_geometry.bounds)
 
-    x_dist = bounds[2] - bounds[0] - offset[0]
-    y_dist = bounds[3] - bounds[1] - offset[1]
+    if offset is not None:
+        grid_origin_x = offset[0]
+        grid_origin_y = offset[1]
+    else:
+        grid_origin_x = bounds[0]
+        grid_origin_y = bounds[1]
 
-    grid_origin_x = bounds[0] + offset[0]
-    grid_origin_y = bounds[1] + offset[1]
+    x_dist = bounds[2] - grid_origin_x
+    y_dist = bounds[3] - grid_origin_y
 
     if cell_type == "square":
-        # Set corner coordinates of square grid. Grid always ends at the right/upper
-        # edge of the bounding box; also if an offset is defined.
-        x_coords_corn = np.arange(
-            bounds[0] + offset[0], bounds[2] + cell_size, cell_size
-        )
-        y_coords_corn = np.arange(
-            bounds[1] + offset[1], bounds[3] + cell_size, cell_size
-        )
+        # Set corner coordinates of square grid.
+        x_coords_corn = np.arange(grid_origin_x, bounds[2] + cell_size, cell_size)
+        y_coords_corn = np.arange(grid_origin_y, bounds[3] + cell_size, cell_size)
         xv, yv = np.meshgrid(x_coords_corn, y_coords_corn)
 
         if what == "corners":
@@ -151,13 +151,12 @@ def make_grid(
 
     elif cell_type == "hexagon":
         if not flat_topped:
-            y_dist = bounds[2] - bounds[0] - offset[0]
-            x_dist = bounds[3] - bounds[1] - offset[1]
+            x_dist, y_dist = y_dist, x_dist
 
         # Create rectangular meshgrid containing both the centers and the cornes
         # of the hexagonal grid
-        dx = cell_size
-        dy = cell_size * np.sqrt(3) / 2
+        dx = cell_size / np.sqrt(3)
+        dy = cell_size / 2
 
         # Determine number of grid points along x/y direction such that the area of
         # any bounding box is fully covered with polygons.
@@ -337,7 +336,7 @@ def _hex_polygon_corners(
 def _basic_checks(
     input_geometry: Polygon | MultiPolygon | GeoSeries | GeoDataFrame,
     cell_size: float,
-    offset: tuple[float, float],
+    offset: tuple[float, float] | None,
     what: str,
     cell_type: str,
     intersect: bool,
@@ -401,15 +400,14 @@ def _basic_checks(
         bounds = np.array(input_geometry.bounds)
     width = bounds[2] - bounds[0]
     height = bounds[3] - bounds[1]
-    if (offset[0] > width) and (offset[1] > height):
-        warnings.warn(
-            f"`offset` {offset} is larger than "
-            f"input_geometry dimensions ({width}, {height})",
-            stacklevel=2,
-        )
     if (cell_size > width) and (cell_size > height):
         warnings.warn(
             f"`cell_size` {cell_size} is larger than "
             f"input_geometry dimensions ({width}, {height})",
+            stacklevel=2,
+        )
+    if offset is not None and ((offset[0] > bounds[2]) or (offset[1] > bounds[3])):
+        warnings.warn(
+            "One of the `offset` coordinates is larger than input_geometry extent.",
             stacklevel=2,
         )
