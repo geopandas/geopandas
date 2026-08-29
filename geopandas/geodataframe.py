@@ -473,6 +473,12 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         # update _geometry_column_name prior to assignment
         # to avoid default is None warning
         frame._geometry_column_name = geo_column_name
+        if isinstance(frame.columns, pd.MultiIndex) and not isinstance(
+            geo_column_name, tuple
+        ):
+            # when setting a single column to dataframe with multi-index columns,
+            # pandas does not like setting it with only the first level name
+            geo_column_name = (geo_column_name,) + ("",) * (frame.columns.nlevels - 1)
         frame[geo_column_name] = level
 
         if not inplace:
@@ -530,7 +536,12 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 return self.rename(columns={geometry_col: col}).set_geometry(
                     col, inplace=inplace
                 )
-            self.rename(columns={geometry_col: col}, inplace=inplace)
+            with warnings.catch_warnings():
+                # TODO: pandas >= 3.1 triggers a warning for inplace rename here
+                # suppresing this for now, but we have to replace this with our own
+                # warning specifically for rename_geometry
+                warnings.filterwarnings("ignore", ".*inplace keyword.*")
+                self.rename(columns={geometry_col: col}, inplace=inplace)
             self.set_geometry(col, inplace=inplace)
 
     @property
@@ -823,6 +834,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             properties = feature.get("properties") or {}
             row.update(properties)
             rows.append(row)
+        if not rows:
+            return cls(geometry=[], columns=columns, crs=crs)
         return cls(rows, columns=columns, crs=crs)
 
     @classmethod
@@ -1468,7 +1481,7 @@ default 'snappy'
             may not be supported by all readers.
         schema_version : {'0.1.0', '0.4.0', '1.0.0', '1.1.0', None}
             GeoParquet specification version; if not provided, will default to
-            latest supported stable version (1.0.0).
+            latest supported stable version (1.1.0).
         kwargs
             Additional keyword arguments passed to :func:`pyarrow.parquet.write_table`.
 
@@ -1534,7 +1547,7 @@ default 'snappy'
             compression. By default uses LZ4 if available, otherwise uncompressed.
         schema_version : {'0.1.0', '0.4.0', '1.0.0', '1.1.0' None}
             GeoParquet specification version; if not provided will default to
-            latest supported stable version (1.0.0).
+            latest supported stable version (1.1.0).
         kwargs
             Additional keyword arguments passed to
             :func:`pyarrow.feather.write_feather`.
@@ -2036,7 +2049,10 @@ default 'snappy'
                 pass
             else:
                 if self.crs is not None and result.crs is None:
-                    result.set_crs(self.crs, inplace=True)
+                    if PANDAS_GE_30:
+                        result = result.set_crs(self.crs)
+                    else:
+                        result.set_crs(self.crs, inplace=True)
         elif isinstance(result, Series) and result.dtype == "object":
             # Try reconstruct series GeometryDtype if lost by apply
             # If all none and object dtype assert list of nones is more likely
@@ -2344,10 +2360,12 @@ default 'snappy'
 
         Parameters
         ----------
-        column : string, default None
-            Column to explode. In the case of a geometry column, multi-part
+        column : string or list of strings, default None
+            Column(s) to explode. In the case of a geometry column, multi-part
             geometries are converted to single-part.
-            If None, the active geometry column is used.
+            If None, the active geometry column is used. A list of multiple
+            (non-geometry) columns may be passed to use the pandas multi-column
+            explode.
         ignore_index : bool, default False
             If True, the resulting index will be labelled 0, 1, …, n - 1,
             ignoring `index_parts`.
@@ -2411,8 +2429,20 @@ default 'snappy'
         # If no column is specified then default to the active geometry column
         if column is None:
             column = self.geometry.name
+        # ``self[column].dtypes`` is a scalar dtype when a single column is
+        # selected and a Series of dtypes when multiple columns are selected.
+        dtypes = self[column].dtypes
+        if isinstance(dtypes, Series):
+            # Multiple columns: only the pandas (non-geometry) multi-column
+            # explode is supported.
+            if any(isinstance(dtype, GeometryDtype) for dtype in dtypes):
+                raise ValueError(
+                    "Exploding multiple columns including a geometry column is "
+                    "not supported."
+                )
+            return super().explode(column, ignore_index=ignore_index, **kwargs)
         # If the specified column is not a geometry dtype use pandas explode
-        if not isinstance(self[column].dtype, GeometryDtype):
+        if not isinstance(dtypes, GeometryDtype):
             return super().explode(column, ignore_index=ignore_index, **kwargs)
 
         exploded_geom = self.geometry.reset_index(drop=True).explode(index_parts=True)
@@ -2424,7 +2454,10 @@ default 'snappy'
         df = df.set_geometry(self._geometry_column_name).__finalize__(self)
 
         if ignore_index:
-            df.reset_index(inplace=True, drop=True)
+            if PANDAS_GE_30:
+                df = df.reset_index(drop=True)
+            else:
+                df.reset_index(inplace=True, drop=True)
         elif index_parts:
             # reset to MultiIndex, otherwise df index is only first level of
             # exploded GeoSeries index.
