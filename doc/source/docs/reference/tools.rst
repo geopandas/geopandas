@@ -10,7 +10,7 @@ Tools
    sjoin_nearest
    overlay
    clip
-   tools.geocode
-   tools.reverse_geocode
-   tools.collect
+   geocode
+   reverse_geocode
+   collect
    points_from_xy
