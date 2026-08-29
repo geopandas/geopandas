@@ -9,7 +9,7 @@ from shapely.geometry import MultiPoint, box
 from shapely.geometry.base import BaseGeometry
 
 from . import _compat as compat
-from .array import GeometryArray, GeometryDtype, points_from_xy
+from .array import GeometryArray, GeometryDtype
 
 
 def is_geometry_type(data):
@@ -388,7 +388,7 @@ GeometryCollection
         it might be desirable to detect narrow gaps as invalidities in the coverage. The
         ``gap_width`` parameter allows to specify the maximum width of gaps to detect.
         When gaps are detected, this method will return ``False`` and the
-        :meth:`coverage_invalid_edges` method can be used to find the edges of those
+        :meth:`invalid_coverage_edges` method can be used to find the edges of those
         gaps.
 
         Geometries that are not Polygon or MultiPolygon are ignored and an empty
@@ -5418,7 +5418,7 @@ GeometryCollection
             linear segments in a quarter circle in the approximation of circular arcs.
         cap_style : {'round', 'square', 'flat'}, default 'round'
             Specifies the shape of buffered line endings. ``'round'`` results in
-            circular line endings (see ``resolution``). Both ``'square'`` and ``'flat'``
+            circular line endings (see ``quad_segs``). Both ``'square'`` and ``'flat'``
             result in rectangular line endings, ``'flat'`` will end at the original
             vertex, while ``'square'`` involves adding the buffer width.
         join_style : {'round', 'mitre', 'bevel'}, default 'round'
@@ -5454,7 +5454,7 @@ GeometryCollection
         2    POLYGON ((2.8 -1, 2.8 1, 2.80096 1.0196, 2.803...
         dtype: geometry
 
-        ``Further specification as ``join_style`` and ``cap_style`` are shown in the
+        Further specification as ``join_style`` and ``cap_style`` are shown in the
         following illustration:
 
         .. plot:: _static/code/buffer.py
@@ -6460,9 +6460,9 @@ GeometryCollection
             if pd.api.types.is_list_like(size):
                 result = [
                     (
-                        points_from_xy(
-                            *sample_function(x, size=s, rng=rng, **kwargs).T
-                        ).union_all()
+                        shapely.multipoints(
+                            sample_function(x, size=s, rng=rng, **kwargs)
+                        )
                         if not (x.is_empty or x is None or "Polygon" not in x.geom_type)
                         else MultiPoint()
                     )
@@ -6471,9 +6471,9 @@ GeometryCollection
             else:
                 result = self.geometry.apply(
                     lambda x: (
-                        points_from_xy(
-                            *sample_function(x, size=size, rng=rng, **kwargs).T
-                        ).union_all()
+                        shapely.multipoints(
+                            sample_function(x, size=size, rng=rng, **kwargs)
+                        )
                         if not (x.is_empty or x is None or "Polygon" not in x.geom_type)
                         else MultiPoint()
                     ),

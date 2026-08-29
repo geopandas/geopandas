@@ -165,11 +165,9 @@ def test_overlay_nybb(how, nybb_filename):
     # 24 is a full original circle overlapping with unioned geometries, and
     # 27 is a completely duplicated row)
     if how == "union":
-        expected = expected.drop([24, 27])
-        expected.reset_index(inplace=True, drop=True)
+        expected = expected.drop([24, 27]).reset_index(drop=True)
     # Eliminate observations without geometries (issue from QGIS)
-    expected = expected[expected.is_valid]
-    expected.reset_index(inplace=True, drop=True)
+    expected = expected[expected.is_valid].reset_index(drop=True)
 
     if how == "identity":
         expected = expected[expected.BoroCode.notnull()].copy()
@@ -846,13 +844,22 @@ def test_zero_len():
         crs=4326,
     )
     # overlay with empty geodataframe shouldn't throw
-    gdf2 = GeoDataFrame({"geometry": []}, crs=4326)
-    res = gdf1.overlay(gdf2, how="union")
+    empty = GeoDataFrame({"geometry": []}, crs=4326)
+    res = gdf1.overlay(empty, how="union")
     assert_geodataframe_equal(res, gdf1)
+    res = gdf1.overlay(empty, how="union")
+    assert_geodataframe_equal(res, gdf1)
+    res = empty.overlay(gdf1, how="union", keep_geom_type=False)
+    assert_geodataframe_equal(res, gdf1)
+    res = empty.overlay(gdf1, how="difference", keep_geom_type=False)
+    assert_geodataframe_equal(res, empty)
 
-    gdf2 = GeoDataFrame(geometry=[], crs=4326)
-    res = gdf1.overlay(gdf2, how="union")
-    assert_geodataframe_equal(res, gdf1)
+    # keep_geom_type should warn gracefully with an empty input
+    # https://github.com/geopandas/geopandas/discussions/3738
+    with pytest.warns(
+        UserWarning, match="`keep_geom_type=True` is invalid when df1 is empty"
+    ):
+        empty.overlay(gdf1, how="union", keep_geom_type=True)
 
 
 class TestOverlayWikiExample:

@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import warnings
 from collections.abc import Collection, Iterable, Sequence
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias
 
 import numpy as np
 import pandas as pd
+from numpy.typing import NDArray
 from pandas import CategoricalDtype
 from pandas.core.dtypes.cast import coerce_indexer_dtype
 from pandas.plotting import PlotAccessor
@@ -17,6 +18,8 @@ import geopandas
 from ._decorator import doc
 
 if TYPE_CHECKING:
+    import os
+
     from matplotlib.axes import Axes
     from matplotlib.collections import (
         LineCollection,
@@ -27,6 +30,13 @@ if TYPE_CHECKING:
     from matplotlib.markers import MarkerStyle
     from matplotlib.patches import PathPatch
     from matplotlib.path import Path
+    from rasterio.io import MemoryFile
+    from xyzservices import TileProvider
+
+
+ColumnLike: TypeAlias = (
+    str | NDArray | pd.Series | pd.Index | pd.Categorical | Sequence | None
+)
 
 
 def _set_aspect(
@@ -313,10 +323,12 @@ def _plot_polygon_collection(
         [_PolygonPatch(poly) for poly in geoms], **kwargs
     )
 
+    if cmap and not isinstance(cmap, dict):
+        collection.set_cmap(cmap)
+
     if values is not None:
         collection.set_array(np.asarray(values))
-        if cmap:
-            collection.set_cmap(cmap)
+
         if "norm" not in kwargs:
             collection.set_clim(vmin, vmax)
 
@@ -456,13 +468,19 @@ def _plot_point_collection(
 
     _expand_kwargs(kwargs, multiindex)
 
+    _cmap = cmap if values is not None else None
+
     # norm cannot be passed alongside vmin and vmax
     if "norm" not in kwargs:
         collection = ax.scatter(
-            xy[:, 0], xy[:, 1], vmin=vmin, vmax=vmax, cmap=cmap, **kwargs
+            xy[:, 0], xy[:, 1], vmin=vmin, vmax=vmax, cmap=_cmap, **kwargs
         )
     else:
         collection = ax.scatter(xy[:, 0], xy[:, 1], cmap=cmap, **kwargs)
+
+    # ensure that cmap is assigned when used categorical plotting for a reference
+    if values is None and cmap is not None:
+        collection.set_cmap(cmap)
 
     return collection
 
@@ -475,6 +493,9 @@ def plot_series(
     figsize: tuple[float, float] | None = None,
     aspect: float | Literal["auto", "equal", None] = "auto",
     autolim: bool = True,
+    tiles: bool | str | TileProvider | os.PathLike | MemoryFile = False,
+    attr: str | None = None,
+    add_labels: bool = True,
     **style_kwds,
 ) -> Axes:
     """
@@ -488,40 +509,64 @@ def plot_series(
         The GeoSeries to be plotted. Currently Polygon,
         MultiPolygon, LineString, MultiLineString, Point and MultiPoint
         geometries can be plotted.
-    cmap : str (default None)
-        The name of a colormap recognized by matplotlib. Any
+    cmap : ``str`` | ``Colormap`` (default ``None``)
+        The name of a colormap recognized by matplotlib, or a
+        :class:`matplotlib.colors.Colormap`. Colors will be mapped to individual
+        geometries along their order of appearance in the GeoSeries. Any
         colormap will work, but categorical colormaps are
         generally recommended. Examples of useful discrete
         colormaps include:
 
-            tab10, tab20, Accent, Dark2, Paired, Pastel1, Set1, Set2
-
-    color : str, np.array, pd.Series, List (default None)
-        If specified, all objects will be colored uniformly.
-    ax : matplotlib.pyplot.Artist (default None)
-        axes on which to draw the plot
-    figsize : pair of floats (default None)
-        Size of the resulting matplotlib.figure.Figure. If the argument
-        ax is given explicitly, figsize is ignored.
-    aspect : 'auto', 'equal', None or float (default 'auto')
-        Set aspect of axis. If 'auto', the default aspect for map plots is 'equal'; if
-        however data are not projected (coordinates are long/lat), the aspect is by
-        default set to 1/cos(s_y * pi/180) with s_y the y coordinate of the middle of
-        the GeoSeries (the mean of the y range of bounding box) so that a long/lat
-        square appears square in the middle of the plot. This implies an
-        Equirectangular projection. If None, the aspect of `ax` won't be changed. It can
-        also be set manually (float) as the ratio of y-unit to x-unit.
-    autolim : bool (default True)
+            "tab10", "tab20", "Accent", "Dark2", "Paired", "Pastel1", "Set1", "Set2"
+    color : ``str``, ``np.array``, ``pd.Series`` (default ``None``)
+        Color of the geometry. If specified as scalar matplotlib understands as a color
+        (``str``, ``tuple`` or RGBA etc.), all objects will be colored uniformly. If
+        specifies as array-like of the same length as GeoDataFrame, individual colors
+        will be mapped to respective geometries..
+    ax : ``matplotlib.axes.Axes`` (default ``None``)
+        :class:`matplotlib.axes.Axes` axes on which to draw the plot
+    figsize : ``tuple`` of integers (default None)
+        Size of the resulting :class:`matplotlib.figure.Figure`. If the argument ``ax``
+        is given explicitly, ``figsize`` is ignored.
+    aspect : `'auto'`, `'equal'`, ``None`` or ``float`` (default ``'auto'``)
+        Set aspect of axis. If ``'auto'``, the default aspect for map plots is
+        ``'equal'``; if however data are not projected (coordinates are long/lat), the
+        aspect is by default set to ``1/cos(df_y * pi/180)`` with ``df_y`` the y
+        coordinate of the middle of the GeoDataFrame (the mean of the y range of
+        bounding box) so that a long/lat square appears square in the middle of the
+        plot. This implies an Equirectangular projection. If ``None``, the aspect of
+        ``ax`` won't be changed. It can also be set manually (float) as the ratio of
+        y-unit to x-unit.
+    autolim : ``bool`` (default ``True``)
         Update axes data limits to contain the new geometries.
+    tiles : bool, str, xyzservices.TileProvider, os.PathLike, file-like, or rasterio.io.MemoryFile (default False)
+        Add contextual background tiles. Can be either a boolean,
+        :class:`xyzservices.TileProvider`, any string that can be resolved by
+        :func:`xyzservices.providers.query_name`, URL, or a path to a local file. The
+        placeholders for the XYZ in the URL need to be `{x}`, `{y}`, `{z}`,
+        respectively. For local file paths, the file is read with `rasterio` and all
+        bands are loaded into the basemap. The tiles are automatically warped to the CRS
+        of the geometry. Note that this can result in suboptimal rendering. To avoid
+        warping, geometry needs to be in EPSG:3857 (Web Mercator) or a CRS of the tiles
+        if other projection is used. Default basemap when `True` follows the default
+        of the underlying :func:`contextily.add_basemap`, which is OpenStreetMap
+        Humanitarian.
+    attr : str (default None)
+        Attribution text passed to :func:`contextily.add_basemap` as
+        ``attribution``. When not provided, the default attribution of the selected
+        tile source is used.
+    add_labels : bool (default True)
+        Use CRS metadata to label the axes.
     **style_kwds : dict
-        Color options to be passed on to the actual plot function, such
-        as ``edgecolor``, ``facecolor``, ``linewidth``, ``markersize``,
-        ``alpha``.
+        Style options to be passed on to the actual plot function, such as
+        ``edgecolor``, ``facecolor``, ``linewidth``, ``markersize``, ``alpha``. These
+        can be scalar, which are uniformly mapped to all geometries, or array-likes of
+        the same length as GeoSeries, which are mapped to their respective geometries.
 
     Returns
     -------
     ax : matplotlib axes instance
-    """
+    """  # noqa: E501
     try:
         import matplotlib  # noqa: F401
         from matplotlib.colors import Colormap
@@ -537,7 +582,8 @@ def plot_series(
     if ax is None:
         _, ax = plt.subplots(figsize=figsize)
 
-    _set_axis_labels(ax, s.crs)
+    if add_labels:
+        _set_axis_labels(ax, s.crs)
 
     if s.empty:
         warnings.warn(
@@ -567,8 +613,20 @@ def plot_series(
     values = None
     color_given = False
 
-    # if cmap is specified, create range of colors based on cmap
-    if cmap is not None:
+    # the order here matters to ensure that categorical plots which specify both
+    # color and cmap are properly plotted - see #3763
+    if color is not None:
+        # if color is as a list-like, ensure it is properly mapped to components
+        color_given = pd.api.types.is_list_like(color) and len(color) == len(s)
+        # have colors been given for all geometries?
+        if color_given:
+            # ensure indexes are consistent
+            if isinstance(color, pd.Series):
+                color = color.reindex(s.index)
+            color = np.take(color, multiindex, axis=0)
+
+    elif cmap is not None:
+        # if cmap is specified, create range of colors based on cmap
         values = np.arange(len(s))
         if isinstance(cmap, Colormap) and hasattr(cmap, "N"):
             # repeat for cmap with limited number of colors
@@ -578,16 +636,6 @@ def plot_series(
 
         # ensure proper mapping of values to components of GeometryCollections
         values = np.take(values, multiindex, axis=0)
-
-    # if color is specified as a list-like, ensure it is properly mapped to components
-    elif color is not None:
-        color_given = pd.api.types.is_list_like(color) and len(color) == len(s)
-        # have colors been given for all geometries?
-        if color_given:
-            # ensure indexes are consistent
-            if isinstance(color, pd.Series):
-                color = color.reindex(s.index)
-            color = np.take(color, multiindex, axis=0)
 
     # subdivide by geometry type - each has its own collection
     geom_types = geoms.geom_type
@@ -649,6 +697,8 @@ def plot_series(
             ax, points, values_, color=color_, cmap=cmap, **points_kwds
         )
 
+    _add_basemap(ax, tiles, s.crs, attr=attr)
+
     ax.figure.canvas.draw_idle()
 
     return ax
@@ -656,7 +706,7 @@ def plot_series(
 
 def plot_dataframe(
     df: geopandas.GeoDataFrame,
-    column: str | np.ndarray | pd.Series | pd.Index | None = None,
+    column: ColumnLike = None,
     cmap: str | Colormap | dict | None = None,
     color: str | Sequence | None = None,
     ax: Axes | None = None,
@@ -675,6 +725,9 @@ def plot_dataframe(
     missing_kwds: dict | None = None,
     aspect: float | Literal["auto", "equal", None] = "auto",
     autolim: bool = True,
+    tiles: bool | str | TileProvider | os.PathLike | MemoryFile = False,
+    attr: str | None = None,
+    add_labels: bool = True,
     **style_kwds,
 ) -> Axes:
     """
@@ -743,6 +796,12 @@ def plot_dataframe(
         continuous plot where bins are used to define
         :class:`matplotlib.colors.BoundaryNorm`. The latter can be enabled by specifying
         ``colorbar=True`` within ``legend_kwds`` and yields colorbar legend.
+
+        In addition, ``scheme='greedy'`` uses :func:`mapclassify.greedy` to derive
+        greedy (topological) coloring which attempts to color a GeoDataFrame using as
+        few colors as possible, where no neighbours can have same color as the feature
+        itself. This cannot be specified together with ``column`` as each geometry
+        is treated as unique with no relation to its attributes.
     k : ``int`` (default ``5``)
         Number of classes (ignored if ``scheme`` is ``None``)
     vmin : ``None`` or ``float`` (default ``None``)
@@ -793,6 +852,24 @@ def plot_dataframe(
         y-unit to x-unit.
     autolim : ``bool`` (default ``True``)
         Update axes data limits to contain the new geometries.
+    tiles : bool, str, xyzservices.TileProvider, os.PathLike, file-like, or rasterio.io.MemoryFile (default False)
+        Add contextual background tiles. Can be either a boolean,
+        :class:`xyzservices.TileProvider`, any string that can be resolved by
+        :func:`xyzservices.providers.query_name`, URL, or a path to a local file. The
+        placeholders for the XYZ in the URL need to be `{x}`, `{y}`, `{z}`,
+        respectively. For local file paths, the file is read with `rasterio` and all
+        bands are loaded into the basemap. The tiles are automatically warped to the CRS
+        of the geometry. Note that this can result in suboptimal rendering. To avoid
+        warping, geometry needs to be in EPSG:3857 (Web Mercator) or a CRS of the tiles
+        if other projection is used. Default basemap when `True` follows the default
+        of the underlying :func:`contextily.add_basemap`, which is OpenStreetMap
+        Humanitarian.
+    attr : str (default None)
+        Attribution text passed to :func:`contextily.add_basemap` as
+        ``attribution``. When not provided, the default attribution of the selected
+        tile source is used.
+    add_labels : bool (default True)
+        Use CRS metadata to label the axes.
     **style_kwds : dict
         Style options to be passed on to the actual plot function, such as
         ``edgecolor``, ``facecolor``, ``linewidth``, ``markersize``, ``alpha``. These
@@ -819,7 +896,7 @@ def plot_dataframe(
     >>> df.plot("BoroName", cmap="Set1")  # doctest: +SKIP
 
     See the User Guide page :doc:`../../user_guide/mapping` for details.
-    """
+    """  # noqa: E501
     try:
         import matplotlib.pyplot as plt
         from matplotlib import cm, colormaps, colors
@@ -846,6 +923,29 @@ def plot_dataframe(
     if markersize is not None:
         style_kwds["markersize"] = markersize
 
+    if classification_kwds is None:
+        classification_kwds = {}
+
+    if scheme:
+        try:
+            import mapclassify
+        except ImportError:
+            raise ImportError(
+                "The 'mapclassify' package is required to use the 'scheme' keyword."
+            )
+
+    if scheme == "greedy":
+        if column is not None:
+            raise ValueError(
+                "The `scheme='greedy'` cannot be specified together with `column`."
+            )
+
+        categorical = True
+        scheme = None
+
+        codes = mapclassify.greedy(df, **classification_kwds)
+        column = pd.Categorical(codes)
+
     # if column is not set, we're showing just geometries -> plot_series
     if column is None:
         return plot_series(
@@ -856,6 +956,8 @@ def plot_dataframe(
             figsize=figsize,
             aspect=aspect,
             autolim=autolim,
+            tiles=tiles,
+            attr=attr,
             **style_kwds,
         )
 
@@ -864,25 +966,27 @@ def plot_dataframe(
             raise ValueError("'ax' can not be None if 'cax' is not.")
         _fig, ax = plt.subplots(figsize=figsize)
 
-    _set_axis_labels(ax, df.crs)
+    if add_labels:
+        _set_axis_labels(ax, df.crs)
 
     # set correct aspect to preserve proportions in geographic CRS
     _set_aspect(aspect, df, ax)
 
     # Process polymorphic column argument (column name or array-like)
-    if isinstance(column, np.ndarray | pd.Series | pd.Index):
-        if column.shape[0] != df.shape[0]:
+    if pd.api.types.is_list_like(column):
+        # column name is a tuple or similar
+        if pd.api.types.is_hashable(column) and column in df.columns:
+            values = df[column]
+        elif len(column) != df.shape[0]:
             raise ValueError(
                 "The dataframe and given column have different number of rows."
             )
+        elif isinstance(column, pd.Series):
+            values = column.reindex(df.index)
         elif isinstance(column, pd.Index):
             values = column.values
         else:
-            values = column
-
-            # Make sure index of a Series matches index of df
-            if isinstance(values, pd.Series):
-                values = values.reindex(df.index)
+            values = np.asarray(column)
     else:
         values = df[column]
 
@@ -910,15 +1014,6 @@ def plot_dataframe(
     nan_idx = np.asarray(pd.isna(values), dtype="bool")
 
     if scheme:
-        try:
-            import mapclassify
-        except ImportError:
-            raise ImportError(
-                "The 'mapclassify' package is required to use the 'scheme' keyword."
-            )
-
-        if classification_kwds is None:
-            classification_kwds = {}
         if "k" not in classification_kwds:
             classification_kwds["k"] = k
 
@@ -983,7 +1078,8 @@ def plot_dataframe(
                     return cmap(i)
                 else:
                     # For continuous cmaps, stretch alongside whole range
-                    return cmap(i / (ngroups - 1))
+                    # (a single group has no range to stretch over)
+                    return cmap(i / (ngroups - 1) if ngroups > 1 else 0.0)
             elif isinstance(cmap, dict):
                 return cmap[name]
             else:
@@ -1010,7 +1106,7 @@ def plot_dataframe(
 
         # looping over groups and adding them to the Axes one by one, each with its
         # own collection and label
-        for i, (name, group) in enumerate(grouped["geometry"]):
+        for i, (name, group) in enumerate(grouped):
             # this ensures that any style kwd can be mapped to a value and that
             # list-like kwds are properly split to groups
             group_style_kwds = {}
@@ -1048,6 +1144,7 @@ def plot_dataframe(
                     group.geometry,
                     label=label,
                     color=_color(i, name, ngroups, cmap),
+                    cmap=cmap,
                     ax=ax,
                     aspect=None,
                     **group_style_kwds,
@@ -1226,6 +1323,8 @@ def plot_dataframe(
         # if there is already a colorbar but we want a legend for missing data,
         # user can simply call `ax.legend()` with any custom keywords.
 
+    _add_basemap(ax, tiles, df.crs, attr=attr)
+
     ax.figure.canvas.draw_idle()
     return ax
 
@@ -1251,6 +1350,23 @@ def _check_invalid_categories(categories: Collection[Any], values) -> pd.Categor
         codes_downcast = coerce_indexer_dtype(codes, categories)
         cat = pd.Categorical.from_codes(codes_downcast, categories)
     return cat
+
+
+def _add_basemap(ax, tiles, crs, attr=None):
+    """Optionally add basemap via contextily."""
+    if tiles:
+        try:
+            import contextily
+        except ImportError:
+            raise ImportError(
+                "Contextily package is required for plotting background tiles. "
+                "You can install it using 'conda install -c conda-forge contextily' or "
+                "'pip install contextily'."
+            )
+        if tiles is True:
+            tiles = None
+
+        contextily.add_basemap(source=tiles, ax=ax, crs=crs, attribution=attr)
 
 
 def _set_axis_labels(ax, crs):

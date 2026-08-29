@@ -1454,6 +1454,13 @@ class GeometryArray(ExtensionArray):
         if method is not None:
             raise NotImplementedError("fillna with a method is not yet supported")
 
+        if isinstance(value, dict):
+            # to match upstream pandas specifically raising for dict
+            raise TypeError(
+                "ExtensionArray.fillna does not support filling with a dict. "
+                "Use Series.fillna instead."
+            )
+
         mask = self.isna()
         if copy:
             new_values = self.copy()
@@ -1868,15 +1875,36 @@ class GeometryArray(ExtensionArray):
         data = np.concatenate([ga._data for ga in to_concat])
         return GeometryArray(data, crs=_get_common_crs(to_concat))
 
-    def _reduce(self, name: str, skipna: bool = True, keepdims: bool = False, **kwargs):
-        # including the base class version here (that raises by default)
-        # because this was not yet defined in pandas 0.23
-        if name in ("any", "all"):
-            return getattr(self._data, name)(keepdims=keepdims)
-        raise TypeError(
-            f"'{type(self).__name__}' with dtype {self.dtype} "
-            f"does not support reduction '{name}'"
-        )
+    def _reduce(
+        self, name: str, *, skipna: bool = True, keepdims: bool = False, **kwargs
+    ):
+        # ensure the base class version does not call our non-reduction skew method
+        if name == "skew":
+            raise TypeError(
+                f"'{type(self).__name__}' with dtype {self.dtype} "
+                f"does not support operation '{name}'"
+            )
+        return super()._reduce(name, skipna=skipna, keepdims=keepdims, **kwargs)
+
+    def all(self, *, skipna: bool = True) -> bool:
+        """Return whether all elements are truthy.
+
+        Returns
+        -------
+        bool
+        """
+        # TODO add handling for skipna
+        return self._data.all()
+
+    def any(self, *, skipna: bool = True) -> bool:
+        """Return whether any element is truthy.
+
+        Returns
+        -------
+        bool
+        """
+        # TODO add handling for skipna
+        return self._data.any()
 
     def __array__(self, dtype=None, copy=None) -> np.ndarray:
         """Return the data as a numpy array.

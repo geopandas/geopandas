@@ -20,15 +20,17 @@ dependencies:
   # optional
   - matplotlib-base
   - mapclassify
+  - libpysal
   - folium
   - xyzservices
+  - contextily
   - scipy
   - geopy
   - pointpats
   - geodatasets
   # installed in tests.yaml, because not available on windows
   # - postgis
-  - SQLalchemy<2.1 # test oldest support sqlalchemy version
+  - sqlalchemy<2.1 # test oldest support sqlalchemy version
   - psycopg2
   - libspatialite
   - geoalchemy2
