@@ -2353,17 +2353,22 @@ default 'snappy'
         **kwargs,
     ) -> GeoDataFrame | DataFrame:
         """
-        Explode multi-part geometries into multiple single geometries.
+        Explode multi-part geometries into multiple component geometries.
 
         Each row containing a multi-part geometry will be split into
-        multiple rows with single geometries, thereby increasing the vertical
-        size of the GeoDataFrame.
+        multiple rows with each component geometry, thereby increasing the
+        vertical size of the GeoDataFrame.
+
+        GeometryCollections are split into their direct components. If a
+        GeometryCollection contains a multi-part geometry, that component is
+        returned as a multi-part geometry. To further split multi-part
+        geometries within a GeometryCollection, call ``explode`` a second time.
 
         Parameters
         ----------
         column : string or list of strings, default None
             Column(s) to explode. In the case of a geometry column, multi-part
-            geometries are converted to single-part.
+            geometries are converted to their component geometries.
             If None, the active geometry column is used. A list of multiple
             (non-geometry) columns may be passed to use the pandas multi-column
             explode.
@@ -2373,13 +2378,13 @@ default 'snappy'
         index_parts : boolean, default False
             If True, the resulting index will be a multi-index (original
             index with an additional level indicating the multiple
-            geometries: a new zero-based index for each single part geometry
-            per multi-part geometry).
+            geometries: a new zero-based index for each component geometry
+            per input geometry).
 
         Returns
         -------
         GeoDataFrame
-            Exploded geodataframe with each single geometry
+            Exploded geodataframe with each component geometry
             as a separate entry in the geodataframe.
 
         Examples
@@ -2394,7 +2399,7 @@ default 'snappy'
         ... }
         >>> gdf = geopandas.GeoDataFrame(d, crs=4326)
         >>> gdf
-            col1               geometry
+            col1                   geometry
         0  name1  MULTIPOINT ((1 2), (3 4))
         1  name2  MULTIPOINT ((2 1), (0 0))
 
@@ -2421,6 +2426,28 @@ default 'snappy'
         1  name1  POINT (3 4)
         2  name2  POINT (2 1)
         3  name2  POINT (0 0)
+
+        A single ``explode`` call splits a GeometryCollection into its direct
+        components, which may themselves be multi-part geometries:
+
+        >>> from shapely.geometry import GeometryCollection
+        >>> gdf = geopandas.GeoDataFrame(
+        ...     {
+        ...         "geometry": [
+        ...             GeometryCollection(
+        ...                 [
+        ...                     MultiPoint([(1, 2), (3, 4)]),
+        ...                     MultiPoint([(2, 1), (0, 0)]),
+        ...                 ]
+        ...             )
+        ...         ]
+        ...     },
+        ...     crs=4326,
+        ... )
+        >>> gdf.explode(index_parts=False)
+                            geometry
+        0  MULTIPOINT ((1 2), (3 4))
+        0  MULTIPOINT ((2 1), (0 0))
 
         See Also
         --------

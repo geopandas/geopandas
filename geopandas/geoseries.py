@@ -1016,11 +1016,16 @@ class GeoSeries(GeoPandasBase, Series):
 
     def explode(self, ignore_index=False, index_parts=False) -> GeoSeries:
         """
-        Explode multi-part geometries into multiple single geometries.
+        Explode multi-part geometries into multiple component geometries.
 
         Single rows can become multiple rows.
         This is analogous to PostGIS's ST_Dump(). The 'path' index is the
         second level of the returned MultiIndex
+
+        GeometryCollections are split into their direct components. If a
+        GeometryCollection contains a multi-part geometry, that component is
+        returned as a multi-part geometry. To further split multi-part
+        geometries within a GeometryCollection, call ``explode`` a second time.
 
         Parameters
         ----------
@@ -1030,14 +1035,16 @@ class GeoSeries(GeoPandasBase, Series):
         index_parts : boolean, default False
             If True, the resulting index will be a multi-index (original
             index with an additional level indicating the multiple
-            geometries: a new zero-based index for each single part geometry
-            per multi-part geometry).
+            geometries: a new zero-based index for each component geometry
+            per input geometry).
 
         Returns
         -------
-        A GeoSeries with a MultiIndex. The levels of the MultiIndex are the
-        original index and a zero-based integer index that counts the
-        number of single geometries within a multi-part geometry.
+        GeoSeries
+            Exploded GeoSeries with each component geometry as a separate
+            entry. If ``index_parts`` is True, the resulting index will be a
+            MultiIndex with the original index and a zero-based integer index
+            that counts the component geometries within each input geometry.
 
         Examples
         --------
