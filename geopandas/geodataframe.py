@@ -2351,10 +2351,12 @@ default 'snappy'
 
         Parameters
         ----------
-        column : string, default None
-            Column to explode. In the case of a geometry column, multi-part
+        column : string or list of strings, default None
+            Column(s) to explode. In the case of a geometry column, multi-part
             geometries are converted to single-part.
-            If None, the active geometry column is used.
+            If None, the active geometry column is used. A list of multiple
+            (non-geometry) columns may be passed to use the pandas multi-column
+            explode.
         ignore_index : bool, default False
             If True, the resulting index will be labelled 0, 1, …, n - 1,
             ignoring `index_parts`.
@@ -2418,8 +2420,20 @@ default 'snappy'
         # If no column is specified then default to the active geometry column
         if column is None:
             column = self.geometry.name
+        # ``self[column].dtypes`` is a scalar dtype when a single column is
+        # selected and a Series of dtypes when multiple columns are selected.
+        dtypes = self[column].dtypes
+        if isinstance(dtypes, Series):
+            # Multiple columns: only the pandas (non-geometry) multi-column
+            # explode is supported.
+            if any(isinstance(dtype, GeometryDtype) for dtype in dtypes):
+                raise ValueError(
+                    "Exploding multiple columns including a geometry column is "
+                    "not supported."
+                )
+            return super().explode(column, ignore_index=ignore_index, **kwargs)
         # If the specified column is not a geometry dtype use pandas explode
-        if not isinstance(self[column].dtype, GeometryDtype):
+        if not isinstance(dtypes, GeometryDtype):
             return super().explode(column, ignore_index=ignore_index, **kwargs)
 
         exploded_geom = self.geometry.reset_index(drop=True).explode(index_parts=True)
