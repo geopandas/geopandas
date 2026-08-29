@@ -1026,6 +1026,31 @@ class TestPolygonPlotting:
         actual_colors_sub = ax.collections[0].get_facecolors()
         np.testing.assert_array_equal(actual_colors_orig[1], actual_colors_sub[0])
 
+    def test_single_category_continuous_cmap(self):
+        # a categorical plot with a single group must not divide by
+        # (ngroups - 1) == 0 when stretching a continuous cmap
+        df = self.df.copy()
+        df["cat"] = ["a", "a"]
+        ax = df.plot(column="cat", cmap="viridis", legend=True)
+        cmap = plt.get_cmap("viridis")
+        _check_colors(2, ax.collections[0].get_facecolors(), [cmap(0.0)] * 2)
+
+        # a single row is the degenerate case of the same thing
+        ax = df[:1].plot(column="cat", cmap="viridis")
+        _check_colors(1, ax.collections[0].get_facecolors(), [cmap(0.0)])
+
+    def test_single_bin_scheme_default_cmap(self):
+        # a constant column collapses to one bin, and `scheme` defaults to the
+        # continuous "viridis" cmap -> same single-group division by zero
+        pytest.importorskip("mapclassify")
+        df = self.df.copy()
+        df["constant"] = [0, 0]
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            ax = df.plot(column="constant", scheme="quantiles", k=5, legend=True)
+        cmap = plt.get_cmap("viridis")
+        _check_colors(2, ax.collections[0].get_facecolors(), [cmap(0.0)] * 2)
+
 
 class TestPolygonZPlotting:
     def setup_method(self):
@@ -2602,6 +2627,18 @@ class TestStyleMapping:
 
         cbar = _get_ax(ax.get_figure(), "<colorbar>")
         assert len(cbar.get_yticklabels()) == 7
+
+    def test_scheme_categorical_cmap_passthrough(self):
+        ax = self.nyc.plot("forhis06", legend=True, scheme="quantiles", cmap="Reds")
+        cmap = ax.collections[0].get_cmap().name
+        assert cmap == "Reds"
+
+    def test_categorical_points_cmap_no_warning(self, nybb):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", UserWarning)
+            ax = nybb.set_geometry(nybb.centroid).plot("BoroName")
+
+        assert ax.collections[0].get_cmap().name == "tab10"
 
     def test_empty_class_poly(self):
         df = GeoDataFrame(

@@ -392,7 +392,7 @@ GeometryCollection
         it might be desirable to detect narrow gaps as invalidities in the coverage. The
         ``gap_width`` parameter allows to specify the maximum width of gaps to detect.
         When gaps are detected, this method will return ``False`` and the
-        :meth:`coverage_invalid_edges` method can be used to find the edges of those
+        :meth:`invalid_coverage_edges` method can be used to find the edges of those
         gaps.
 
         Geometries that are not Polygon or MultiPolygon are ignored and an empty
@@ -5422,7 +5422,7 @@ GeometryCollection
             linear segments in a quarter circle in the approximation of circular arcs.
         cap_style : {'round', 'square', 'flat'}, default 'round'
             Specifies the shape of buffered line endings. ``'round'`` results in
-            circular line endings (see ``resolution``). Both ``'square'`` and ``'flat'``
+            circular line endings (see ``quad_segs``). Both ``'square'`` and ``'flat'``
             result in rectangular line endings, ``'flat'`` will end at the original
             vertex, while ``'square'`` involves adding the buffer width.
         join_style : {'round', 'mitre', 'bevel'}, default 'round'
@@ -5458,7 +5458,7 @@ GeometryCollection
         2    POLYGON ((2.8 -1, 2.8 1, 2.80096 1.0196, 2.803...
         dtype: geometry
 
-        ``Further specification as ``join_style`` and ``cap_style`` are shown in the
+        Further specification as ``join_style`` and ``cap_style`` are shown in the
         following illustration:
 
         .. plot:: _static/code/buffer.py
