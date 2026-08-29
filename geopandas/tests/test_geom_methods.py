@@ -20,6 +20,7 @@ from shapely.geometry import (
 from shapely.geometry.collection import GeometryCollection
 from shapely.ops import unary_union
 
+import geopandas
 from geopandas import GeoDataFrame, GeoSeries
 from geopandas._compat import GEOS_GE_312, HAS_PYPROJ
 from geopandas.base import GeoPandasBase
@@ -36,6 +37,35 @@ def assert_array_dtype_equal(a, b, *args, **kwargs):
     b = np.asanyarray(b)
     assert a.dtype == b.dtype
     assert_array_equal(a, b, *args, **kwargs)
+
+
+def _reference_geodesic_area(geom, geod):
+    """Geodesic area computed ring by ring with pyproj (orientation independent)."""
+    if geom is None:
+        return np.nan
+    total = 0.0
+    for part in shapely.get_parts(geom):
+        if part.geom_type == "Polygon" and not part.is_empty:
+            total += abs(geod.geometry_area_perimeter(part.exterior)[0])
+            for hole in part.interiors:
+                total -= abs(geod.geometry_area_perimeter(hole)[0])
+    return total
+
+
+def _reference_geodesic_length(geom, geod):
+    """Geodesic length computed curve by curve with pyproj (holes included)."""
+    if geom is None:
+        return np.nan
+    total = 0.0
+    for part in shapely.get_parts(geom):
+        if part.is_empty:
+            continue
+        if part.geom_type == "Polygon":
+            rings = [part.exterior, *part.interiors]
+            total += sum(geod.geometry_length(ring) for ring in rings)
+        elif part.geom_type in ("LineString", "LinearRing"):
+            total += geod.geometry_length(part)
+    return total
 
 
 class TestGeomMethods:
@@ -552,8 +582,10 @@ class TestGeomMethods:
 
     @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
     def test_area_crs_warn(self):
-        with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
+        with pytest.warns(UserWarning, match="Geometry is in a geographic CRS") as rec:
             self.g4.area
+        assert "geopandas.options.geodesic_calculation = True" in str(rec[0].message)
+        assert "GeoPandas 2.0" in str(rec[0].message)
 
     def test_bounds(self):
         # Set columns to get the order right
@@ -668,8 +700,245 @@ class TestGeomMethods:
 
     @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
     def test_length_crs_warn(self):
-        with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
+        with pytest.warns(UserWarning, match="Geometry is in a geographic CRS") as rec:
             self.g4.length
+        assert "geopandas.options.geodesic_calculation = True" in str(rec[0].message)
+        assert "GeoPandas 2.0" in str(rec[0].message)
+
+    @staticmethod
+    def _geod(crs=4326):
+        import pyproj
+
+        return pyproj.CRS(crs).get_geod()
+
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
+    def test_geodesic_area(self, monkeypatch):
+        monkeypatch.setattr(geopandas.options, "geodesic_calculation", True)
+        geod = self._geod()
+        multi = MultiPolygon([self.sq, self.t3])
+        s = GeoSeries([self.sq, self.nested_squares, multi], crs=4326)
+        expected = Series([_reference_geodesic_area(g, geod) for g in s], index=s.index)
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            result = s.area
+            result_df = GeoDataFrame(geometry=s).area
+
+        assert_series_equal(result, expected)
+        assert_series_equal(result_df, expected)
+        assert result[0] == pytest.approx(12308778361.47, rel=1e-6)
+        assert result[1] < result[0]
+
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
+    def test_geodesic_area_hole_orientation(self, monkeypatch):
+        monkeypatch.setattr(geopandas.options, "geodesic_calculation", True)
+        shell = [(0, 0), (1, 0), (1, 1), (0, 1)]
+        hole = [(0.2, 0.2), (0.4, 0.2), (0.4, 0.4), (0.2, 0.4)]
+        s = GeoSeries(
+            [Polygon(shell, [hole]), Polygon(shell, [hole[::-1]]), Polygon(shell)],
+            crs=4326,
+        )
+        result = s.area
+        assert result[0] == result[1]
+        assert result[0] == pytest.approx(_reference_geodesic_area(s[0], self._geod()))
+        assert result[0] < result[2]
+
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
+    def test_geodesic_length(self, monkeypatch):
+        monkeypatch.setattr(geopandas.options, "geodesic_calculation", True)
+        geod = self._geod()
+        s = GeoSeries(
+            [
+                self.l1,
+                MultiLineString([self.l1, self.l2]),
+                self.sq,
+                MultiPolygon([self.sq, self.t3]),
+                self.sq.exterior,
+            ],
+            crs=4326,
+        )
+        expected = Series(
+            [_reference_geodesic_length(g, geod) for g in s], index=s.index
+        )
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            result = s.length
+            result_df = GeoDataFrame(geometry=s).length
+
+        assert_series_equal(result, expected)
+        assert_series_equal(result_df, expected)
+        assert result[2] == pytest.approx(443770.917, rel=1e-6)
+        assert result[2] == result[4]
+
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
+    def test_geodesic_length_includes_interior_rings(self, monkeypatch):
+        monkeypatch.setattr(geopandas.options, "geodesic_calculation", True)
+        geod = self._geod()
+        multi = MultiPolygon([self.nested_squares, self.t3])
+        s = GeoSeries([self.nested_squares, multi], crs=4326)
+        exterior = geod.geometry_length(self.nested_squares.exterior)
+        interior = geod.geometry_length(self.nested_squares.interiors[0])
+        t3 = geod.geometry_length(self.t3.exterior)
+
+        result = s.length
+
+        assert result[0] == pytest.approx(exterior + interior)
+        assert result[1] == pytest.approx(exterior + interior + t3)
+
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
+    @pytest.mark.parametrize("attr", ["area", "length"])
+    @pytest.mark.parametrize(
+        "geoms",
+        [
+            [box(0, 0, 1, 1), None],
+            [None, box(0, 0, 1, 1)],
+            [None, None],
+            [None, box(0, 0, 1, 1), None, box(0, 0, 1, 1)],
+        ],
+    )
+    def test_geodesic_missing_is_nan(self, attr, geoms, monkeypatch):
+        monkeypatch.setattr(geopandas.options, "geodesic_calculation", True)
+        value = getattr(GeoSeries([box(0, 0, 1, 1)], crs=4326), attr)[0]
+        expected = Series([np.nan if g is None else value for g in geoms])
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            result = getattr(GeoSeries(geoms, crs=4326), attr)
+
+        assert_series_equal(result, expected)
+
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
+    @pytest.mark.parametrize("attr", ["area", "length"])
+    def test_geodesic_empty_and_non_polygonal(self, attr, monkeypatch):
+        monkeypatch.setattr(geopandas.options, "geodesic_calculation", True)
+        geod = self._geod()
+        geoms = [
+            self.sq,
+            Polygon(),
+            self.p0,
+            self.pt_empty,
+            self.l1,
+            LineString(),
+            MultiPolygon(),
+        ]
+        reference = {
+            "area": _reference_geodesic_area,
+            "length": _reference_geodesic_length,
+        }[attr]
+        expected = Series([reference(g, geod) for g in geoms])
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            result = getattr(GeoSeries(geoms, crs=4326), attr)
+            empty = getattr(GeoSeries([], crs=4326), attr)
+
+        assert_series_equal(result, expected)
+        assert result.dtype == "float64"
+        assert len(empty) == 0
+        assert empty.dtype == "float64"
+
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
+    def test_geodesic_geometry_collection(self, monkeypatch):
+        monkeypatch.setattr(geopandas.options, "geodesic_calculation", True)
+        geod = self._geod()
+        flat = GeometryCollection([self.sq, self.l1, self.p0])
+        nested = GeometryCollection([MultiPolygon([self.sq, self.t3]), self.l1])
+        s = GeoSeries([flat, nested], crs=4326)
+        sq_area = _reference_geodesic_area(self.sq, geod)
+        t3_area = _reference_geodesic_area(self.t3, geod)
+        sq_len = _reference_geodesic_length(self.sq, geod)
+        t3_len = _reference_geodesic_length(self.t3, geod)
+        l1_len = _reference_geodesic_length(self.l1, geod)
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            area = s.area
+            length = s.length
+
+        assert_series_equal(area, Series([sq_area, sq_area + t3_area]))
+        assert_series_equal(length, Series([sq_len + l1_len, sq_len + t3_len + l1_len]))
+
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
+    @pytest.mark.parametrize("attr", ["area", "length"])
+    def test_geodesic_ignores_third_dimension(self, attr, monkeypatch):
+        monkeypatch.setattr(geopandas.options, "geodesic_calculation", True)
+        poly_2d = Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
+        poly_3d = Polygon([(0, 0, 1), (1, 0, 2), (1, 1, 3), (0, 1, 4)])
+        line_2d = LineString([(0, 0), (1, 0), (1, 1)])
+        line_3d = LineString([(0, 0, 1), (1, 0, 2), (1, 1, 3)])
+        s = GeoSeries([poly_2d, poly_3d, line_2d, line_3d], crs=4326)
+
+        result = getattr(s, attr)
+
+        assert result[0] == result[1]
+        assert result[2] == result[3]
+
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
+    @pytest.mark.parametrize("attr", ["area", "length"])
+    @pytest.mark.parametrize("crs", [3857, None])
+    def test_geodesic_option_only_applies_to_geographic_crs(
+        self, attr, crs, monkeypatch
+    ):
+        s = GeoSeries([self.sq, self.nested_squares, None], crs=crs)
+        planar = getattr(s, attr)
+        monkeypatch.setattr(geopandas.options, "geodesic_calculation", True)
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            result = getattr(s, attr)
+
+        assert_series_equal(result, planar)
+
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
+    @pytest.mark.parametrize("attr", ["area", "length"])
+    def test_geodesic_uses_ellipsoid_of_crs(self, attr, monkeypatch):
+        monkeypatch.setattr(geopandas.options, "geodesic_calculation", True)
+        reference = {
+            "area": _reference_geodesic_area,
+            "length": _reference_geodesic_length,
+        }[attr]
+        wgs84 = getattr(GeoSeries([self.sq], crs=4326), attr)[0]
+        sphere = getattr(GeoSeries([self.sq], crs=4047), attr)[0]
+
+        assert wgs84 == pytest.approx(reference(self.sq, self._geod(4326)))
+        assert sphere == pytest.approx(reference(self.sq, self._geod(4047)))
+        assert wgs84 != sphere
+
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
+    @pytest.mark.parametrize("geodesic", [False, True])
+    def test_crs_warn_other_ops_do_not_mention_geodesic_option(
+        self, geodesic, monkeypatch
+    ):
+        monkeypatch.setattr(geopandas.options, "geodesic_calculation", geodesic)
+        for op in (lambda s: s.buffer(1), lambda s: s.centroid):
+            with pytest.warns(
+                UserWarning, match="Geometry is in a geographic CRS"
+            ) as rec:
+                op(self.g4)
+            for r in rec:
+                if "geographic CRS" in str(r.message):
+                    assert "geodesic_calculation" not in str(r.message)
+
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
+    def test_geodesic_naturalearth(self, naturalearth_lowres, monkeypatch):
+        monkeypatch.setattr(geopandas.options, "geodesic_calculation", True)
+        world = geopandas.read_file(naturalearth_lowres)
+        geod = self._geod()
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            area = world.area
+            length = world.length
+
+        assert np.isfinite(area).all()
+        assert (area > 0).all()
+        expected_area = [_reference_geodesic_area(g, geod) for g in world.geometry]
+        np.testing.assert_allclose(area, expected_area, rtol=1e-9)
+        expected_length = [_reference_geodesic_length(g, geod) for g in world.geometry]
+        np.testing.assert_allclose(length, expected_length, rtol=1e-9)
+        brazil_km2 = area[world["name"] == "Brazil"].iloc[0] / 1e6
+        assert 8.4e6 < brazil_km2 < 8.6e6
 
     def test_count_coordinates(self):
         expected = Series(np.array([4, 5]), index=self.g1.index)

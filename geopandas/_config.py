@@ -113,16 +113,19 @@ io_engine = Option(
 )
 
 
-def _validate_geodesic_calculation(value):
+def _validate_geodesic_calculation(value: bool) -> None:
     if not isinstance(value, bool):
-        raise ValueError("geodesic_calculation must be a boolean value")
+        raise ValueError(f"Expected a boolean, got {value!r}")
+
 
 geodesic_calculation = Option(
     key="geodesic_calculation",
     default_value=False,
     doc=(
-        "Whether to use geodesic calculations for area computations when the CRS "
-        "is geographic. If False, will use planar calculations."
+        "Whether to compute ``area`` and ``length`` geodesically, on the "
+        "ellipsoid of the CRS (in meters / square meters), when the CRS is "
+        "geographic. If False (default), planar calculations in the units of "
+        "the CRS are used and a warning is raised for geographic CRS."
     ),
     validator=_validate_geodesic_calculation,
     callback=None,
@@ -133,6 +136,6 @@ options = Options(
     {
         "display_precision": display_precision,
         "io_engine": io_engine,
-        "geodesic_calculation":geodesic_calculation
+        "geodesic_calculation": geodesic_calculation,
     }
 )

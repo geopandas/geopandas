@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+import itertools
 import numbers
 import operator
 import typing
@@ -338,6 +339,22 @@ def points_from_xy(
     return GeometryArray(shapely.points(x, y, z), crs=crs)
 
 
+def _get_single_parts(data: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Explode (nested) multi-part geometries and collections into single parts.
+
+    Returns the single-part geometries and, for each of them, the index of the
+    geometry in ``data`` it belongs to. Missing geometries contribute no parts.
+    """
+    parts, index = shapely.get_parts(data, return_index=True)
+    is_multi = shapely.get_type_id(parts) >= shapely.GeometryType.MULTIPOINT
+    while is_multi.any():
+        sub_parts, sub_index = shapely.get_parts(parts[is_multi], return_index=True)
+        parts = np.concatenate([parts[~is_multi], sub_parts])
+        index = np.concatenate([index[~is_multi], index[is_multi][sub_index]])
+        is_multi = shapely.get_type_id(parts) >= shapely.GeometryType.MULTIPOINT
+    return parts, index
+
+
 class GeometryArray(ExtensionArray):
     """Class wrapping a numpy array of Shapely objects.
 
@@ -427,7 +444,9 @@ class GeometryArray(ExtensionArray):
                 )
             self._crs = None
 
-    def check_geographic_crs(self, stacklevel, geodesic_supported=False):
+    def check_geographic_crs(
+        self, stacklevel: int, geodesic_supported: bool = False
+    ) -> None:
         """Check CRS and warn if the planar operation is done in a geographic CRS."""
         if self.crs and self.crs.is_geographic:
             msg = (
@@ -586,10 +605,11 @@ class GeometryArray(ExtensionArray):
     def area(self):
         """Return the area of the geometries in this array.
 
-        Raises a UserWarning if the CRS is geographic, as the area
-        calculation is not accurate in that case.
-
-        Note that the area is calculated in the units of the CRS.
+        The area is calculated in the units of the CRS. If the CRS is
+        geographic, a UserWarning is raised as the planar area is not accurate
+        in that case, unless ``geopandas.options.geodesic_calculation`` is
+        enabled, in which case the geodesic area on the ellipsoid of the CRS is
+        returned (in square meters).
 
         Returns
         -------
@@ -598,99 +618,93 @@ class GeometryArray(ExtensionArray):
         """
         import geopandas
 
-        geodesic_calculation = geopandas.options.geodesic_calculation
-        if geodesic_calculation and (self.crs and self.crs.is_geographic):
+        if (
+            geopandas.options.geodesic_calculation
+            and self.crs
+            and self.crs.is_geographic
+        ):
             return self._calculate_geodesic_area()
-        
+
         self.check_geographic_crs(stacklevel=5, geodesic_supported=True)
         return shapely.area(self._data)
 
-    def _calculate_geodesic_area(self):        
+    def _calculate_geodesic_area(self) -> np.ndarray:
         geod = self.crs.get_geod()
-        def __geodesic_ring_area(rings):
-            areas = np.array([abs(geod.geometry_area_perimeter(shapely.geometry.shape(ring))[0]) 
-                            for ring in rings])
-            return areas
-        parts = shapely.get_parts(shapely.normalize(self._data))
-        part_area = __geodesic_ring_area(shapely.get_exterior_ring(parts))
 
-        num_rings = shapely.get_num_interior_rings(parts)
-        has_rings = num_rings > 0
+        parts, index = _get_single_parts(self._data)
+        is_polygon = shapely.get_type_id(parts) == shapely.GeometryType.POLYGON
+        polygon_index = index[is_polygon]
+        rings, ring_polygon = shapely.get_rings(parts[is_polygon], return_index=True)
+        coords, ring_coords = shapely.get_coordinates(rings, return_index=True)
 
-        if has_rings.any():
-            part_ix = np.repeat(np.arange(len(parts)), num_rings)
-            count = num_rings[has_rings]
-            starts = np.r_[True, part_ix[:-1] != part_ix[1:]]
-            inner_index = (~starts).cumsum()
-            inner_index -= np.repeat(inner_index[starts], count)
-            
-            hole_area = __geodesic_ring_area(shapely.get_interior_ring(parts[part_ix], inner_index))
-            breaks = np.append(np.cumsum(count) - count, count.sum())
-            part_hole_area = np.add.reduceat(hole_area, breaks[:-1])
-            part_area[has_rings] -= part_hole_area
+        ring_start = np.r_[0, np.cumsum(np.bincount(ring_coords, minlength=len(rings)))]
+        ring_area = np.zeros(len(rings), dtype="float64")
+        for i, (start, end) in enumerate(itertools.pairwise(ring_start)):
+            lons, lats = coords[start:end, 0], coords[start:end, 1]
+            ring_area[i] = abs(geod.polygon_area_perimeter(lons, lats)[0])
+        is_exterior = np.ones(len(rings), dtype=bool)
+        is_exterior[1:] = ring_polygon[1:] != ring_polygon[:-1]
+        polygon_area = np.bincount(
+            ring_polygon,
+            weights=np.where(is_exterior, ring_area, -ring_area),
+            minlength=len(polygon_index),
+        )
 
-        num_parts = shapely.get_num_geometries(self._data)
-        breaks = np.append(np.cumsum(num_parts) - num_parts, num_parts.sum())
-        total = np.add.reduceat(part_area, breaks[:-1])
-        return total 
+        area = np.bincount(
+            polygon_index, weights=polygon_area, minlength=len(self)
+        ).astype("float64", copy=False)
+        area[shapely.is_missing(self._data)] = np.nan
+        return area
 
     @property
     def length(self):
+        """Return the length of the geometries in this array.
+
+        The length is calculated in the units of the CRS. If the CRS is
+        geographic, a UserWarning is raised as the planar length is not accurate
+        in that case, unless ``geopandas.options.geodesic_calculation`` is
+        enabled, in which case the geodesic length on the ellipsoid of the CRS
+        is returned (in meters).
+
+        Returns
+        -------
+        np.ndarray of float
+            Length of the geometries.
+        """
         import geopandas
 
-        geodesic_calculation = geopandas.options.geodesic_calculation
-        if geodesic_calculation and (self.crs and self.crs.is_geographic):
+        if (
+            geopandas.options.geodesic_calculation
+            and self.crs
+            and self.crs.is_geographic
+        ):
             return self._calculate_geodesic_length()
 
         self.check_geographic_crs(stacklevel=5, geodesic_supported=True)
         return shapely.length(self._data)
-    
-    def _calculate_geodesic_length(self):
-        from shapely.geometry import LineString, MultiLineString, Polygon, MultiPolygon
+
+    def _calculate_geodesic_length(self) -> np.ndarray:
         geod = self.crs.get_geod()
-        individual_lengths = []
 
-        def _get_length_of_linestring(linestring_obj_param):
-            """Helper to calculate length of a single LineString."""
-            current_length = 0
-            coords = list(linestring_obj_param.coords)
-            for i in range(len(coords) - 1):
-                lon1, lat1 = coords[i]
-                lon2, lat2 = coords[i + 1]
-                _, _, distance = geod.inv(lon1, lat1, lon2, lat2)
-                current_length += distance
-            return abs(current_length)
+        parts, index = _get_single_parts(self._data)
+        is_polygon = shapely.get_type_id(parts) == shapely.GeometryType.POLYGON
+        rings, ring_polygon = shapely.get_rings(parts[is_polygon], return_index=True)
+        curves = np.concatenate([parts[~is_polygon], rings])
+        curve_index = np.concatenate(
+            [index[~is_polygon], index[is_polygon][ring_polygon]]
+        )
+        coords, coord_curve = shapely.get_coordinates(curves, return_index=True)
 
-        for geom_obj in self._data:
-            current_geom_total_length = 0 # Length for the current top-level geometry (e.g., one MultiLineString)
+        same_curve = coord_curve[:-1] == coord_curve[1:]
+        start, end = coords[:-1][same_curve], coords[1:][same_curve]
+        _, _, distance = geod.inv(start[:, 0], start[:, 1], end[:, 0], end[:, 1])
+        segment_index = curve_index[coord_curve[:-1][same_curve]]
 
-            if isinstance(geom_obj, LineString):
-                current_geom_total_length = _get_length_of_linestring(geom_obj)
-
-            elif isinstance(geom_obj, MultiLineString):
-                for line_string in geom_obj.geoms:
-                    current_geom_total_length += _get_length_of_linestring(line_string)
-
-            elif isinstance(geom_obj, Polygon):
-                current_geom_total_length += _get_length_of_linestring(geom_obj.exterior)
-                # for interior_ring in geom_obj.interiors:
-                #     current_geom_total_length += _get_length_of_linestring(interior_ring)
-
-            elif isinstance(geom_obj, MultiPolygon):
-                for polygon in geom_obj.geoms:
-                    # For each polygon in the MultiPolygon, get its exterior perimeter
-                    current_geom_total_length += _get_length_of_linestring(polygon.exterior)
-                    # for interior_ring in polygon.interiors:
-                    #     current_geom_total_length += _get_length_of_linestring(interior_ring)
-
-            else:
-                msg=f"Warning: Unsupported geometry type found: {type(geom_obj)}. Adding 0 length."
-                warnings.warn(msg, UserWarning, stacklevel=2)
-                current_geom_total_length = 0
-
-            individual_lengths.append(current_geom_total_length)
-
-        return np.array(individual_lengths)
+        length = np.bincount(
+            segment_index, weights=distance, minlength=len(self)
+        ).astype("float64", copy=False)
+        length[shapely.is_missing(self._data)] = np.nan
+        return length
 
     def count_coordinates(self):
         return shapely.get_num_coordinates(self._data)

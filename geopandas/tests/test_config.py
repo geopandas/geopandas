@@ -47,9 +47,9 @@ def test_options_io_engine():
     geopandas.options.io_engine = None
 
 
-def test_options_geodesic_calculation():
+def test_options_geodesic_calculation(monkeypatch):
     assert geopandas.options.geodesic_calculation is False
-    geopandas.options.geodesic_calculation = True
+    monkeypatch.setattr(geopandas.options, "geodesic_calculation", True)
     assert geopandas.options.geodesic_calculation is True
 
     with pytest.raises(ValueError):
@@ -58,4 +58,5 @@ def test_options_geodesic_calculation():
     with pytest.raises(ValueError):
         geopandas.options.geodesic_calculation = 1
 
-    geopandas.options.geodesic_calculation = False
+    with pytest.raises(ValueError):
+        geopandas.options.geodesic_calculation = None
