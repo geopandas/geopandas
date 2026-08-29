@@ -342,14 +342,15 @@ class TestMakeGridHexagon:
 
     def test_hexagon_corners_cs_eq_bb(self, square):
         cell_size = 2 * np.sqrt(3)
-        out = make_grid(
-            square,
-            cell_size,
-            what="corners",
-            cell_type="hexagon",
-            intersect=False,
-            flat_topped=True,
-        )
+        with pytest.warns(UserWarning, match="`cell_size`*"):
+            out = make_grid(
+                square,
+                cell_size,
+                what="corners",
+                cell_type="hexagon",
+                intersect=False,
+                flat_topped=True,
+            )
         exp_out = GeoSeries(
             [
                 Point(-1, -np.sqrt(3)),
@@ -450,13 +451,14 @@ class TestMakeGridHexagon:
 
     def test_hexagon_polygons_intersect(self, square):
         cell_size = 1.5 * np.sqrt(3)
-        out = make_grid(
-            square,
-            cell_size,
-            what="polygons",
-            cell_type="hexagon",
-            flat_topped=True,
-        )
+        with pytest.warns(UserWarning, match="`cell_size`*"):
+            out = make_grid(
+                square,
+                cell_size,
+                what="polygons",
+                cell_type="hexagon",
+                flat_topped=True,
+            )
         exp_out = GeoSeries(
             [
                 Polygon(
