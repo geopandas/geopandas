@@ -72,6 +72,49 @@ the :attr:`GeoSeries.crs` attribute):
     my_geoseries = my_geoseries.set_crs("EPSG:4326")
     my_geoseries = my_geoseries.set_crs(epsg=4326)
 
+It is important to know that the coordinate values in a ``GeoSeries`` or
+``GeoDataFrame`` are only ever expressed in the units of its active CRS.
+This has a direct effect on measurement operations such as ``area``,
+``length``, ``distance``, and ``buffer``. For example, geometries assigned a
+geographic CRS such as ``EPSG:4326`` have coordinates in degrees, so any
+direct area calculation is expressed in square degrees rather than a ground
+area in square metres.
+
+.. code-block:: python
+
+    import geopandas as gpd
+    from shapely.geometry import Polygon
+
+    gdf = gpd.GeoDataFrame(
+        {"name": ["example area"]},
+        geometry=[
+            Polygon(
+                [
+                    (80.20, 13.00),
+                    (80.21, 13.00),
+                    (80.21, 13.01),
+                    (80.20, 13.01),
+                ]
+            )
+        ],
+    )
+
+    # The source coordinates are known to be longitude and latitude.
+    # Setting a CRS defines their interpretation; it does not modify them.
+    gdf = gdf.set_crs("EPSG:4326")
+
+    # With a geographic CRS, this result uses square-degree coordinate units
+    # and should not be interpreted as ground area in square metres.
+    area_in_coordinate_units = gdf.area
+
+    # Transform coordinates before calculating metric measurements.
+    gdf_projected = gdf.to_crs(gdf.estimate_utm_crs())
+    gdf_projected["area_m2"] = gdf_projected.area
+
+For compact study areas, :meth:`GeoDataFrame.estimate_utm_crs` can provide a
+convenient metric CRS. For larger or accuracy-sensitive analyses, select a
+CRS appropriate to the study area and intended measurement.
+
 
 Re-projecting
 ----------------
