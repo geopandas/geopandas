@@ -741,6 +741,18 @@ class TestPolygonPlotting:
         self.df.plot(ax=ax, autolim=True)
         assert ax.get_xlim() != xlim
 
+    def test_autolim_categorical(self):
+        """Test categorical polygon plot respecting autolim."""
+        ax = self.df[:1].plot()
+        xlim = ax.get_xlim()
+        self.df.plot(ax=ax, column="values", categorical=True, autolim=False)
+        assert ax.get_xlim() == xlim
+
+        ax = self.df[:1].plot()
+        xlim = ax.get_xlim()
+        self.df.plot(ax=ax, column="values", categorical=True, autolim=True)
+        assert ax.get_xlim() != xlim
+
     def test_single_color(self):
         ax = self.polys.plot(color="green")
         _check_colors(2, ax.collections[0].get_facecolors(), ["green"] * 2)
