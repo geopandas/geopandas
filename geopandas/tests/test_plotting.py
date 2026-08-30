@@ -1324,6 +1324,62 @@ class TestGeographicAspect:
         assert ax3.get_aspect() == 0.5
 
 
+class TestEmptyOrMissingGeometryPlotting:
+    """Plotting nothing must warn and no-op, never raise.
+
+    With the default ``aspect="auto"`` and a geographic CRS the aspect is derived
+    from ``total_bounds``, which is all NaN when there is nothing to bound; without
+    a guard matplotlib rejects the resulting NaN aspect. Note that these cases only
+    ever raised on a geographic CRS, hence the parametrization over ``crs``.
+    """
+
+    @pytest.mark.parametrize("crs", [None, "EPSG:4326", "EPSG:3857"])
+    @pytest.mark.parametrize("column", [None, "v"])
+    def test_empty_dataframe(self, crs, column):
+        df = GeoDataFrame({"v": []}, geometry=GeoSeries([], crs=crs))
+        with pytest.warns(UserWarning, match="is empty"):
+            ax = df.plot(column=column)
+        assert len(ax.collections) == 0
+
+    @pytest.mark.parametrize("crs", [None, "EPSG:4326", "EPSG:3857"])
+    @pytest.mark.parametrize("column", [None, "v"])
+    def test_all_missing_geometries(self, crs, column):
+        df = GeoDataFrame({"v": [1.0, 2.0]}, geometry=GeoSeries([None, None], crs=crs))
+        with pytest.warns(UserWarning, match="composed of missing geometries"):
+            ax = df.plot(column=column)
+        assert len(ax.collections) == 0
+
+    @pytest.mark.parametrize("crs", [None, "EPSG:4326", "EPSG:3857"])
+    def test_all_missing_geometries_series(self, crs):
+        s = GeoSeries([None, None], crs=crs)
+        with pytest.warns(UserWarning, match="composed of missing geometries"):
+            ax = s.plot()
+        assert len(ax.collections) == 0
+
+    @pytest.mark.parametrize("crs", [None, "EPSG:4326", "EPSG:3857"])
+    @pytest.mark.parametrize("column", [None, "v"])
+    def test_mix_of_missing_and_empty(self, crs, column):
+        # is_empty is False for None, so neither condition catches this on its own
+        df = GeoDataFrame(
+            {"v": [1.0, 2.0]}, geometry=GeoSeries([None, Polygon()], crs=crs)
+        )
+        with pytest.warns(UserWarning, match="composed of empty geometries"):
+            ax = df.plot(column=column)
+        assert len(ax.collections) == 0
+
+    @pytest.mark.parametrize("column", [None, "v"])
+    def test_single_drawable_geometry_still_plots(self, column):
+        # the guard must not swallow a frame that has something to draw
+        df = GeoDataFrame(
+            {"v": [1.0, 2.0, 3.0]},
+            geometry=GeoSeries(
+                [None, Polygon(), Polygon([(0, 0), (1, 0), (1, 1)])], crs="EPSG:4326"
+            ),
+        )
+        ax = df.plot(column=column)
+        assert len(ax.collections) == 1
+
+
 @pytest.mark.filterwarnings(
     "ignore:Numba not installed. Using slow pure python version.:UserWarning"
 )

@@ -30,6 +30,11 @@ Bug fixes:
 - Fix `GeoDataFrame.from_features` raising a `ValueError` for an empty list of
   features when a `crs` is provided; it now returns an empty `GeoDataFrame` with
   a `geometry` column (#3777).
+- Fix `plot()` raising ``ValueError: aspect must be finite and positive`` on a
+  geographic CRS when there is nothing to draw: a `GeoDataFrame` plotted with
+  `column=` but no rows, or geometry that is entirely missing. Such calls now warn
+  and display nothing, as an empty `GeoSeries` already did. This also restores the
+  "empty" warning for `GeoDataFrame.plot(column=...)`, dropped in (#3728).
 
 
 Community:

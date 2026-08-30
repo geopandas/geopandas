@@ -77,6 +77,34 @@ def _set_aspect(
         ax.set_aspect(aspect)
 
 
+def _nothing_to_plot(
+    s: geopandas.GeoSeries, name: Literal["GeoSeries", "GeoDataFrame"]
+) -> str | None:
+    """Return a warning message if `s` holds nothing drawable, else None.
+
+    Missing geometries are not empty geometries (``is_empty`` is False for None), so
+    both have to be accounted for: either would otherwise leave ``total_bounds`` all
+    NaN and make :func:`_set_aspect` raise on a geographic CRS.
+    """
+    if s.empty:
+        return (
+            f"The {name} you are attempting to plot is empty. "
+            "Nothing has been displayed."
+        )
+    missing = s.isna()
+    if missing.all():
+        return (
+            f"The {name} you are attempting to plot is composed of missing "
+            "geometries. Nothing has been displayed."
+        )
+    if (s.is_empty | missing).all():
+        return (
+            f"The {name} you are attempting to plot is composed of empty "
+            "geometries. Nothing has been displayed."
+        )
+    return None
+
+
 def _sanitize_geoms(
     geoms: geopandas.GeoSeries,
 ) -> tuple[geopandas.GeoSeries, np.ndarray]:
@@ -585,22 +613,9 @@ def plot_series(
     if add_labels:
         _set_axis_labels(ax, s.crs)
 
-    if s.empty:
-        warnings.warn(
-            "The GeoSeries you are attempting to plot is "
-            "empty. Nothing has been displayed.",
-            UserWarning,
-            stacklevel=3,
-        )
-        return ax
-
-    if s.is_empty.all():
-        warnings.warn(
-            "The GeoSeries you are attempting to plot is "
-            "composed of empty geometries. Nothing has been displayed.",
-            UserWarning,
-            stacklevel=3,
-        )
+    nothing_to_plot = _nothing_to_plot(s, "GeoSeries")
+    if nothing_to_plot is not None:
+        warnings.warn(nothing_to_plot, UserWarning, stacklevel=3)
         return ax
 
     # set correct aspect to preserve proportions in geographic CRS
@@ -968,6 +983,11 @@ def plot_dataframe(
 
     if add_labels:
         _set_axis_labels(ax, df.crs)
+
+    nothing_to_plot = _nothing_to_plot(df.geometry, "GeoDataFrame")
+    if nothing_to_plot is not None:
+        warnings.warn(nothing_to_plot, UserWarning, stacklevel=3)
+        return ax
 
     # set correct aspect to preserve proportions in geographic CRS
     _set_aspect(aspect, df, ax)
