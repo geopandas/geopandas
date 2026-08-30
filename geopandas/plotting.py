@@ -1147,6 +1147,7 @@ def plot_dataframe(
                     cmap=cmap,
                     ax=ax,
                     aspect=None,
+                    autolim=autolim,
                     **group_style_kwds,
                 )
 
