@@ -30,6 +30,8 @@ Bug fixes:
 - Fix `GeoDataFrame.from_features` raising a `ValueError` for an empty list of
   features when a `crs` is provided; it now returns an empty `GeoDataFrame` with
   a `geometry` column (#3777).
+- Fix ``GeoSeries.map()`` dropping the CRS; it is now preserved when the result is
+  a ``GeoSeries``, consistent with ``GeoSeries.apply()`` (#3842).
 
 
 Community:
