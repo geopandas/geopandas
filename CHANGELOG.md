@@ -73,6 +73,8 @@ Bug fixes:
   `get_coordinates(index_parts=True)` being `int32` instead of `int64` on 32-bit
   platforms (#3865).
 - Various compatibility fixes for pandas 3.1 (#3802, #3831).
+- Fix ``GeoSeries.map()`` dropping the CRS; it is now preserved when the result is
+  a ``GeoSeries``, consistent with ``GeoSeries.apply()`` (#3842).
 
 Community:
 
