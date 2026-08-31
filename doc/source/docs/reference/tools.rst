@@ -12,5 +12,5 @@ Tools
    clip
    geocode
    reverse_geocode
-   collect
+   tools.collect
    points_from_xy
