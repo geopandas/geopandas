@@ -326,6 +326,17 @@ class TestPointPlotting:
         with pytest.warns(UserWarning):
             ax = df.plot()
         assert len(ax.collections) == 0
+        with pytest.warns(UserWarning):
+            ax = (
+                GeoDataFrame(
+                    {"pop": [1.0, 2.0]},
+                    geometry=[Point(0, 0), Point(1, 1)],
+                    crs="EPSG:4326",
+                )
+                .query("pop > 5")
+                .plot(column="pop")
+            )
+        assert len(ax.collections) == 0
 
     def test_empty_geometry(self):
         s = GeoSeries([Polygon([(0, 0), (1, 0), (1, 1)]), Polygon()])
