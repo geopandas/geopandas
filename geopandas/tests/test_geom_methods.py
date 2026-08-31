@@ -1852,6 +1852,54 @@ class TestGeomMethods:
         exploded_df = gdf.explode(column="col1", ignore_index=True)
         assert_geodataframe_equal(exploded_df, expected_df)
 
+    def test_explode_pandas_fallback_multiple_columns(self):
+        # GH2753: exploding multiple non-geometry columns falls back to pandas
+        gdf = GeoDataFrame(
+            {
+                "col1": [[1, 2, 3], [4, 5], [6]],
+                "col2": [[7, 8, 9], [10, 11], [12]],
+                "geometry": [Point(0, 0), Point(1, 1), Point(2, 2)],
+            }
+        )
+        expected_df = GeoDataFrame(
+            {
+                "col1": [1, 2, 3, 4, 5, 6],
+                "col2": [7, 8, 9, 10, 11, 12],
+                "geometry": [
+                    Point(0, 0),
+                    Point(0, 0),
+                    Point(0, 0),
+                    Point(1, 1),
+                    Point(1, 1),
+                    Point(2, 2),
+                ],
+            },
+            index=[0, 0, 0, 1, 1, 2],
+        )
+        # exploding object-dtype list columns keeps the object dtype
+        expected_df[["col1", "col2"]] = expected_df[["col1", "col2"]].astype(object)
+
+        exploded_df = gdf.explode(["col1", "col2"])
+        assert_geodataframe_equal(exploded_df, expected_df)
+
+        # A singleton list of a non-geometry column behaves like the scalar form
+        assert_geodataframe_equal(gdf.explode(["col1"]), gdf.explode("col1"))
+
+    def test_explode_multiple_columns_with_geometry_raises(self):
+        # GH2753: exploding multiple columns including a geometry is unsupported
+        gdf = GeoDataFrame(
+            {
+                "col1": [[1, 2, 3], [4, 5], [6]],
+                "geometry": [
+                    MultiPoint([(1, 2), (3, 4)]),
+                    MultiPoint([(2, 1), (0, 0)]),
+                    MultiPoint([(5, 5), (6, 6)]),
+                ],
+            }
+        )
+        with pytest.raises(ValueError, match="geometry column is not supported"):
+            gdf.explode(["col1", "geometry"])
+
     @pytest.mark.parametrize("outer_index", [1, (1, 2), "1"])
     def test_explode_pandas_multi_index(self, outer_index):
         index = MultiIndex.from_arrays(

@@ -4,20 +4,19 @@
    :suppress:
 
    import geopandas
-   import matplotlib
-   orig = matplotlib.rcParams['figure.figsize']
-   matplotlib.rcParams['figure.figsize'] = [orig[0] * 1.5, orig[1] * 1.5]
    import matplotlib.pyplot as plt
+   import matplotlib
    plt.close('all')
-
+   matplotlib.rcParams['savefig.bbox'] = 'tight'
 
 Mapping and plotting tools
-=========================================
-
+==========================
 
 GeoPandas provides a high-level interface to the matplotlib_ library for making maps. Mapping shapes is as easy as using the :meth:`~GeoDataFrame.plot()` method on a :class:`GeoSeries` or :class:`GeoDataFrame`.
 
 .. _matplotlib: https://matplotlib.org/stable/
+
+On this page, you can read a quickstart guide covering the most important aspects of plotting. You can further look into dedicated guides to :doc:`choropleth maps <choropleth>` and :doc:`categorical maps <categorical>`.
 
 Loading some example data:
 
@@ -25,8 +24,12 @@ Loading some example data:
 
     import geodatasets
 
-    chicago = geopandas.read_file(geodatasets.get_path("geoda.chicago_commpop"))
-    groceries = geopandas.read_file(geodatasets.get_path("geoda.groceries"))
+    chicago = geopandas.read_file(
+        geodatasets.get_path("geoda.chicago_commpop")
+    )
+    groceries = geopandas.read_file(
+        geodatasets.get_path("geoda.groceries")
+    )
 
 You can now plot those GeoDataFrames:
 
@@ -43,7 +46,7 @@ Note that in general, any options one can pass to `pyplot <http://matplotlib.org
 
 
 Choropleth maps
------------------
+---------------
 
 GeoPandas makes it easy to create Choropleth maps (maps where the color of each shape is based on the value of an associated variable). Simply use the plot command with the ``column`` argument set to the column whose values you want used to assign colors.
 
@@ -87,7 +90,7 @@ However, the default appearance of the legend and plot axes may not be desirable
     from mpl_toolkits.axes_grid1 import make_axes_locatable
     fig, ax = plt.subplots(1, 1)
     divider = make_axes_locatable(ax)
-    cax = divider.append_axes("bottom", size="5%", pad=0.1)
+    cax = divider.append_axes("bottom", size="5%", pad=0.5)
     @savefig chicago_cax.png
     chicago.plot(
         column="POP2010",
@@ -99,7 +102,7 @@ However, the default appearance of the legend and plot axes may not be desirable
 
 
 Choosing colors
-~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~
 
 You can also modify the colors used by :meth:`~GeoDataFrame.plot` with the ``cmap`` option. For a full list of colormaps, see `Choosing Colormaps in Matplotlib <https://matplotlib.org/stable/tutorials/colors/colormaps.html>`_.
 
@@ -117,8 +120,8 @@ To make the color transparent for when you just want to show the boundary, you h
     chicago.boundary.plot();
 
 
-The way color maps are scaled can also be manipulated with the ``scheme`` option (if you have ``mapclassify`` installed, which can be accomplished via ``conda install -c conda-forge mapclassify``). The ``scheme`` option can be set to any scheme provided by mapclassify (e.g. 'box_plot', 'equal_interval',
-'fisher_jenks', 'fisher_jenks_sampled', 'headtail_breaks', 'jenks_caspall', 'jenks_caspall_forced', 'jenks_caspall_sampled', 'max_p_classifier', 'maximum_breaks', 'natural_breaks', 'quantiles', 'percentiles', 'std_mean' or 'user_defined'). Arguments can be passed in classification_kwds dict. See the `mapclassify documentation <https://pysal.org/mapclassify>`_ for further details about these map classification schemes.
+The way color maps are scaled can also be manipulated with the ``scheme`` option (if you have ``mapclassify`` installed, which can be accomplished via ``conda install -c conda-forge mapclassify``). The ``scheme`` option can be set to any scheme provided by mapclassify (e.g. ``'box_plot'``, ``'equal_interval'``,
+``'fisher_jenks'``, ``'fisher_jenks_sampled'``, ``'headtail_breaks'``, ``'jenks_caspall'``, ``'jenks_caspall_forced',`` ``'jenks_caspall_sampled'``, ``'max_p_classifier'``, ``'maximum_breaks'``, ``'natural_breaks'``, ``'quantiles'``, ``'percentiles'``, ``'std_mean'`` or ``'user_defined'``). Arguments can be passed in ``classification_kwds`` dict. See the `mapclassify documentation <https://pysal.org/mapclassify>`_ for further details about these map classification schemes.
 
 .. ipython:: python
 
@@ -129,7 +132,7 @@ The way color maps are scaled can also be manipulated with the ``scheme`` option
 Missing data
 ~~~~~~~~~~~~
 
-In some cases one may want to plot data which contains missing values - for some features one simply does not know the value. Geopandas (from the version 0.7) by defaults ignores such features.
+In some cases one may want to plot data which contains missing values - for some features one simply does not know the value. GeoPandas by defaults ignores such features.
 
 .. ipython:: python
 
@@ -159,10 +162,64 @@ However, passing ``missing_kwds`` one can specify the style and label of feature
         },
     );
 
-Other map customizations
-~~~~~~~~~~~~~~~~~~~~~~~~
+Background tiles
+----------------
 
-Maps usually do not have to have axis labels. You can turn them off using ``set_axis_off()`` or ``axis("off")`` axis methods.
+Background tiles add contextual web (or local) map imagery below the plotted geometries. Pass
+``tiles=True`` to use the default provider (``OpenStreetMap.HOT``). Note that this requires `contextily <https://contextily.readthedocs.io/en/latest/>`__ package to be installed.
+
+.. ipython:: python
+
+    @savefig tiles.png
+    groceries.plot(tiles=True);
+
+Alternatively, pass the name of any provider
+available through `xyzservices <https://xyzservices.readthedocs.io/en/latest/>`__ or anything else supported by ``contextily``.
+
+.. ipython:: python
+
+    @savefig tiles_osm.png
+    groceries.plot(tiles="OpenStreetMap DE");
+
+
+Tile providers typically require attribution. GeoPandas adds provider attribution by
+default when it is available, but you can customize it with ``attr`` or add your own when none is available. For example, if you want to show it only once, rather than in each subplot.
+
+.. ipython:: python
+
+    tiles = [
+        "OpenStreetMap CAT",
+        "OpenStreetMap DE",
+    ]
+
+    fig, axs = plt.subplots(1, 2)
+    for ax, t in zip(axs, tiles):
+        groceries.plot(tiles=t, attr="", ax=ax)
+        ax.set_title(t)
+        ax.set_axis_off()
+    @savefig attr.png
+    fig.suptitle("(C) OpenStreetMap contributors, Tiles courtesy of Breton OpenStreetMap Team", y=0.05);
+
+By default, GeoPandas forces ``contextily`` to warp the images to match the CRS of the data, which can occasionally result in blurred maps. To avoid that, re-project the data to Web Mercator (EPSG:3857) first.
+
+.. ipython:: python
+
+    @savefig tiles_3857.png
+    groceries.to_crs(epsg=3857).plot(tiles=True);
+
+Any other customisation of background tiles shall be done directly with ``contextily`` as illustrated in the :doc:`dedicated example <../../gallery/plotting_basemap_background>`.
+
+Other map customizations
+------------------------
+
+GeoPandas uses an information stored in the coordinate reference system about units each axis represents and includes them as labels, as shown above. This can be turned off with the ``add_labels`` keyword.
+
+.. ipython:: python
+
+    @savefig labels_off.png
+    ax = chicago.plot(add_labels=False);
+
+However, maps usually do not have to have coordinate indication either. You can turn the entire asex off using ``set_axis_off()`` or ``axis("off")`` axis methods.
 
 .. ipython:: python
 
@@ -179,7 +236,7 @@ Before combining maps, however, remember to always ensure they share a common CR
 
 .. ipython:: python
 
-    # Look at capitals
+    # Look at groceries
     # Note use of standard `pyplot` line style options
     @savefig capitals.png
     groceries.plot(marker='*', color='green', markersize=5);
@@ -189,7 +246,10 @@ Before combining maps, however, remember to always ensure they share a common CR
 
     # Now you can overlay over the outlines
 
-**Method 1**
+Method 1: let GeoPandas create the matplotlib figure
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The simple way is to let the first call to ``plot`` define the ``Axes`` which can be consumed by subsequent ``plot`` calls via the ``ax`` keyword:
 
 .. ipython:: python
 
@@ -197,16 +257,31 @@ Before combining maps, however, remember to always ensure they share a common CR
     @savefig groceries_over_chicago_1.png
     groceries.plot(ax=base, marker='o', color='red', markersize=5);
 
-**Method 2: Using matplotlib objects**
+Method 2: Create the matplotlib figure manually
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The other way is to define the ``Axes`` object before and pass it to both.
 
 .. ipython:: python
 
     fig, ax = plt.subplots()
 
     chicago.plot(ax=ax, color='white', edgecolor='black')
-    groceries.plot(ax=ax, marker='o', color='red', markersize=5)
     @savefig groceries_over_chicago_2.png
-    plt.show();
+    groceries.plot(ax=ax, marker='o', color='red', markersize=5)
+
+
+Legend for layers
+~~~~~~~~~~~~~~~~~
+
+You can define the ``label`` of each layer and use it to generate the legend for each layer using matplotlib.
+
+.. ipython:: python
+
+    base = chicago.plot(color='white', edgecolor='black', label="Community")
+    groceries.plot(ax=base, marker='o', color='red', markersize=5, label="Grocery")
+    @savefig groceries_over_chicago_3.png
+    plt.legend();
 
 Control the order of multiple layers in a plot
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -232,7 +307,7 @@ You can set the ``zorder`` for cities higher than for world to move it of top.
 
 
 Pandas plots
------------------
+------------
 
 Plotting methods also allow for different plot styles from pandas
 along with the default ``geo`` plot. These methods can be accessed using
@@ -264,22 +339,17 @@ For example, ``hist``, can be used to plot histograms of population for two diff
 
 For more information, see `Chart visualization <https://pandas.pydata.org/pandas-docs/stable/user_guide/visualization.html>`_ in the pandas documentation.
 
-
-Other resources
------------------
-Links to Jupyter Notebooks for different mapping tasks:
-
-`Making Heat Maps <http://nbviewer.jupyter.org/gist/perrygeo/c426355e40037c452434>`_
-
-
-.. ipython:: python
-    :suppress:
-
-    matplotlib.rcParams['figure.figsize'] = orig
-
-
 .. ipython:: python
     :suppress:
 
     import matplotlib.pyplot as plt
     plt.close('all')
+
+Other resources
+-----------------
+
+.. toctree::
+  :maxdepth: 2
+
+  choropleth
+  categorical
