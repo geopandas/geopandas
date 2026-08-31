@@ -393,13 +393,17 @@ def test_pandas_parquet_roundtrip2(test_dataset, tmpdir, request):
     assert_frame_equal(df, pq_df)
 
 
+@pytest.mark.parametrize("schema_version", [None, "1.0.0", "1.1.0", "2.0.0"])
 @pytest.mark.parametrize(
     "test_dataset", ["naturalearth_lowres", "naturalearth_cities", "nybb_filename"]
 )
-def test_roundtrip(tmpdir, file_format, test_dataset, request):
+def test_roundtrip(tmpdir, file_format, test_dataset, schema_version, request):
     """Writing to parquet should not raise errors, and should not alter original
     GeoDataFrame
     """
+    if schema_version == "2.0.0" and Version(pyarrow.__version__) < Version("21.0.0"):
+        pytest.skip("Writing GeoParquet 2.0 files requires pyarrow>=21.0")
+
     path = request.getfixturevalue(test_dataset)
     reader, writer = file_format
 
@@ -408,7 +412,7 @@ def test_roundtrip(tmpdir, file_format, test_dataset, request):
 
     filename = os.path.join(str(tmpdir), "test.pq")
 
-    writer(df, filename)
+    writer(df, filename, schema_version=schema_version)
 
     assert os.path.exists(filename)
 
@@ -930,6 +934,9 @@ def test_write_spec_version(tmpdir, format, schema_version):
         from pyarrow.feather import read_table
     else:
         from pyarrow.parquet import read_table
+
+    if schema_version == "2.0.0" and Version(pyarrow.__version__) < Version("21.0.0"):
+        pytest.skip("Writing GeoParquet 2.0 files requires pyarrow>=21.0")
 
     filename = os.path.join(str(tmpdir), f"test.{format}")
     gdf = geopandas.GeoDataFrame(geometry=[box(0, 0, 10, 10)], crs="EPSG:4326")
@@ -1484,3 +1491,76 @@ def test_read_parquet_2_0_error_old_pyarrow():
     data_dir = DATA_PATH / "arrow" / "geoparquet"
     with pytest.raises(OSError, match=r"Reading GeoParquet 2\.0 files"):
         geopandas.read_parquet(data_dir / "2.0.0" / "data-point-encoding_wkb.parquet")
+
+
+@pytest.mark.skipif(
+    Version(pyarrow.__version__) < Version("21.0.0"),
+    reason="Writing GeoParquet 2.0 files requires pyarrow>=21.0",
+)
+@pytest.mark.parametrize("extension_type_registered", [False, True])
+def test_write_parquet_2_0(tmp_path, extension_type_registered):
+    if extension_type_registered:
+        context = with_geoarrow_extension_types
+    else:
+        context = contextlib.nullcontext
+
+    gdf = GeoDataFrame(
+        {"col": [1, 2, 3]},
+        geometry=geopandas.points_from_xy([1, 2, 3], [1, 2, 3]),
+        crs="EPSG:4326",
+    )
+    with context():
+        gdf.to_parquet(tmp_path / "test-2_0.parquet", schema_version="2.0.0")
+
+    meta = pq.read_metadata(tmp_path / "test-2_0.parquet")
+    metadata = json.loads(meta.metadata[b"geo"])
+    assert metadata["version"] == "2.0.0"
+
+    # verify the Parquet file is indeed using the Parquet logical types
+    geo_col = meta.schema.column(1)
+    assert geo_col.name == "geometry"
+    assert geo_col.physical_type == "BYTE_ARRAY"
+    assert str(geo_col.logical_type).startswith("Geometry")
+
+    # also verify the statistics were written by default
+    col_chunk = meta.row_group(0).column(1)
+    assert col_chunk.is_geo_stats_set
+    assert col_chunk.geo_statistics is not None
+
+
+@pytest.mark.skipif(
+    Version(pyarrow.__version__) >= Version("21.0.0"),
+    reason="Writing GeoParquet 2.0 files requires pyarrow>=21.0",
+)
+def test_write_parquet_2_0_old_pyarrow(tmp_path):
+    gdf = GeoDataFrame(
+        {"col": [1, 2, 3]},
+        geometry=geopandas.points_from_xy([1, 2, 3], [1, 2, 3]),
+        crs="EPSG:4326",
+    )
+    with pytest.raises(
+        ValueError,
+        match=re.escape("Writing GeoParquet 2.0 files requires pyarrow>=21.0"),
+    ):
+        gdf.to_parquet(tmp_path / "test-2_0.parquet", schema_version="2.0.0")
+
+
+@pytest.mark.filterwarnings("ignore:.*proxy.*:RuntimeWarning")
+@pytest.mark.skipif(
+    Version(pyarrow.__version__) < Version("21.0.0"),
+    reason="Writing GeoParquet 2.0 files requires pyarrow>=21.0",
+)
+def test_write_parquet_2_0_gdal_readable(tmp_path):
+    pyogrio = pytest.importorskip("pyogrio")
+    if "Parquet" not in pyogrio.list_drivers():
+        pytest.skip("Test needs pyogrio/GDAL with Parquet support")
+
+    gdf = GeoDataFrame(
+        {"col": [1, 2, 3]},
+        geometry=geopandas.points_from_xy([1, 2, 3], [1, 2, 3]),
+        crs="EPSG:4326",
+    )
+    gdf.to_parquet(tmp_path / "test-2_0.parquet", schema_version="2.0.0")
+
+    result = geopandas.read_file(tmp_path / "test-2_0.parquet")
+    assert_geodataframe_equal(result, gdf)
