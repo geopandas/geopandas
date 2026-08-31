@@ -13,7 +13,7 @@ New features and improvements:
   with `read_file` and the pyogrio engine, using `fid_as_index=True` (#3829)
 - DOC: add example clarifying measurement units (area, length, distance,
   buffer) depend on the active CRS, and demonstrate the `set_crs()` →
-  `to_crs()` workflow before metric calculations (#XXXX)
+  `to_crs()` workflow before metric calculations (#3846)
 
 Deprecations and compatibility notes:
 
