@@ -178,7 +178,8 @@ def _create_metadata(
         if schema_version == "2.0.0" and encoding != "WKB":
             raise ValueError(
                 "When writing GeoParquet 2.0.0 files, only the 'WKB' encoding is "
-                "supported."
+                "supported. Specify `schema_version='1.1.0'` to use the 'geoarrow' "
+                "encoding."
             )
 
         column_metadata[col] = {
