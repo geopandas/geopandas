@@ -1,3 +1,5 @@
+import warnings
+
 import pandas as pd
 
 from shapely.geometry import MultiLineString, MultiPoint, MultiPolygon
@@ -22,6 +24,9 @@ def collect(x, multi=False):
         only have one component.
 
     """
+    warnings.warn(
+        "geopandas.tools.collect is deprecated.", DeprecationWarning, stacklevel=2
+    )
     if isinstance(x, BaseGeometry):
         x = [x]
     elif isinstance(x, pd.Series):
