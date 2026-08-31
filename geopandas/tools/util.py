@@ -25,7 +25,10 @@ def collect(x, multi=False):
 
     """
     warnings.warn(
-        "geopandas.tools.collect is deprecated.", DeprecationWarning, stacklevel=2
+        "geopandas.tools.collect is deprecated. "
+        "Use GeoDataFrame.collect().geometry.item() instead.",
+        DeprecationWarning,
+        stacklevel=2,
     )
     if isinstance(x, BaseGeometry):
         x = [x]
