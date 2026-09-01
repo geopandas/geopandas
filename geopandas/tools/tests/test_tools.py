@@ -62,8 +62,14 @@ class TestTools:
 
     def test_collect_mixed_types(self):
         with pytest.raises(ValueError):
-            collect([self.p1, self.line1])
+            with pytest.warns(
+                DeprecationWarning, match="geopandas.tools.collect is deprecated"
+            ):
+                collect([self.p1, self.line1])
 
     def test_collect_mixed_multi(self):
         with pytest.raises(ValueError):
-            collect([self.mpc, self.mp1])
+            with pytest.warns(
+                DeprecationWarning, match="geopandas.tools.collect is deprecated"
+            ):
+                collect([self.mpc, self.mp1])
