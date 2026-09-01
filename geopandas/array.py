@@ -518,14 +518,22 @@ class GeometryArray(ExtensionArray):
         #         )
 
     def __getstate__(self):
-        return (shapely.to_wkb(self._data), self._crs)
+        type_ids = shapely.get_type_id(self._data)
+        ring_indices = np.where(type_ids == shapely.GeometryType.LINEARRING)[0]
+        if len(ring_indices) == 0:
+            ring_indices = None
+        return (shapely.to_wkb(self._data), self._crs, ring_indices)
 
     def __setstate__(self, state):
         if not isinstance(state, dict):
-            # pickle file saved with pygeos
             geoms = shapely.from_wkb(state[0])
+            if len(state) > 2 and state[2] is not None:
+                ring_indices = state[2]
+                geoms[ring_indices] = [
+                    shapely.geometry.LinearRing(g) for g in geoms[ring_indices]
+                ]
             self._crs = state[1]
-            self._sindex = None  # pygeos.STRtree could not be pickled yet
+            self._sindex = None
             self._data = geoms
             self.base = None
         else:
@@ -534,6 +542,18 @@ class GeometryArray(ExtensionArray):
             if "_crs" not in state:
                 state["_crs"] = None
             self.__dict__.update(state)
+            if "_ring_indices" in state and state["_ring_indices"] is not None:
+                ring_indices = state.pop("_ring_indices")
+                if isinstance(self._data, np.ndarray) and len(ring_indices) > 0:
+                    if (
+                        self._data.dtype == object
+                        and len(self._data) > 0
+                        and isinstance(self._data[0], (str, bytes))
+                    ):
+                        self._data = shapely.from_wkb(self._data)
+                    self._data[ring_indices] = [
+                        shapely.geometry.LinearRing(g) for g in self._data[ring_indices]
+                    ]
 
     # -------------------------------------------------------------------------
     # Geometry related methods

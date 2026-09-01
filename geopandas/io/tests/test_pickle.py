@@ -54,3 +54,26 @@ def test_round_trip_current(tmpdir, current_pickle_data):
         result = pd.read_pickle(path)
         assert_geodataframe_equal(result, value)
         assert isinstance(result.has_sindex, bool)
+
+
+def test_pickle_linear_ring():
+    import pickle
+
+    from shapely.geometry import LinearRing, LineString
+
+    import geopandas as gpd
+
+    lr = LinearRing([(0, 0), (1, 1), (1, 0)])
+    ls = LineString([(0, 0), (1, 1)])
+
+    # GeoSeries
+    s = gpd.GeoSeries([lr, ls])
+    unpickled_s = pickle.loads(pickle.dumps(s))
+    assert isinstance(unpickled_s[0], LinearRing)
+    assert isinstance(unpickled_s[1], LineString)
+
+    # GeoDataFrame
+    df = gpd.GeoDataFrame({"geometry": s})
+    unpickled_df = pickle.loads(pickle.dumps(df))
+    assert isinstance(unpickled_df.geometry[0], LinearRing)
+    assert isinstance(unpickled_df.geometry[1], LineString)
