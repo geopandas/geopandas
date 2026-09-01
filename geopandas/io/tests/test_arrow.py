@@ -1136,7 +1136,7 @@ def test_parquet_dataset_availability_partitioned(
     df[:100].to_parquet(basedir / "data1.parquet")
     df[100:].to_parquet(basedir / "data2.parquet")
 
-    with pytest.raises(Exception, match="is a directory"):
+    with pytest.raises(Exception, match=r"is a directory|Failed to open local file"):
         geopandas.read_parquet(str(basedir))
 
 
