@@ -3,6 +3,7 @@ import json
 import os
 import pathlib
 import re
+import sys
 from io import BytesIO
 from itertools import product
 from packaging.version import Version
@@ -1079,6 +1080,78 @@ def test_parquet_read_partitioned_dataset_fsspec(tmpdir, naturalearth_lowres):
 
     result = read_parquet("memory://partitioned_dataset")
     assert_geodataframe_equal(result, df)
+
+
+@pytest.fixture
+def pyarrow_dataset_unavailable():
+    import pyarrow.dataset as ds
+
+    sys.modules["pyarrow.dataset"] = None
+    yield
+    sys.modules["pyarrow.dataset"] = ds
+
+
+def test_parquet_dataset_availability(
+    tmp_path, naturalearth_lowres, pyarrow_dataset_unavailable
+):
+    # basic roundtrip test (subset of test_roundtrip) to ensure basic files
+    # can be read if pyarrow.dataset is not available
+    df = read_file(naturalearth_lowres)
+    orig = df.copy()
+
+    filename = str(tmp_path / "test.parquet")
+
+    # Write to single file
+    df.to_parquet(filename)
+    assert os.path.exists(filename)
+    assert_geodataframe_equal(df, orig)
+
+    # Read from single file
+    pq_df = geopandas.read_parquet(filename)
+    assert_geodataframe_equal(pq_df, df)
+
+    pq_df = geopandas.read_parquet(filename, columns=["name", "geometry"])
+    assert_geodataframe_equal(pq_df, df[["name", "geometry"]])
+
+    # and with file-like object
+    buf = BytesIO()
+    df.to_parquet(buf)
+    buf.seek(0)
+    assert_geodataframe_equal(df, orig)
+
+    pq_df = geopandas.read_parquet(BytesIO(buf.getvalue()))
+    assert_geodataframe_equal(pq_df, df)
+
+
+def test_parquet_dataset_availability_partitioned(
+    tmpdir, naturalearth_lowres, pyarrow_dataset_unavailable
+):
+    # reading a directory is not supported in this case
+
+    # manually create partitioned dataset
+    df = read_file(naturalearth_lowres)
+    basedir = tmpdir / "partitioned_dataset"
+    basedir.mkdir()
+    df[:100].to_parquet(basedir / "data1.parquet")
+    df[100:].to_parquet(basedir / "data2.parquet")
+
+    with pytest.raises(Exception, match="is a directory"):
+        geopandas.read_parquet(str(basedir))
+
+
+def test_parquet_dataset_availability_filters(
+    tmpdir, naturalearth_lowres, pyarrow_dataset_unavailable
+):
+    # reading with filters is not supported in this case
+    df = read_file(naturalearth_lowres)
+    filename = os.path.join(str(tmpdir), "test.pq")
+    df.to_parquet(filename, write_covering_bbox=True)
+
+    with pytest.raises(ValueError, match="not supported"):
+        geopandas.read_parquet(filename, bbox=(0, 0, 1, 1))
+
+    with pytest.raises(ValueError, match="not supported"):
+        geopandas.read_parquet(filename, filters=[("gdp_md_est", ">", 20000)])
 
 
 @pytest.mark.parametrize(
