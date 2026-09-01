@@ -1164,7 +1164,10 @@ def test_parquet_dataset_availability_filters(
 )
 def test_read_parquet_pandas_metadata(tmp_path, index):
     gdf = GeoDataFrame(
-        {"col": pd.array([1, 2, 3], dtype="Int64")},
+        {
+            "col1": pd.array([1, 2, 3], dtype="Int64"),
+            "col2": pd.period_range("2012-01-01", periods=3, freq="D"),
+        },
         index=index,
         geometry=geopandas.points_from_xy([1, 2, 3], [1, 2, 3]),
         crs="EPSG:4326",
@@ -1174,16 +1177,16 @@ def test_read_parquet_pandas_metadata(tmp_path, index):
     result = geopandas.read_parquet(tmp_path / "test.parquet")
     # index and dtypes should be preserved
     assert result.index.name == "named_index"
-    assert result["col"].dtype == "Int64"
+    assert result["col1"].dtype == "Int64"
     assert_geodataframe_equal(result, gdf)
 
     # also when reading a subset of columns, the index gets preserved
     result = geopandas.read_parquet(
-        tmp_path / "test.parquet", columns=["col", "geometry"]
+        tmp_path / "test.parquet", columns=["col1", "geometry"]
     )
     assert result.index.name == "named_index"
-    assert result["col"].dtype == "Int64"
-    assert_geodataframe_equal(result, gdf)
+    assert result["col1"].dtype == "Int64"
+    assert_geodataframe_equal(result, gdf[["col1", "geometry"]])
 
 
 @pytest.mark.parametrize(
