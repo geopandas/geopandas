@@ -9,6 +9,7 @@ from itertools import product
 from packaging.version import Version
 
 import numpy as np
+import pandas as pd
 from pandas import ArrowDtype, DataFrame, Index, Series
 from pandas import read_parquet as pd_read_parquet
 
@@ -1152,6 +1153,37 @@ def test_parquet_dataset_availability_filters(
 
     with pytest.raises(ValueError, match="not supported"):
         geopandas.read_parquet(filename, filters=[("gdp_md_est", ">", 20000)])
+
+
+@pytest.mark.parametrize(
+    "index",
+    [
+        pd.Index(["a", "b", "c"], name="named_index"),
+        pd.RangeIndex(1, 4, name="named_index"),
+    ],
+)
+def test_read_parquet_pandas_metadata(tmp_path, index):
+    gdf = GeoDataFrame(
+        {"col": pd.array([1, 2, 3], dtype="Int64")},
+        index=index,
+        geometry=geopandas.points_from_xy([1, 2, 3], [1, 2, 3]),
+        crs="EPSG:4326",
+    )
+    gdf.to_parquet(tmp_path / "test.parquet")
+
+    result = geopandas.read_parquet(tmp_path / "test.parquet")
+    # index and dtypes should be preserved
+    assert result.index.name == "named_index"
+    assert result["col"].dtype == "Int64"
+    assert_geodataframe_equal(result, gdf)
+
+    # also when reading a subset of columns, the index gets preserved
+    result = geopandas.read_parquet(
+        tmp_path / "test.parquet", columns=["col", "geometry"]
+    )
+    assert result.index.name == "named_index"
+    assert result["col"].dtype == "Int64"
+    assert_geodataframe_equal(result, gdf)
 
 
 @pytest.mark.parametrize(
