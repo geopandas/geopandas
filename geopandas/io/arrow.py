@@ -933,14 +933,16 @@ def _read_parquet(
         columns = _add_index_columns_from_pandas_metadata(columns, metadata)
 
     filters = kwargs.pop("filters", None)
-    if filters is not None and isinstance(filters, list):
+    if filters is not None:
+        # support both old-style [(..)] filters and pyarrow expressions
         filters = parquet.filters_to_expression(filters)
 
     # if both bbox and filters kwargs are used, must splice together.
-    if filters is not None:
-        filters = _splice_bbox_and_filters(filters, bbox_filter)
-    else:
-        filters = bbox_filter
+    if bbox_filter is not None:
+        if filters is not None:
+            filters = bbox_filter & filters
+        else:
+            filters = bbox_filter
 
     if isinstance(dataset, parquet.ParquetFile):
         table = dataset.read(columns=columns, use_threads=use_threads)
@@ -1083,14 +1085,3 @@ def _get_non_bbox_columns(schema, geo_metadata):
     if bbox_column_name in columns:
         columns.remove(bbox_column_name)
     return columns
-
-
-def _splice_bbox_and_filters(kwarg_filters, bbox_filter):
-    parquet = import_optional_dependency(
-        "pyarrow.parquet", extra="pyarrow is required for Parquet support."
-    )
-    if bbox_filter is None:
-        return kwarg_filters
-
-    filters_expression = parquet.filters_to_expression(kwarg_filters)
-    return bbox_filter & filters_expression
