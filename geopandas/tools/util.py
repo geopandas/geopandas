@@ -26,7 +26,7 @@ def collect(x, multi=False):
     """
     warnings.warn(
         "geopandas.tools.collect is deprecated. "
-        "Use GeoDataFrame.dissolve(method='collec').geometry.item() instead.",
+        "Use GeoDataFrame.dissolve(method='collect').geometry.item() instead.",
         DeprecationWarning,
         stacklevel=2,
     )
