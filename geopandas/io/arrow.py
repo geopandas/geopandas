@@ -564,7 +564,15 @@ def _to_feather(df, path, index=None, compression=None, schema_version=None, **k
 
     path = _expand_user(path)
     table = _geopandas_to_arrow(df, index=index, schema_version=schema_version)
-    feather.write_feather(table, path, compression=compression, **kwargs)
+    # TODO pyarrow 25 deprecates feather.write_feather in favor of pyarrow.ipc;
+    # suppress until we migrate the implementation
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            "pyarrow.feather.write_feather is deprecated",
+            FutureWarning,
+        )
+        feather.write_feather(table, path, compression=compression, **kwargs)
 
 
 def _arrow_to_geopandas(table, geo_metadata=None, to_pandas_kwargs=None, df_attrs=None):
@@ -964,7 +972,15 @@ def _read_feather(path, columns=None, to_pandas_kwargs=None, **kwargs):
 
     path = _expand_user(path)
 
-    table = feather.read_table(path, columns=columns, **kwargs)
+    # TODO pyarrow 25 deprecates feather.read_table in favor of pyarrow.ipc;
+    # suppress until we migrate the implementation
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            "pyarrow.feather.read_table is deprecated",
+            FutureWarning,
+        )
+        table = feather.read_table(path, columns=columns, **kwargs)
     return _arrow_to_geopandas(table, to_pandas_kwargs=to_pandas_kwargs)
 
 
