@@ -86,3 +86,12 @@ def test_unimodality(size):  # GH 3470
     stats = pytest.importorskip("scipy.stats")
     assert stats.shapiro(centers_x).pvalue > 0.05
     assert stats.shapiro(centers_y).pvalue > 0.05
+
+
+def test_uniform_zero_area_polygon():
+    # a collapsed ring is not `is_empty`, but its interior is, so no
+    # candidate point is ever `contains`ed and `_uniform_polygon` never returned.
+    collapsed = shapely.Polygon([(0, 0), (1, 1), (2, 2), (0, 0)])
+    assert not collapsed.is_empty
+    assert collapsed.area == 0
+    assert uniform(collapsed, size=5, rng=1).is_empty
