@@ -716,7 +716,7 @@ def _validate_and_decode_metadata(metadata):
     return decoded_geo_metadata
 
 
-def _read_parquet_schema_and_metadata(path, filesystem):
+def _read_parquet_schema_and_metadata(path, filesystem, partitioning="hive"):
     """Open the Parquet file/dataset a first time to get the schema and metadata.
 
     TODO: we should look into how we can reuse opened dataset for reading the
@@ -729,7 +729,9 @@ def _read_parquet_schema_and_metadata(path, filesystem):
 
     try:
         try:
-            schema = parquet.ParquetDataset(path, filesystem=filesystem).schema
+            schema = parquet.ParquetDataset(
+                path, filesystem=filesystem, partitioning=partitioning
+            ).schema
         except Exception:
             schema = parquet.read_schema(path, filesystem=filesystem)
     except OSError as exc:
@@ -854,7 +856,9 @@ def _read_parquet(
         path, filesystem=filesystem, storage_options=storage_options
     )
     path = _expand_user(path)
-    schema, metadata = _read_parquet_schema_and_metadata(path, filesystem)
+    schema, metadata = _read_parquet_schema_and_metadata(
+        path, filesystem, partitioning=kwargs.get("partitioning", "hive")
+    )
 
     geo_metadata = _validate_and_decode_metadata(metadata)
     if len(geo_metadata["columns"]) == 0:
