@@ -274,6 +274,11 @@ def _read_file(
     pyarrow is installed, pass ``use_arrow=True`` as an argument. See the User
     Guide page :doc:`../../user_guide/io` for details.
 
+    Some formats (e.g. GeoPackage) store a feature ID (``fid``) that is not
+    included in the columns by default. With the pyogrio engine, pass
+    ``fid_as_index=True`` to use it as the index of the returned GeoDataFrame.
+    See the User Guide page :doc:`../../user_guide/io` for details.
+
 
     When specifying a URL, geopandas will check if the server supports reading
     partial data and in that case pass the URL as is to the underlying engine,

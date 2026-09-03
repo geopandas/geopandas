@@ -67,7 +67,7 @@ jobs:
             dev: true
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Install Conda environment with Micromamba
         uses: mamba-org/setup-micromamba@v3

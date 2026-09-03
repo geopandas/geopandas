@@ -1,5 +1,7 @@
+import contextlib
 import json
 import warnings
+from packaging.version import Version
 from typing import Literal, get_args
 
 import numpy as np
@@ -14,8 +16,10 @@ from geopandas.array import from_shapely, from_wkb
 
 from .file import _expand_user
 
-METADATA_VERSION = "1.0.0"
-SUPPORTED_VERSIONS_LITERAL = Literal["0.1.0", "0.4.0", "1.0.0-beta.1", "1.0.0", "1.1.0"]
+METADATA_VERSION = "1.1.0"
+SUPPORTED_VERSIONS_LITERAL = Literal[
+    "0.1.0", "0.4.0", "1.0.0-beta.1", "1.0.0", "1.1.0", "2.0.0"
+]
 SUPPORTED_VERSIONS = list(get_args(SUPPORTED_VERSIONS_LITERAL))
 GEOARROW_ENCODINGS = [
     "point",
@@ -115,7 +119,7 @@ def _create_metadata(
     Parameters
     ----------
     df : GeoDataFrame
-    schema_version : {'0.1.0', '0.4.0', '1.0.0-beta.1', '1.0.0', '1.1.0', None}
+    schema_version : {'0.1.0', '0.4.0', '1.0.0-beta.1', '1.0.0', '1.1.0', '2.0.0', None}
         GeoParquet specification version; if not provided will default to
         latest supported version.
     geometry_encoding : dict, default None
@@ -131,16 +135,17 @@ def _create_metadata(
     dict
     """
     if schema_version is None:
-        if geometry_encoding and any(
-            encoding != "WKB" for encoding in geometry_encoding.values()
-        ):
-            schema_version = "1.1.0"
-        else:
-            schema_version = METADATA_VERSION
+        schema_version = METADATA_VERSION
 
     if schema_version not in SUPPORTED_VERSIONS:
         raise ValueError(
             f"schema_version must be one of: {', '.join(SUPPORTED_VERSIONS)}"
+        )
+
+    if write_covering_bbox and schema_version < "1.1.0":
+        raise ValueError(
+            "Writing a bounding box column is only supported since GeoParquet 1.1.0, "
+            f"while a {schema_version=} is specified."
         )
 
     # Construct metadata for each geometry
@@ -164,12 +169,21 @@ def _create_metadata(
                 crs = series.crs.to_json_dict()
                 _remove_id_from_member_of_ensembles(crs)
 
+        encoding = (
+            geometry_encoding[col]
+            if geometry_encoding and col in geometry_encoding
+            else "WKB"
+        )
+
+        if schema_version == "2.0.0" and encoding != "WKB":
+            raise ValueError(
+                "When writing GeoParquet 2.0.0 files, only the 'WKB' encoding is "
+                "supported. Specify `schema_version='1.1.0'` to use the 'geoarrow' "
+                "encoding."
+            )
+
         column_metadata[col] = {
-            "encoding": (
-                geometry_encoding[col]
-                if geometry_encoding and col in geometry_encoding
-                else "WKB"
-            ),
+            "encoding": encoding,
             "crs": crs,
             geometry_types_name: geometry_types,
         }
@@ -323,6 +337,50 @@ def _validate_geo_metadata(metadata):
                         raise ValueError("Metadata for bbox column is malformed.")
 
 
+@contextlib.contextmanager
+def _ensure_geoarrow_wkb_ext_type_registered():
+    """Ensure that the GeoArrow WKB extension type is registered.
+
+    Either uses an already registered extension type, or temporarily registers
+    a small dummy one with enough functionality for the writing to succeed.
+
+    This is needed for writing GeoParquet 2.0 files to ensure the pyarrow.parquet
+    writer will use the Geometry logical type. It does only do that for input
+    that actually uses an extension type (just a binary field with the extension
+    type metadata is not sufficient to trigger the logical type).
+    """
+    import pyarrow
+
+    class _WkbExtensionType(pyarrow.ExtensionType):
+        def __init__(self, metadata=b""):
+            self._metadata = metadata
+
+            super().__init__(
+                pyarrow.binary(),
+                "geoarrow.wkb",
+            )
+
+        def __arrow_ext_serialize__(self) -> bytes:
+            return self._metadata
+
+        @classmethod
+        def __arrow_ext_deserialize__(cls, storage_type, serialized):
+            return _WkbExtensionType(serialized)
+
+    try:
+        pyarrow.register_extension_type(_WkbExtensionType())
+    except Exception:
+        # already registered by other package -> use that one
+        yield
+        return
+
+    # otherwise we have registered our dummy -> unregister at the end
+    try:
+        yield
+    finally:
+        pyarrow.unregister_extension_type("geoarrow.wkb")
+
+
 def _geopandas_to_arrow(
     df,
     index=None,
@@ -334,6 +392,7 @@ def _geopandas_to_arrow(
 
     Helper function with main, shared logic for to_parquet/to_feather.
     """
+    import pyarrow as pa
     from pyarrow import StructArray
 
     from geopandas.io._geoarrow import geopandas_to_arrow
@@ -345,6 +404,11 @@ def _geopandas_to_arrow(
             raise ValueError(
                 "'geoarrow' encoding is only supported with schema version >= 1.1.0"
             )
+        if schema_version == "2.0.0" and Version(pa.__version__) < Version("21.0.0"):
+            raise ValueError(
+                "Writing GeoParquet 2.0 files requires pyarrow>=21.0, while pyarrow "
+                f"{pa.__version__} is installed."
+            )
 
     table, geometry_encoding_dict = geopandas_to_arrow(
         df, geometry_encoding=geometry_encoding, index=index, interleaved=False
@@ -355,6 +419,19 @@ def _geopandas_to_arrow(
         geometry_encoding=geometry_encoding_dict,
         write_covering_bbox=write_covering_bbox,
     )
+    if schema_version == "2.0.0":
+        # ensure `table` uses extension types and not just extension field metadata
+        # such that pyarrow.parquet will write the Geometry logical type
+        with _ensure_geoarrow_wkb_ext_type_registered():
+            for col, encoding in geometry_encoding_dict.items():
+                if encoding == "WKB":
+                    geom_ext = pa.table(table.select([col]))
+
+                    table = table.set_column(
+                        table.schema.get_field_index(col),
+                        geom_ext.schema.field(col),
+                        geom_ext[col],
+                    )
 
     if write_covering_bbox:
         if "bbox" in df.columns:
@@ -399,7 +476,7 @@ def _to_parquet(
 
     Requires 'pyarrow'.
 
-    This is tracking version 1.0.0 of the GeoParquet specification at:
+    This is tracking version 1.1.0 of the GeoParquet specification at:
     https://github.com/opengeospatial/geoparquet. Writing older versions is
     supported using the `schema_version` keyword.
 
@@ -422,7 +499,7 @@ def _to_parquet(
         The encoding to use for the geometry columns. Defaults to "WKB"
         for maximum interoperability. Specify "geoarrow" to use one of the
         native GeoArrow-based single-geometry type encodings.
-    schema_version : {'0.1.0', '0.4.0', '1.0.0', '1.1.0', None}
+    schema_version : {'0.1.0', '0.4.0', '1.0.0', '1.1.0', '2.0.0', None}
         GeoParquet specification version; if not provided will default to
         latest supported version.
     write_covering_bbox : bool, default False
@@ -455,7 +532,7 @@ def _to_feather(df, path, index=None, compression=None, schema_version=None, **k
 
     Requires 'pyarrow' >= 0.17.
 
-    This is tracking version 1.0.0 of the GeoParquet specification for
+    This is tracking version 1.1.0 of the GeoParquet specification for
     the metadata at: https://github.com/opengeospatial/geoparquet. Writing
     older versions is supported using the `schema_version` keyword.
 
@@ -475,7 +552,7 @@ def _to_feather(df, path, index=None, compression=None, schema_version=None, **k
     compression : {'zstd', 'lz4', 'uncompressed'}, optional
         Name of the compression to use. Use ``"uncompressed"`` for no
         compression. By default uses LZ4 if available, otherwise uncompressed.
-    schema_version : {'0.1.0', '0.4.0', '1.0.0', '1.1.0', None}
+    schema_version : {'0.1.0', '0.4.0', '1.0.0', '1.1.0', '2.0.0', None}
         GeoParquet specification version for the metadata; if not provided
         will default to latest supported version.
     kwargs
@@ -647,14 +724,24 @@ def _read_parquet_schema_and_metadata(path, filesystem, partitioning="hive"):
     that the ParquetDataset interface doesn't allow passing the filters on read)
 
     """
+    import pyarrow
     from pyarrow import parquet
 
     try:
-        schema = parquet.ParquetDataset(
-            path, filesystem=filesystem, partitioning=partitioning
-        ).schema
-    except Exception:
-        schema = parquet.read_schema(path, filesystem=filesystem)
+        try:
+            schema = parquet.ParquetDataset(
+                path, filesystem=filesystem, partitioning=partitioning
+            ).schema
+        except Exception:
+            schema = parquet.read_schema(path, filesystem=filesystem)
+    except OSError as exc:
+        if "Thrift LogicalType that is not recognized" in str(exc):
+            raise OSError(
+                "Reading GeoParquet 2.0 files with Parquet Geometry/Geography logical "
+                "types requires pyarrow>=20.0, while pyarrow "
+                f"{pyarrow.__version__} is installed."
+            ) from exc
+        raise
 
     metadata = schema.metadata
 
@@ -691,7 +778,7 @@ def _read_parquet(
       columns, the first available geometry column will be set as the geometry
       column of the returned GeoDataFrame.
 
-    Supports versions 0.1.0, 0.4.0, 1.0.0, and 1.1.0 of the GeoParquet
+    Supports versions 0.1.0, 0.4.0, 1.0.0, 1.1.0 and 2.0.0 of the GeoParquet
     specification at: https://github.com/opengeospatial/geoparquet
 
     If 'crs' key is not present in the GeoParquet metadata associated with the

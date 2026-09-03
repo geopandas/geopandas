@@ -40,9 +40,13 @@ def _overlay_intersection(df1, df2):
     # Create pairs of geometries in both dataframes to be intersected
     if idx1.size > 0 and idx2.size > 0:
         left = df1.geometry.take(idx1)
-        left.reset_index(drop=True, inplace=True)
         right = df2.geometry.take(idx2)
-        right.reset_index(drop=True, inplace=True)
+        if PANDAS_GE_30:
+            left = left.reset_index(drop=True)
+            right = right.reset_index(drop=True)
+        else:
+            left.reset_index(drop=True, inplace=True)
+            right.reset_index(drop=True, inplace=True)
         intersections = left.intersection(right)
         poly_ix = intersections.geom_type.isin(POLYGON_GEOM_TYPES)
         intersections.loc[poly_ix] = intersections[poly_ix].make_valid()
@@ -152,8 +156,12 @@ def _overlay_symmetric_diff(df1, df2):
     geometry.loc[dfsym.geometry_1.isnull()] = dfsym.loc[
         dfsym.geometry_1.isnull(), "geometry_2"
     ]
-    dfsym.drop(["geometry_1", "geometry_2"], axis=1, inplace=True)
-    dfsym.reset_index(drop=True, inplace=True)
+    if PANDAS_GE_30:
+        dfsym = dfsym.drop(["geometry_1", "geometry_2"], axis=1)
+        dfsym = dfsym.reset_index(drop=True)
+    else:
+        dfsym.drop(["geometry_1", "geometry_2"], axis=1, inplace=True)
+        dfsym.reset_index(drop=True, inplace=True)
     dfsym = GeoDataFrame(dfsym, geometry=geometry, crs=df1.crs)
     return dfsym
 
@@ -369,12 +377,18 @@ def overlay(
             result = _overlay_identity(df1, df2)
 
         if how in ["intersection", "symmetric_difference", "union", "identity"]:
-            result.drop(["__idx1", "__idx2"], axis=1, inplace=True)
+            if PANDAS_GE_30:
+                result = result.drop(["__idx1", "__idx2"], axis=1)
+            else:
+                result.drop(["__idx1", "__idx2"], axis=1, inplace=True)
 
     if keep_geom_type:
         result = _collection_extract(result, geom_type, keep_geom_type_warning)
 
-    result.reset_index(drop=True, inplace=True)
+    if PANDAS_GE_30:
+        result = result.reset_index(drop=True)
+    else:
+        result.reset_index(drop=True, inplace=True)
     return result
 
 

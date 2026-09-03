@@ -473,6 +473,12 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         # update _geometry_column_name prior to assignment
         # to avoid default is None warning
         frame._geometry_column_name = geo_column_name
+        if isinstance(frame.columns, pd.MultiIndex) and not isinstance(
+            geo_column_name, tuple
+        ):
+            # when setting a single column to dataframe with multi-index columns,
+            # pandas does not like setting it with only the first level name
+            geo_column_name = (geo_column_name,) + ("",) * (frame.columns.nlevels - 1)
         frame[geo_column_name] = level
 
         if not inplace:
@@ -530,7 +536,12 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 return self.rename(columns={geometry_col: col}).set_geometry(
                     col, inplace=inplace
                 )
-            self.rename(columns={geometry_col: col}, inplace=inplace)
+            with warnings.catch_warnings():
+                # TODO: pandas >= 3.1 triggers a warning for inplace rename here
+                # suppresing this for now, but we have to replace this with our own
+                # warning specifically for rename_geometry
+                warnings.filterwarnings("ignore", ".*inplace keyword.*")
+                self.rename(columns={geometry_col: col}, inplace=inplace)
             self.set_geometry(col, inplace=inplace)
 
     @property
@@ -823,6 +834,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             properties = feature.get("properties") or {}
             row.update(properties)
             rows.append(row)
+        if not rows:
+            return cls(geometry=[], columns=columns, crs=crs)
         return cls(rows, columns=columns, crs=crs)
 
     @classmethod
@@ -1286,6 +1299,16 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         -------
         DataFrame
             geometry columns are encoded to WKB
+
+        Notes
+        -----
+        The Well-Known Binary (WKB) specification does not support all variations
+        of geometry types that GeoPandas does, and some geometries may not be
+        serialised without information loss. Notably:
+
+        - LinearRing will be converted to LineString
+        - Empty Points will be converted to Points with NaN as coordinates (but will be
+          read by :meth:`~geopandas.GeoSeries.from_wkb` as empty Points).
         """
         df = DataFrame(self.copy(deep=not PANDAS_GE_30))
 
@@ -1451,15 +1474,11 @@ default 'snappy'
         write_covering_bbox : bool, default False
             Writes the bounding box column for each row entry with column
             name 'bbox'. Writing a bbox column can be computationally
-            expensive, but allows you to specify a `bbox` in :
-            func:`read_parquet` for filtered reading.
-            Note: this bbox column is part of the newer GeoParquet 1.1
-            specification and should be considered as experimental. While
-            writing the column is backwards compatible, using it for filtering
-            may not be supported by all readers.
-        schema_version : {'0.1.0', '0.4.0', '1.0.0', '1.1.0', None}
+            expensive, but allows you to specify a `bbox` in
+            :func:`read_parquet` for filtered reading.
+        schema_version : {'0.1.0', '0.4.0', '1.0.0', '1.1.0', '2.0.0', None}
             GeoParquet specification version; if not provided, will default to
-            latest supported stable version (1.0.0).
+            latest supported stable version (1.1.0).
         kwargs
             Additional keyword arguments passed to :func:`pyarrow.parquet.write_table`.
 
@@ -1525,7 +1544,7 @@ default 'snappy'
             compression. By default uses LZ4 if available, otherwise uncompressed.
         schema_version : {'0.1.0', '0.4.0', '1.0.0', '1.1.0' None}
             GeoParquet specification version; if not provided will default to
-            latest supported stable version (1.0.0).
+            latest supported stable version (1.1.0).
         kwargs
             Additional keyword arguments passed to
             :func:`pyarrow.feather.write_feather`.
@@ -2027,7 +2046,10 @@ default 'snappy'
                 pass
             else:
                 if self.crs is not None and result.crs is None:
-                    result.set_crs(self.crs, inplace=True)
+                    if PANDAS_GE_30:
+                        result = result.set_crs(self.crs)
+                    else:
+                        result.set_crs(self.crs, inplace=True)
         elif isinstance(result, Series) and result.dtype == "object":
             # Try reconstruct series GeometryDtype if lost by apply
             # If all none and object dtype assert list of nones is more likely
@@ -2327,31 +2349,38 @@ default 'snappy'
         **kwargs,
     ) -> GeoDataFrame | DataFrame:
         """
-        Explode multi-part geometries into multiple single geometries.
+        Explode multi-part geometries into multiple component geometries.
 
         Each row containing a multi-part geometry will be split into
-        multiple rows with single geometries, thereby increasing the vertical
-        size of the GeoDataFrame.
+        multiple rows with each component geometry, thereby increasing the
+        vertical size of the GeoDataFrame.
+
+        GeometryCollections are split into their direct components. If a
+        GeometryCollection contains a multi-part geometry, that component is
+        returned as a multi-part geometry. To further split multi-part
+        geometries within a GeometryCollection, call ``explode`` a second time.
 
         Parameters
         ----------
-        column : string, default None
-            Column to explode. In the case of a geometry column, multi-part
-            geometries are converted to single-part.
-            If None, the active geometry column is used.
+        column : string or list of strings, default None
+            Column(s) to explode. In the case of a geometry column, multi-part
+            geometries are converted to their component geometries.
+            If None, the active geometry column is used. A list of multiple
+            (non-geometry) columns may be passed to use the pandas multi-column
+            explode.
         ignore_index : bool, default False
             If True, the resulting index will be labelled 0, 1, …, n - 1,
             ignoring `index_parts`.
         index_parts : boolean, default False
             If True, the resulting index will be a multi-index (original
             index with an additional level indicating the multiple
-            geometries: a new zero-based index for each single part geometry
-            per multi-part geometry).
+            geometries: a new zero-based index for each component geometry
+            per input geometry).
 
         Returns
         -------
         GeoDataFrame
-            Exploded geodataframe with each single geometry
+            Exploded geodataframe with each component geometry
             as a separate entry in the geodataframe.
 
         Examples
@@ -2366,7 +2395,7 @@ default 'snappy'
         ... }
         >>> gdf = geopandas.GeoDataFrame(d, crs=4326)
         >>> gdf
-            col1               geometry
+            col1                   geometry
         0  name1  MULTIPOINT ((1 2), (3 4))
         1  name2  MULTIPOINT ((2 1), (0 0))
 
@@ -2394,6 +2423,28 @@ default 'snappy'
         2  name2  POINT (2 1)
         3  name2  POINT (0 0)
 
+        A single ``explode`` call splits a GeometryCollection into its direct
+        components, which may themselves be multi-part geometries:
+
+        >>> from shapely.geometry import GeometryCollection
+        >>> gdf = geopandas.GeoDataFrame(
+        ...     {
+        ...         "geometry": [
+        ...             GeometryCollection(
+        ...                 [
+        ...                     MultiPoint([(1, 2), (3, 4)]),
+        ...                     MultiPoint([(2, 1), (0, 0)]),
+        ...                 ]
+        ...             )
+        ...         ]
+        ...     },
+        ...     crs=4326,
+        ... )
+        >>> gdf.explode(index_parts=False)
+                            geometry
+        0  MULTIPOINT ((1 2), (3 4))
+        0  MULTIPOINT ((2 1), (0 0))
+
         See Also
         --------
         GeoDataFrame.dissolve : dissolve geometries into a single observation.
@@ -2402,8 +2453,20 @@ default 'snappy'
         # If no column is specified then default to the active geometry column
         if column is None:
             column = self.geometry.name
+        # ``self[column].dtypes`` is a scalar dtype when a single column is
+        # selected and a Series of dtypes when multiple columns are selected.
+        dtypes = self[column].dtypes
+        if isinstance(dtypes, Series):
+            # Multiple columns: only the pandas (non-geometry) multi-column
+            # explode is supported.
+            if any(isinstance(dtype, GeometryDtype) for dtype in dtypes):
+                raise ValueError(
+                    "Exploding multiple columns including a geometry column is "
+                    "not supported."
+                )
+            return super().explode(column, ignore_index=ignore_index, **kwargs)
         # If the specified column is not a geometry dtype use pandas explode
-        if not isinstance(self[column].dtype, GeometryDtype):
+        if not isinstance(dtypes, GeometryDtype):
             return super().explode(column, ignore_index=ignore_index, **kwargs)
 
         exploded_geom = self.geometry.reset_index(drop=True).explode(index_parts=True)
@@ -2415,7 +2478,10 @@ default 'snappy'
         df = df.set_geometry(self._geometry_column_name).__finalize__(self)
 
         if ignore_index:
-            df.reset_index(inplace=True, drop=True)
+            if PANDAS_GE_30:
+                df = df.reset_index(drop=True)
+            else:
+                df.reset_index(inplace=True, drop=True)
         elif index_parts:
             # reset to MultiIndex, otherwise df index is only first level of
             # exploded GeoSeries index.
