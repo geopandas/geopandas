@@ -56,6 +56,8 @@ Bug fixes:
   x-axis (#3773).
 - Fix ``GeoDataFrame.explore()`` ignoring custom ``legend_kwds={"labels": ...}``
   for categorical and boolean columns (#3496).
+- Fix ``read_parquet`` ignoring the ``partitioning`` keyword when auto-detecting
+  the columns to read, so that ``partitioning=None`` no longer raises (#3459).
 - Fix ``GeoDataFrame.explode()`` raising a cryptic error when passing multiple
   (non-geometry) columns; it now falls back to the pandas multi-column explode (#2753).
 - Fix `GeoDataFrame.from_features` raising a `ValueError` for an empty list of
