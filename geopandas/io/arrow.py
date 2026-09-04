@@ -888,16 +888,71 @@ def _read_parquet(
 
     kwargs["use_pandas_metadata"] = True
 
-    table = parquet.read_table(
-        path, columns=columns, filesystem=filesystem, filters=filters, **kwargs
-    )
+    # table = parquet.read_table(
+    #     path, columns=columns, filesystem=filesystem, filters=filters, **kwargs
+    # )
+
+    pqdataset = parquet.ParquetDataset(path, filesystem=filesystem)
+    dsdataset = pqdataset._dataset
+
+    if bbox is not None and bbox_filter is None:
+        # if bbox is specified, but the dataset does not have a bbox column,
+        # we need to filter the row groups manually.
+        # breakpoint()
+        ds = import_optional_dependency(
+            "pyarrow.dataset", extra="pyarrow is required for Parquet support."
+        )
+
+        geometry = geo_metadata["primary_column"]
+        filtered_fragments = []
+
+        for fragment in pqdataset.fragments:
+            geometry_idx = fragment.metadata.schema.names.index(geometry)
+            row_group_ids = [
+                rg.id
+                for rg in fragment.row_groups
+                if _bbox_intersects(
+                    rg.metadata.column(geometry_idx).geo_statistics, bbox
+                )
+            ]
+            fragment_filtered = fragment.subset(row_group_ids=row_group_ids)
+
+            filtered_fragments.append(fragment_filtered)
+
+        dsdataset = ds.FileSystemDataset(
+            filtered_fragments,
+            dsdataset.schema,
+            dsdataset.format,
+            filesystem=dsdataset.filesystem,
+            root_partition=dsdataset.partition_expression,
+        )
+
+    if filters is not None and isinstance(filters, list):
+        filters = parquet.filters_to_expression(filters)
+    table = dsdataset.to_table(columns=columns, filter=filters)
 
     if metadata and b"PANDAS_ATTRS" in metadata:
         df_attrs = metadata[b"PANDAS_ATTRS"]
     else:
         df_attrs = None
 
-    return _arrow_to_geopandas(table, geo_metadata, to_pandas_kwargs, df_attrs)
+    result = _arrow_to_geopandas(table, geo_metadata, to_pandas_kwargs, df_attrs)
+
+    if bbox is not None and bbox_filter is None:
+        # post-filtering step: manual filtering above only filtered up to the row group
+        # level -> further filter at the row level to give consistent behaviour
+        bbox_bounds = result.bounds
+        result_bbox = shapely.box(
+            bbox_bounds["minx"],
+            bbox_bounds["miny"],
+            bbox_bounds["maxx"],
+            bbox_bounds["maxy"],
+        )
+        result = result[
+            shapely.intersects(result_bbox, shapely.box(*bbox))
+        ].reset_index(drop=True)
+
+    return result
 
 
 def _read_feather(path, columns=None, to_pandas_kwargs=None, **kwargs):
@@ -989,6 +1044,10 @@ def _get_parquet_bbox_filter(geo_metadata, bbox):
             & (pc.field((primary_column, "y")) <= bbox[3])
         )
 
+    elif geo_metadata["version"] == "2.0.0":
+        # this case gets handled later manually
+        return None
+
     else:
         raise ValueError(
             "Specifying 'bbox' not supported for this Parquet file (it should either "
@@ -1034,3 +1093,19 @@ def _splice_bbox_and_filters(kwarg_filters, bbox_filter):
 
     filters_expression = parquet.filters_to_expression(kwarg_filters)
     return bbox_filter & filters_expression
+
+
+def _bbox_intersects(geo_stats, bbox):
+    stats_xmin, stats_ymin, stats_xmax, stats_ymax = (
+        geo_stats.xmin,
+        geo_stats.ymin,
+        geo_stats.xmax,
+        geo_stats.ymax,
+    )
+    xmin, ymin, xmax, ymax = bbox
+    return (
+        (stats_xmin <= xmax)
+        and (stats_xmax >= xmin)
+        and (stats_ymin <= ymax)
+        and (stats_ymax >= ymin)
+    )
