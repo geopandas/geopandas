@@ -2914,22 +2914,20 @@ class TestTilesPlotting:
         )
 
     def test_tiles_custom_xyzservices(self):
-        ax = self.nybb.plot(tiles="NASAGIBS.BlueMarble")
+        ax = self.nybb.plot(tiles="OpenTopoMap")
         im = next(iter(ax.images))
-        assert im.get_array().shape == (256, 259, 4)
+        assert im.get_array().shape == (1023, 1030, 4)
 
         attr = next(iter(ax.texts)).get_text()
         assert (
-            attr
-            == "Imagery provided by services from the Global Imagery Browse Services "
-            "(GIBS), operated by the NASA/GSFC/Earth Science Data and Information "
-            "System (ESDIS) with funding provided by NASA/HQ."
+            attr == "Map data: (C) OpenStreetMap contributors, SRTM | Map style: (C) "
+            "OpenTopoMap (CC-BY-SA)"
         )
 
     def test_tiles_custom_attribution(self):
-        ax = self.nybb.plot(tiles="NASAGIBS.BlueMarble", attr="Custom attribution")
+        ax = self.nybb.plot(tiles="OpenTopoMap", attr="Custom attribution")
         im = next(iter(ax.images))
-        assert im.get_array().shape == (256, 259, 4)
+        assert im.get_array().shape == (1023, 1030, 4)
 
         attr = next(iter(ax.texts)).get_text()
         assert attr == "Custom attribution"
