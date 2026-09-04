@@ -803,7 +803,7 @@ class TestExplore:
     def test_xyzservices_query_name(self):
         pytest.importorskip("xyzservices")
 
-        m = self.nybb.explore(tiles="OPenStreetMap DE")
+        m = self.nybb.explore(tiles="OpenStreetMap DE")
         out_str = self._fetch_map_string(m)
 
         assert '"https://tile.openstreetmap.de/{z}/{x}/{y}.png"' in out_str
