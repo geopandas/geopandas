@@ -518,12 +518,42 @@ class GeometryArray(ExtensionArray):
         #         )
 
     def __getstate__(self):
-        return (shapely.to_wkb(self._data), self._crs)
+        # include type ids so LinearRing (which WKB encodes as LineString) can
+        # be restored on unpickling -- see GH3785
+        return (shapely.to_wkb(self._data), self._crs, shapely.get_type_id(self._data))
 
     def __setstate__(self, state):
         if not isinstance(state, dict):
-            # pickle file saved with pygeos
+            # tuple format: (wkb_bytes, crs) for legacy pygeos pickles,
+            # (wkb_bytes, crs, type_ids) for GeoPandas >= 1.2
             geoms = shapely.from_wkb(state[0])
+            # older pickles are a 2-tuple without type ids
+            if len(state) > 2:
+                ring_mask = state[2] == shapely.GeometryType.LINEARRING
+                if ring_mask.any():
+                    masked = geoms[ring_mask]
+                    # empty geometries produce no coordinates, and M
+                    # coordinates cannot be rebuilt by shapely.linearrings
+                    # (which only knows Z), so restore those per-geometry;
+                    # otherwise vectorise, grouping by has_z so a global
+                    # include_z cannot promote 2D rings to 3D with NaN
+                    # coordinates
+                    if shapely.is_empty(masked).any() or shapely.has_m(masked).any():
+                        geoms[ring_mask] = [
+                            shapely.LinearRing(g.coords) for g in masked
+                        ]
+                    else:
+                        for z in (False, True):
+                            grp = ring_mask & (shapely.has_z(geoms) == z)
+                            if grp.any():
+                                coords, indices = shapely.get_coordinates(
+                                    geoms[grp],
+                                    include_z=z,
+                                    return_index=True,
+                                )
+                                geoms[grp] = shapely.linearrings(
+                                    coords, indices=indices
+                                )
             self._crs = state[1]
             self._sindex = None  # pygeos.STRtree could not be pickled yet
             self._data = geoms
