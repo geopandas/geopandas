@@ -30,7 +30,7 @@ def make_grid(
     If there are multiple geometries in a GeoSeries/GeoDataFrame, the grid will
     be created over the total bounds of the GeoSeries/GeoDataFrame. Subsequently,
     the grid is filtered to only include elements that spatially overlap with
-    any of the individual geometries when ``intersetcts`` is ``True``.
+    any of the individual geometries when ``intersect`` is ``True``.
 
     Parameters
     ----------
@@ -48,7 +48,8 @@ def make_grid(
         vertices of the grid cells (i.e., the points where cell edges meet).
         ``"polygons"`` returns the grid cell polygons.
     offset : tuple | None, default None
-        Lower left corner coordinates (x, y) of the grid.
+        Lower left corner coordinates (x, y) of the grid. By default uses
+        the lower left corner of the bounding box of the input geometry.
     intersect : bool, default True
         If False, the grid is not filtered by the ``input_geometry`` and the
         full grid covering the bounding box is returned.

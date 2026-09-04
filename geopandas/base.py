@@ -6644,9 +6644,10 @@ GeometryCollection
     ) -> "GeoSeries":
         """Provide the centers, corners, or polygons of a square or hexagonal grid.
 
-        The grid covers the area of the GeoSeries' bounds. By default, only
+        The grid covers the area of the GeoSeries' total bounds. By default, only
         grid elements that spatially overlap with the GeoSeries geometries
-        are returned.
+        are returned. This filtering can be disabled by setting the
+        ``intersect`` parameter to ``False``.
 
         Parameters
         ----------
@@ -6660,7 +6661,8 @@ GeometryCollection
             vertices of the grid cells. ``"polygons"`` returns the grid cell
             polygons.
         offset : tuple | None, default None
-            Lower left corner coordinates (x, y) of the grid.
+            Lower left corner coordinates (x, y) of the grid. By default uses
+            the lower left corner of the bounding box of the input geometry.
         intersect : bool, default True
             If False, the grid is not filtered by the geometry and the full
             grid covering the bounding box is returned.
