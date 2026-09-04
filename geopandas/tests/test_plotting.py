@@ -2914,15 +2914,18 @@ class TestTilesPlotting:
         )
 
     def test_tiles_custom_xyzservices(self):
-        ax = self.nybb.plot(tiles="CartoDBPositron")
+        ax = self.nybb.plot(tiles="OpenTopoMap")
         im = next(iter(ax.images))
         assert im.get_array().shape == (1023, 1030, 4)
 
         attr = next(iter(ax.texts)).get_text()
-        assert attr == "(C) OpenStreetMap contributors (C) CARTO"
+        assert (
+            attr == "Map data: (C) OpenStreetMap contributors, SRTM | Map style: (C) "
+            "OpenTopoMap (CC-BY-SA)"
+        )
 
     def test_tiles_custom_attribution(self):
-        ax = self.nybb.plot(tiles="CartoDBPositron", attr="Custom attribution")
+        ax = self.nybb.plot(tiles="OpenTopoMap", attr="Custom attribution")
         im = next(iter(ax.images))
         assert im.get_array().shape == (1023, 1030, 4)
 
