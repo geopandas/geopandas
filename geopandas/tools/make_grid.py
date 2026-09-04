@@ -85,13 +85,42 @@ def make_grid(
     >>> import geodatasets
     >>> world = geopandas.read_file(
     ...     geodatasets.get_path('naturalearth land'))
-    >>> borneo = world.loc[[42]]
-    >>> sq_grid = geopandas.make_grid(borneo,6)
-    >>> sq_grid
-    0    POLYGON ((108.95266 -4.10698, 114.95266 -4.106...
-    1    POLYGON ((108.95266 1.89302, 114.95266 1.89302...
-    2    POLYGON ((114.95266 -4.10698, 120.95266 -4.106...
-    3    POLYGON ((114.95266 1.89302, 120.95266 1.89302...
+    >>> madagascar = world.cx[45:50, -25:-15]
+    >>> sq_grid = geopandas.make_grid(madagascar, cell_size=1)
+    >>> sq_grid.head(3)
+    0    POLYGON ((43.25419 -25.60143, 44.25419 -25.601...
+    1    POLYGON ((43.25419 -24.60143, 44.25419 -24.601...
+    2    POLYGON ((43.25419 -23.60143, 44.25419 -23.601...
+    dtype: geometry
+
+    By default, grid is aligned with the bounding box of the input geometries.
+    If instead you want to a fixed grid aligning with specific coordinates,
+    use the ``offset`` keyword. For example, to have a grid of round degrees:
+
+    >>> sq_grid2 = geopandas.make_grid(madagascar, cell_size=1, offset=(30, -30))
+    >>> sq_grid2.head(3)
+    0    POLYGON ((43 -25, 44 -25, 44 -24, 43 -24, 43 -...
+    1    POLYGON ((43 -24, 44 -24, 44 -23, 43 -23, 43 -...
+    2    POLYGON ((43 -23, 44 -23, 44 -22, 43 -22, 43 -...
+    dtype: geometry
+
+    .. plot:: _static/code/make_grid.py
+
+    Specify the ``what`` keyword to get the centers or corners of the grid
+    cells, instead of the polygons:
+
+    >>> sq_grid_centers = geopandas.make_grid(madagascar, cell_size=1, what="centers")
+    >>> sq_grid_centers.head(3)
+    0    POINT (43.75419 -24.10143)
+    1    POINT (43.75419 -23.10143)
+    2    POINT (43.75419 -22.10143)
+    dtype: geometry
+
+    Specify the ``cell_type="hexagon`` keyword to get hexagons instead of the
+    default squares.
+
+    .. plot:: _static/code/make_grid_types.py
+
     """
     # Run basic checks
     _basic_checks(input_geometry, cell_size, offset, what, cell_type, intersect)
