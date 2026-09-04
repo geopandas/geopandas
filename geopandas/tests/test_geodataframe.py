@@ -1600,6 +1600,22 @@ class TestConstructor:
         if compat.HAS_PYPROJ:
             assert gdf.crs == "EPSG:4326"
 
+    def test_constructor_with_arrow_backed_columns(self):
+        """GeoDataFrame constructor should work with pyarrow-backed string columns."""
+        pa = pytest.importorskip("pyarrow")
+
+        gdf = GeoDataFrame(
+            {
+                "key": pd.array(["a", "b"], dtype="string[pyarrow]"),
+                "value": pd.array([1, 2], dtype=pd.ArrowDtype(pa.int64())),
+                "geometry": [Point(0, 0), Point(1, 1)],
+            },
+            geometry="geometry",
+        )
+        check_geodataframe(gdf, geometry_column="geometry")
+        assert len(gdf) == 2
+        assert list(gdf["key"]) == ["a", "b"]
+
 
 @pytest.mark.skipif(not compat.HAS_PYPROJ, reason="pyproj not available")
 def test_geodataframe_crs():
