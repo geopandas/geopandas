@@ -2192,14 +2192,16 @@ default 'snappy'
         sort: bool = True,
         observed: bool = False,
         dropna: bool = True,
-        method: Literal["unary", "coverage", "disjoint_subset"] = "unary",
+        method: Literal["unary", "coverage", "disjoint_subset", "collect"] = "unary",
         grid_size: float | None = None,
         **kwargs,
     ) -> GeoDataFrame:
         """
         Dissolve geometries within `groupby` into single observation.
+
         This is accomplished by applying the `union_all` method
-        to all geometries within a groupself.
+        to all geometries within a groupself or by collecting geometries to a respective
+        mutli-part geometry type or a GeometryCollection, when heterogeneous.
 
         Observations associated with each `groupby` group will be aggregated
         using the `aggfunc`.
@@ -2247,10 +2249,13 @@ default 'snappy'
               for non-overlapping polygons and can be significantly faster than the
               unary union algorithm. However, it can produce invalid geometries if the
               polygons overlap.
-            * ``"disjoint_subset:``: use the disjoint subset union algorithm. This
+            * ``"disjoint_subset``: use the disjoint subset union algorithm. This
               option is optimized for inputs that can be divided into subsets that do
               not intersect. If there is only one such subset, performance can be
               expected to be worse than ``"unary"``.  Requires Shapely >= 2.1.
+            * ``"collect"``: collect geometries to a multi-part geometry without
+              performing union. Heterogeneous geometry types will be collected to a
+              GeometryCollection.
 
 
         grid_size : float, default None
@@ -2325,8 +2330,22 @@ default 'snappy'
             merged_geom = block.union_all(method=method, grid_size=grid_size)
             return merged_geom
 
+        def collect_geometries(geometries):
+            """Collect geometries without performing an expensive union."""
+            type_ids = shapely.get_type_id(geometries)
+
+            if np.all((type_ids == 0) | (type_ids == 4)):
+                return shapely.multipoints(shapely.get_parts(geometries))
+            if np.all(((type_ids >= 1) & (type_ids <= 2)) | (type_ids == 5)):
+                return shapely.multilinestrings(shapely.get_parts(geometries))
+            if np.all((type_ids == 3) | (type_ids == 6)):
+                return shapely.multipolygons(shapely.get_parts(geometries))
+            return shapely.geometrycollections(geometries)
+
+        func = collect_geometries if method == "collect" else merge_geometries
+
         g = self.groupby(group_keys=False, **groupby_kwargs)[self.geometry.name].agg(
-            merge_geometries
+            func
         )
 
         # Aggregate

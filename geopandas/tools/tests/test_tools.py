@@ -17,35 +17,59 @@ class TestTools:
         self.line1 = LineString([(3, 3), (4, 4)])
 
     def test_collect_single(self):
-        result = collect(self.p1)
+        with pytest.warns(
+            DeprecationWarning, match="geopandas.tools.collect is deprecated"
+        ):
+            result = collect(self.p1)
         assert self.p1.equals(result)
 
     def test_collect_single_force_multi(self):
-        result = collect(self.p1, multi=True)
+        with pytest.warns(
+            DeprecationWarning, match="geopandas.tools.collect is deprecated"
+        ):
+            result = collect(self.p1, multi=True)
         expected = MultiPoint([self.p1])
         assert expected.equals(result)
 
     def test_collect_multi(self):
-        result = collect(self.mp1)
+        with pytest.warns(
+            DeprecationWarning, match="geopandas.tools.collect is deprecated"
+        ):
+            result = collect(self.mp1)
         assert self.mp1.equals(result)
 
     def test_collect_multi_force_multi(self):
-        result = collect(self.mp1)
+        with pytest.warns(
+            DeprecationWarning, match="geopandas.tools.collect is deprecated"
+        ):
+            result = collect(self.mp1)
         assert self.mp1.equals(result)
 
     def test_collect_list(self):
-        result = collect([self.p1, self.p2, self.p3])
+        with pytest.warns(
+            DeprecationWarning, match="geopandas.tools.collect is deprecated"
+        ):
+            result = collect([self.p1, self.p2, self.p3])
         assert self.mpc.equals(result)
 
     def test_collect_GeoSeries(self):
         s = GeoSeries([self.p1, self.p2, self.p3])
-        result = collect(s)
+        with pytest.warns(
+            DeprecationWarning, match="geopandas.tools.collect is deprecated"
+        ):
+            result = collect(s)
         assert self.mpc.equals(result)
 
     def test_collect_mixed_types(self):
         with pytest.raises(ValueError):
-            collect([self.p1, self.line1])
+            with pytest.warns(
+                DeprecationWarning, match="geopandas.tools.collect is deprecated"
+            ):
+                collect([self.p1, self.line1])
 
     def test_collect_mixed_multi(self):
         with pytest.raises(ValueError):
-            collect([self.mpc, self.mp1])
+            with pytest.warns(
+                DeprecationWarning, match="geopandas.tools.collect is deprecated"
+            ):
+                collect([self.mpc, self.mp1])
