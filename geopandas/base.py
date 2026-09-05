@@ -1,3 +1,4 @@
+from typing import TYPE_CHECKING, Literal
 from warnings import warn
 
 import numpy as np
@@ -10,6 +11,9 @@ from shapely.geometry.base import BaseGeometry
 
 from . import _compat as compat
 from .array import GeometryArray, GeometryDtype
+
+if TYPE_CHECKING:
+    from .geoseries import GeoSeries
 
 
 def is_geometry_type(data):
@@ -6627,6 +6631,75 @@ GeometryCollection
         polygons = shapely.polygonize(geometry_input)
         return GeoSeries(polygons, crs=self.crs, name="polygons").explode(
             ignore_index=True
+        )
+
+    def make_grid(
+        self,
+        cell_size: float,
+        cell_type: Literal["square", "hexagon"] = "square",
+        what: Literal["centers", "corners", "polygons"] = "polygons",
+        offset: tuple[float, float] | None = None,
+        intersect: bool = True,
+        flat_topped: bool = False,
+    ) -> "GeoSeries":
+        """Provide the centers, corners, or polygons of a square or hexagonal grid.
+
+        The grid covers the area of the GeoSeries' total bounds. By default, only
+        grid elements that spatially overlap with the GeoSeries geometries
+        are returned. This filtering can be disabled by setting the
+        ``intersect`` parameter to ``False``.
+
+        Parameters
+        ----------
+        cell_size : float
+            Side length of the square or hexagonal grid cell.
+        cell_type : str, one of "square", "hexagon", default "square"
+            Grid type that is returned.
+        what : str, one of "centers", "corners", "polygons", default "polygons"
+            Grid feature that is returned. ``"centers"`` returns points at the
+            center of each grid cell. ``"corners"`` returns points at all unique
+            vertices of the grid cells. ``"polygons"`` returns the grid cell
+            polygons.
+        offset : tuple | None, default None
+            Lower left corner coordinates (x, y) of the grid. By default uses
+            the lower left corner of the bounding box of the input geometry.
+        intersect : bool, default True
+            If False, the grid is not filtered by the geometry and the full
+            grid covering the bounding box is returned.
+        flat_topped : bool, default False
+            If True generate flat topped hexagons. If False, the orientation of the
+            hexagonal cells is such that a corner points upwards.
+
+        Returns
+        -------
+        GeoSeries
+
+        See Also
+        --------
+        make_grid : equivalent top-level function
+
+        Examples
+        --------
+        >>> import geodatasets
+        >>> world = geopandas.read_file(
+        ...     geodatasets.get_path('naturalearth land'))
+        >>> borneo = world.loc[[42]]
+        >>> borneo.geometry.make_grid(6)
+        0    POLYGON ((108.95266 -4.10698, 114.95266 -4.106...
+        1    POLYGON ((108.95266 1.89302, 114.95266 1.89302...
+        2    POLYGON ((114.95266 -4.10698, 120.95266 -4.106...
+        3    POLYGON ((114.95266 1.89302, 120.95266 1.89302...
+        """
+        from .tools.make_grid import make_grid
+
+        return make_grid(
+            self.geometry,
+            cell_size=cell_size,
+            cell_type=cell_type,
+            what=what,
+            offset=offset,
+            intersect=intersect,
+            flat_topped=flat_topped,
         )
 
 
