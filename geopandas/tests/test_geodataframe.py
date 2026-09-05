@@ -1,8 +1,11 @@
+import datetime
+import decimal
 import json
 import os
 import re
 import shutil
 import tempfile
+import uuid
 from enum import Enum
 
 import numpy as np
@@ -600,6 +603,83 @@ class TestDataFrame:
             ValueError, match="GeoDataFrame cannot contain duplicated column names"
         ):
             df.to_json()
+
+    @pytest.mark.parametrize(
+        "value,expected",
+        [
+            (pd.Timestamp("2024-03-01 12:30:00"), "2024-03-01T12:30:00"),
+            (
+                pd.Timestamp("2024-03-01 12:30:00", tz="UTC"),
+                "2024-03-01T12:30:00Z",  # GDAL spells UTC "Z", not "+00:00"
+            ),
+            (datetime.date(2024, 3, 1), "2024-03-01"),
+            (datetime.time(12, 30), "12:30:00"),
+            (pd.Timedelta("1 days 2:03:04"), "P1DT2H3M4S"),
+            # a plain timedelta must render like its pandas twin, not str()
+            (datetime.timedelta(days=1, hours=2, minutes=3, seconds=4), "P1DT2H3M4S"),
+            (datetime.time(12, 30, tzinfo=datetime.UTC), "12:30:00Z"),
+            (pd.Period("2024-01", freq="M"), "2024-01"),
+            (
+                uuid.UUID("12345678-1234-5678-1234-567812345678"),
+                "12345678-1234-5678-1234-567812345678",
+            ),
+            (decimal.Decimal("1.50"), "1.50"),
+        ],
+    )
+    def test_to_json_non_serializable_values(self, value, expected):
+        # values JSON has no native type for must be converted, not raise
+        df = GeoDataFrame({"v": [value]}, geometry=[Point(1, 1)], crs="EPSG:4326")
+        data = json.loads(df.to_json())
+        assert data["features"][0]["properties"]["v"] == expected
+
+    @pytest.mark.parametrize(
+        "value",
+        [
+            pd.Timestamp("2024-03-01 12:30:00"),
+            pd.Timestamp("2024-03-01 12:30:00", tz="UTC"),
+            datetime.date(2024, 3, 1),
+        ],
+    )
+    def test_to_json_matches_to_file_geojson(self, value, tmp_path):
+        # to_json and to_file(driver="GeoJSON") both emit GeoJSON, so a value must
+        # serialize identically through either one. Compared dynamically rather than
+        # against a literal so this tracks whatever GDAL writes.
+        pytest.importorskip("pyogrio")
+        df = GeoDataFrame({"v": [value]}, geometry=[Point(1, 1)], crs="EPSG:4326")
+        path = tmp_path / "out.geojson"
+        df.to_file(path, driver="GeoJSON")
+
+        from_file = json.loads(path.read_text())["features"][0]["properties"]["v"]
+        from_json = json.loads(df.to_json())["features"][0]["properties"]["v"]
+        assert from_json == from_file
+
+    @pytest.mark.parametrize("na,expected", [("null", {"v": None}), ("drop", {})])
+    def test_to_json_missing_datetime(self, na, expected):
+        # NaT must still follow the na= rules rather than reach the encoder
+        df = GeoDataFrame(
+            {"v": pd.to_datetime([None])}, geometry=[Point(1, 1)], crs="EPSG:4326"
+        )
+        data = json.loads(df.to_json(na=na))
+        assert data["features"][0]["properties"] == expected
+
+    def test_to_json_default_kwarg_is_overridable(self):
+        df = GeoDataFrame(
+            {"v": [pd.Timestamp("2024-03-01")]},
+            geometry=[Point(1, 1)],
+            crs="EPSG:4326",
+        )
+        data = json.loads(df.to_json(default=lambda obj: "CUSTOM"))
+        assert data["features"][0]["properties"]["v"] == "CUSTOM"
+
+    def test_to_json_serializable_values_unchanged(self):
+        # the fallback must not stringify types JSON already supports
+        df = GeoDataFrame(
+            {"i": [42], "f": [1.5], "b": [True], "s": ["hi"]},
+            geometry=[Point(1, 1)],
+            crs="EPSG:4326",
+        )
+        props = json.loads(df.to_json())["features"][0]["properties"]
+        assert props == {"i": 42, "f": 1.5, "b": True, "s": "hi"}
 
     def test_copy(self):
         df2 = self.df.copy()

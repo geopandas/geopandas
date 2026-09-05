@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 import json
 import typing
 import warnings
@@ -41,6 +42,22 @@ if typing.TYPE_CHECKING:
         PARQUET_GEOMETRY_ENCODINGS,
         SUPPORTED_VERSIONS_LITERAL,
     )
+
+
+def _json_default(obj: Any) -> str:
+    """Encode values that the stdlib JSON encoder does not handle natively.
+
+    ``iterfeatures`` yields real Python scalars, so a property value can be any
+    object pandas stores -- ``Timestamp``, ``Timedelta``, ``Decimal``, ``UUID``.
+    Temporal values are rendered as ISO 8601, matching what
+    ``to_file(driver="GeoJSON")`` writes; anything else falls back to ``str``.
+    """
+    if isinstance(obj, (datetime.date, datetime.time)):  # datetime subclasses date
+        # GDAL spells a UTC offset "Z" rather than "+00:00"
+        return obj.isoformat().replace("+00:00", "Z")
+    if isinstance(obj, datetime.timedelta):  # including pandas' Timedelta
+        return pd.Timedelta(obj).isoformat()
+    return str(obj)
 
 
 def _ensure_geometry(data, crs: Any | None = None) -> GeoSeries | GeometryArray:
@@ -1021,6 +1038,11 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         -----
         The remaining *kwargs* are passed to json.dumps().
 
+        Values with no native JSON type are converted rather than raising, matching
+        what ``to_file(driver="GeoJSON")`` writes: temporal types become ISO 8601
+        strings (UTC as a trailing ``Z``), anything else falls back to ``str``. Pass
+        your own ``default=`` callable to override this.
+
         Missing (NaN) values in the GeoDataFrame can be represented as follows:
 
         - ``null``: output the missing entries as JSON null.
@@ -1087,6 +1109,8 @@ es": {"name": "urn:ogc:def:crs:EPSG::3857"}}}'
                 ogc_crs = f"urn:ogc:def:crs:{authority}::{code}"
                 geo["crs"] = {"type": "name", "properties": {"name": ogc_crs}}
 
+        # setdefault so a caller-supplied default= still wins
+        kwargs.setdefault("default", _json_default)
         return json.dumps(geo, **kwargs)
 
     @property

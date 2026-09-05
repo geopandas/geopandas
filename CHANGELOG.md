@@ -66,6 +66,12 @@ Bug fixes:
 - Fix `GeoDataFrame.from_features` raising a `ValueError` for an empty list of
   features when a `crs` is provided; it now returns an empty `GeoDataFrame` with
   a `geometry` column (#3777).
+- Fix `GeoDataFrame.to_json` and `GeoSeries.to_json` raising ``TypeError`` on columns
+  holding values with no native JSON type, such as the `datetime64` column produced by
+  reading a GeoPackage date field. Such values are now serialized exactly as
+  ``to_file(driver="GeoJSON")`` already wrote them -- ISO 8601 for temporal types (UTC
+  as a trailing ``Z``), `str` for others such as `Decimal`, `UUID` and `Period`; pass
+  ``default=`` to override.
 
 
 Community:
