@@ -2,9 +2,8 @@ import pandas as pd
 
 from shapely.geometry import Point
 
-from geopandas import GeoDataFrame, GeoSeries
+from geopandas import GeoDataFrame, GeoSeries, geocode, reverse_geocode, tools
 from geopandas._compat import HAS_PYPROJ
-from geopandas.tools import geocode, reverse_geocode
 from geopandas.tools.geocoding import _prepare_geocode_result
 
 import pytest
@@ -140,7 +139,7 @@ def test_forward(locations, points):
 
     for provider in ["photon", Photon]:
         with mock.patch("geopy.geocoders.Photon.geocode", ForwardMock()) as m:
-            g = geocode(locations, provider=provider, timeout=2)
+            g = tools.geocode(locations, provider=provider, timeout=2)
             assert len(locations) == m.call_count
 
         n = len(locations)
@@ -157,7 +156,7 @@ def test_reverse(locations, points):
 
     for provider in ["photon", Photon]:
         with mock.patch("geopy.geocoders.Photon.reverse", ReverseMock()) as m:
-            g = reverse_geocode(points, provider=provider, timeout=2)
+            g = tools.reverse_geocode(points, provider=provider, timeout=2)
             assert len(points) == m.call_count
 
         assert isinstance(g, GeoDataFrame)
@@ -168,3 +167,15 @@ def test_reverse(locations, points):
             ["address" + str(x) for x in range(len(points))], name="address"
         )
         assert_series_equal(g["address"], address)
+
+
+def test_top_level_api(locations, points):
+    with mock.patch("geopy.geocoders.Photon.geocode", ForwardMock()) as m:
+        g = geocode(locations, provider="photon", timeout=2)
+        assert len(locations) == m.call_count
+        assert isinstance(g, GeoDataFrame)
+
+    with mock.patch("geopy.geocoders.Photon.reverse", ReverseMock()) as m:
+        g = tools.reverse_geocode(points, provider="photon", timeout=2)
+        assert len(points) == m.call_count
+        assert isinstance(g, GeoDataFrame)

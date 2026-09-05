@@ -51,7 +51,7 @@ def geocode(strings, provider=None, **kwargs):
 
     Examples
     --------
-    >>> df = geopandas.tools.geocode(  # doctest: +SKIP
+    >>> df = geopandas.geocode(  # doctest: +SKIP
     ...         ["boston, ma", "1600 pennsylvania ave. washington, dc"]
     ...     )
     >>> df  # doctest: +SKIP
