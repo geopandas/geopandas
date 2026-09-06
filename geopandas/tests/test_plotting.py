@@ -2914,18 +2914,18 @@ class TestTilesPlotting:
         )
 
     def test_tiles_custom_xyzservices(self):
-        ax = self.nybb.plot(tiles="OpenTopoMap")
+        ax = self.nybb.plot(tiles="Esri.WorldImagery")
         im = next(iter(ax.images))
         assert im.get_array().shape == (1023, 1030, 4)
 
         attr = next(iter(ax.texts)).get_text()
         assert (
-            attr == "Map data: (C) OpenStreetMap contributors, SRTM | Map style: (C) "
-            "OpenTopoMap (CC-BY-SA)"
+            attr == "Tiles (C) Esri -- Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, "
+            "Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community"
         )
 
     def test_tiles_custom_attribution(self):
-        ax = self.nybb.plot(tiles="OpenTopoMap", attr="Custom attribution")
+        ax = self.nybb.plot(tiles="Esri.WorldImagery", attr="Custom attribution")
         im = next(iter(ax.images))
         assert im.get_array().shape == (1023, 1030, 4)
 
