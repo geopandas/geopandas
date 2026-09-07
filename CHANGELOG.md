@@ -42,6 +42,9 @@ New features and improvements:
 - `read_parquet` now support direct reading from HTTP/HTTPS protocols (#3699)
 - Document how to access the feature ID (`fid`) as the index when reading files
   with `read_file` and the pyogrio engine, using `fid_as_index=True` (#3829)
+- DOC: add example clarifying measurement units (area, length, distance,
+  buffer) depend on the active CRS, and demonstrate the `set_crs()` →
+  `to_crs()` workflow before metric calculations (#3846)
 
 Deprecations and compatibility notes:
 
