@@ -289,5 +289,5 @@ Outputs are served as `GeoDataFrame` in `epsg:4326`.
 ```{admonition} Expand this page
 Do know a package which should be here? [Let us
 know](https://github.com/geopandas/geopandas/issues) or [add it by
-yourself](contributing.rst)!
+yourself](contributing)!
 ```
