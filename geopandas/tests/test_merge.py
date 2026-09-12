@@ -223,3 +223,31 @@ class TestMerging:
         assert type(result2) is GeoDataFrame
         assert result._geometry_column_name is None
         assert_index_equal(pd.Index(["foo", 0]), result2.columns)
+
+    def test_merge_with_arrow_backed_columns(self):
+        """Merge with Arrow-backed columns should not raise AttributeError (GH#3765)."""
+        pa = pytest.importorskip("pyarrow")
+
+        gdf = GeoDataFrame(
+            {
+                "key": pd.array(["a", "b"], dtype="string[pyarrow]"),
+                "value": pd.array([1, 2], dtype=pd.ArrowDtype(pa.int64())),
+                "geometry": [Point(0, 0), Point(1, 1)],
+            },
+            geometry="geometry",
+        )
+
+        # Construct a DataFrame with Arrow-backed columns directly
+        # (simulates the result of pivot_table without calling it)
+        pivot = pd.DataFrame(
+            {
+                "key": pd.array(["a", "b"], dtype="string[pyarrow]"),
+                "a": pd.array([1, 0], dtype=pd.ArrowDtype(pa.int64())),
+                "b": pd.array([0, 1], dtype=pd.ArrowDtype(pa.int64())),
+            }
+        )
+
+        # Should not raise AttributeError: 'ArrowExtensionArray' has no attribute 'sum'
+        result = gdf.merge(pivot, on="key")
+        assert len(result) == 2
+        assert "geometry" in result.columns
