@@ -1391,11 +1391,13 @@ class TestSjoinDistanceCol:
         )
         assert "dist" in result.columns
         assert result["dist"].dtype == float
-        # Point(0,0) matches Point(0,0.5) – distance 0.5
-        # Point(0,2) matches Point(0,0.5) – distance 1.5
+        # Point(0,0) matches Point(0,0.5) - distance 0.5
+        # Point(0,2) matches Point(0,0.5) - distance 1.5
         assert len(result) == 2
         expected_dists = sorted([0.5, 1.5])
-        assert sorted(result["dist"].tolist()) == pytest.approx(expected_dists, abs=1e-9)
+        assert sorted(result["dist"].tolist()) == pytest.approx(
+            expected_dists, abs=1e-9
+        )
 
     def test_distance_col_left(self, pts_left, pts_right):
         """Left join: unmatched left rows get NaN distance."""
@@ -1441,9 +1443,7 @@ class TestSjoinDistanceCol:
         result_with = sjoin(
             pts_left, pts_right, predicate="dwithin", distance=1.5, distance_col="dist"
         )
-        result_without = sjoin(
-            pts_left, pts_right, predicate="dwithin", distance=1.5
-        )
+        result_without = sjoin(pts_left, pts_right, predicate="dwithin", distance=1.5)
         assert "dist" not in result_without.columns
         # Column set: result_with has one extra column
         assert set(result_with.columns) - set(result_without.columns) == {"dist"}
@@ -1454,12 +1454,8 @@ class TestSjoinDistanceCol:
 
     def test_distance_col_within_predicate(self):
         """distance_col works with 'within' predicate (zero for interior points)."""
-        poly = GeoDataFrame(
-            {"geometry": [Point(0, 0).buffer(5)]}, crs="EPSG:3857"
-        )
-        points = GeoDataFrame(
-            {"geometry": [Point(0, 0), Point(3, 0)]}, crs="EPSG:3857"
-        )
+        poly = GeoDataFrame({"geometry": [Point(0, 0).buffer(5)]}, crs="EPSG:3857")
+        points = GeoDataFrame({"geometry": [Point(0, 0), Point(3, 0)]}, crs="EPSG:3857")
         result = sjoin(points, poly, predicate="within", distance_col="d")
         assert "d" in result.columns
         # Both points are strictly inside the buffer, so distance to buffer
@@ -1471,12 +1467,8 @@ class TestSjoinDistanceCol:
 
     def test_distance_col_intersects_overlapping(self):
         """Intersecting (overlapping) geometries should return distance = 0."""
-        poly = GeoDataFrame(
-            {"geometry": [Point(0, 0).buffer(5)]}, crs="EPSG:3857"
-        )
-        points = GeoDataFrame(
-            {"geometry": [Point(0, 0), Point(4, 0)]}, crs="EPSG:3857"
-        )
+        poly = GeoDataFrame({"geometry": [Point(0, 0).buffer(5)]}, crs="EPSG:3857")
+        points = GeoDataFrame({"geometry": [Point(0, 0), Point(4, 0)]}, crs="EPSG:3857")
         result = sjoin(points, poly, predicate="intersects", distance_col="d")
         assert "d" in result.columns
         # Points inside the polygon: shapely.distance between a point and a
@@ -1558,6 +1550,7 @@ class TestSjoinDistanceCol:
             left, right, how="inner", predicate="dwithin", distance=6, distance_col="d"
         )
         import shapely as shp
+
         expected_d0 = shp.distance(Point(0, 0), Point(0, 0))  # 0.0
         expected_d1 = shp.distance(Point(3, 4), Point(0, 0))  # 5.0
         got_dists = dict(zip(result.index.tolist(), result["d"].tolist()))
@@ -1576,7 +1569,9 @@ class TestSjoinDistanceCol:
         result = pts_left.sjoin(
             pts_right, predicate="dwithin", distance=1.5, distance_col="dist"
         )
-        assert_frame_equal(result.reset_index(drop=True), expected.reset_index(drop=True))
+        assert_frame_equal(
+            result.reset_index(drop=True), expected.reset_index(drop=True)
+        )
 
     # ------------------------------------------------------------------
     # Multiple matches: each pair gets its own distance
@@ -1589,9 +1584,7 @@ class TestSjoinDistanceCol:
             {"geometry": [Point(0, 1), Point(0, 2), Point(0, 3)]},
             crs="EPSG:3857",
         )
-        result = sjoin(
-            left, right, predicate="dwithin", distance=4, distance_col="d"
-        )
+        result = sjoin(left, right, predicate="dwithin", distance=4, distance_col="d")
         assert len(result) == 3  # all three right points matched
         expected = [1.0, 2.0, 3.0]
         assert sorted(result["d"].tolist()) == pytest.approx(sorted(expected))

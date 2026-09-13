@@ -805,9 +805,7 @@ class TestGeoSeriesFromGeoJSON:
 
     def test_from_geojson_basic(self):
         """Basic list of GeoJSON strings -> GeoSeries of geometries."""
-        result = GeoSeries.from_geojson(
-            [self.geojson1, self.geojson2, self.geojson3]
-        )
+        result = GeoSeries.from_geojson([self.geojson1, self.geojson2, self.geojson3])
         expected = GeoSeries([self.point1, self.point2, self.point3])
         assert_geoseries_equal(result, expected)
 
@@ -840,9 +838,7 @@ class TestGeoSeriesFromGeoJSON:
     @pytest.mark.skipif(not compat.HAS_PYPROJ, reason="pyproj not available")
     def test_from_geojson_with_crs(self):
         """CRS is attached to the resulting GeoSeries."""
-        result = GeoSeries.from_geojson(
-            [self.geojson1, self.geojson2], crs="EPSG:4326"
-        )
+        result = GeoSeries.from_geojson([self.geojson1, self.geojson2], crs="EPSG:4326")
         assert result.crs.to_epsg() == 4326
 
     def test_from_geojson_no_crs(self):
@@ -853,6 +849,7 @@ class TestGeoSeriesFromGeoJSON:
     def test_from_geojson_extension_array(self):
         """ExtensionArray input is handled directly by from_geojson."""
         from geopandas.array import from_geojson
+
         ea = pd.array([self.geojson1, self.geojson2], dtype="string")
         result = from_geojson(ea)
         assert len(result) == 2
@@ -864,20 +861,14 @@ class TestGeoSeriesFromGeoJSON:
 
     def test_from_geojson_series(self):
         """pandas Series input: index of the Series is preserved."""
-        s = pd.Series(
-            [self.geojson1, self.geojson2], index=[10, 20]
-        )
+        s = pd.Series([self.geojson1, self.geojson2], index=[10, 20])
         result = GeoSeries.from_geojson(s)
-        expected = GeoSeries(
-            [self.point1, self.point2], index=pd.Index([10, 20])
-        )
+        expected = GeoSeries([self.point1, self.point2], index=pd.Index([10, 20]))
         assert_geoseries_equal(result, expected)
 
     def test_from_geojson_series_with_explicit_index(self):
         """Explicit index reindexes the underlying Series before parsing."""
-        s = pd.Series(
-            [self.geojson1, self.geojson2], index=[10, 20]
-        )
+        s = pd.Series([self.geojson1, self.geojson2], index=[10, 20])
         result = GeoSeries.from_geojson(s, index=[10])
         expected = GeoSeries([self.point1], index=pd.Index([10]))
         assert_geoseries_equal(result, expected)
@@ -896,9 +887,7 @@ class TestGeoSeriesFromGeoJSON:
     @pytest.mark.parametrize("missing_value", [None, np.nan, pd.NA])
     def test_from_geojson_with_missing_object(self, missing_value):
         """Various missing sentinels all produce None geometries."""
-        s = pd.Series(
-            [self.geojson1, missing_value, self.geojson3], dtype="object"
-        )
+        s = pd.Series([self.geojson1, missing_value, self.geojson3], dtype="object")
         result = GeoSeries.from_geojson(s)
         expected = GeoSeries([self.point1, None, self.point3])
         assert_geoseries_equal(result, expected)
@@ -911,22 +900,20 @@ class TestGeoSeriesFromGeoJSON:
         """on_invalid='ignore': invalid GeoJSON produces None without warning."""
         with warnings.catch_warnings():
             warnings.simplefilter("error")
-            result = GeoSeries.from_geojson(
-                ["not valid geojson"], on_invalid="ignore"
-            )
+            result = GeoSeries.from_geojson(["not valid geojson"], on_invalid="ignore")
         assert result[0] is None
 
     def test_from_geojson_on_invalid_warn(self):
         """on_invalid='warn': invalid GeoJSON produces None with a warning."""
         with pytest.warns(Warning):
-            result = GeoSeries.from_geojson(
-                ["not valid geojson"], on_invalid="warn"
-            )
+            result = GeoSeries.from_geojson(["not valid geojson"], on_invalid="warn")
         assert result[0] is None
 
     def test_from_geojson_on_invalid_raise(self):
         """on_invalid='raise' (default): invalid GeoJSON raises an exception."""
-        with pytest.raises(Exception):
+        import shapely.errors
+
+        with pytest.raises((shapely.errors.GEOSException, ValueError)):
             GeoSeries.from_geojson(["not valid geojson"], on_invalid="raise")
 
     # ------------------------------------------------------------------
@@ -936,6 +923,7 @@ class TestGeoSeriesFromGeoJSON:
     def test_from_geojson_roundtrip(self):
         """GeoSeries produced from GeoJSON serialises back to the same GeoJSON."""
         import shapely
+
         geoms = GeoSeries([self.point1, self.point2, self.point3])
         geojson_strings = [shapely.to_geojson(g) for g in geoms]
         result = GeoSeries.from_geojson(geojson_strings)

@@ -3,6 +3,7 @@ from functools import partial
 
 import numpy as np
 import pandas as pd
+
 import shapely
 
 from geopandas import GeoDataFrame
@@ -163,7 +164,7 @@ def sjoin(
     return_distance = distance_col is not None
 
     if return_distance:
-        # Warn users if geometries are in geographic CRS – results will be
+        # Warn users if geometries are in geographic CRS - results will be
         # inaccurate (same warning already issued by sjoin_nearest).
         left_df.geometry.values.check_geographic_crs(stacklevel=1)
         right_df.geometry.values.check_geographic_crs(stacklevel=1)
