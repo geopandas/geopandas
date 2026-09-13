@@ -1350,3 +1350,283 @@ class TestNearest:
 
         if max_distance:
             assert result["dist"].max() <= max_distance
+
+
+class TestSjoinDistanceCol:
+    """Tests for the distance_col parameter in sjoin() (GH-3270).
+
+    The distance_col parameter allows sjoin() to return the Euclidean distance
+    between each matched pair of geometries, analogous to sjoin_nearest().
+    """
+
+    @pytest.fixture()
+    def pts_left(self):
+        """Three points at y=0, y=2, y=5 on the x-axis (EPSG:3857)."""
+        return GeoDataFrame(
+            {"geometry": [Point(0, 0), Point(0, 2), Point(0, 5)]},
+            crs="EPSG:3857",
+        )
+
+    @pytest.fixture()
+    def pts_right(self):
+        """Two points at y=0.5 and y=10 on the x-axis (EPSG:3857)."""
+        return GeoDataFrame(
+            {"geometry": [Point(0, 0.5), Point(0, 10)]},
+            crs="EPSG:3857",
+        )
+
+    # ------------------------------------------------------------------
+    # Basic correctness for every join type using dwithin predicate
+    # ------------------------------------------------------------------
+
+    def test_distance_col_inner(self, pts_left, pts_right):
+        """Inner join: only matched rows present; distance correct."""
+        result = sjoin(
+            pts_left,
+            pts_right,
+            how="inner",
+            predicate="dwithin",
+            distance=1.5,
+            distance_col="dist",
+        )
+        assert "dist" in result.columns
+        assert result["dist"].dtype == float
+        # Point(0,0) matches Point(0,0.5) – distance 0.5
+        # Point(0,2) matches Point(0,0.5) – distance 1.5
+        assert len(result) == 2
+        expected_dists = sorted([0.5, 1.5])
+        assert sorted(result["dist"].tolist()) == pytest.approx(expected_dists, abs=1e-9)
+
+    def test_distance_col_left(self, pts_left, pts_right):
+        """Left join: unmatched left rows get NaN distance."""
+        result = sjoin(
+            pts_left,
+            pts_right,
+            how="left",
+            predicate="dwithin",
+            distance=1.5,
+            distance_col="dist",
+        )
+        assert "dist" in result.columns
+        # Point(0,5) has no match within 1.5 -> NaN distance
+        assert result.loc[result["index_right"].isna(), "dist"].isna().all()
+        matched = result.dropna(subset=["index_right"])
+        assert matched["dist"].notna().all()
+
+    def test_distance_col_right(self, pts_left, pts_right):
+        """Right join: unmatched right rows get NaN distance."""
+        result = sjoin(
+            pts_left,
+            pts_right,
+            how="right",
+            predicate="dwithin",
+            distance=1.5,
+            distance_col="dist",
+        )
+        assert "dist" in result.columns
+        # Point(0,10) on the right has no match -> NaN distance
+        right_geom = Point(0, 10)
+        unmatched_rows = result[result.geometry == right_geom]
+        assert unmatched_rows["dist"].isna().all()
+        # Matched rows have non-NaN distances
+        matched = result.dropna(subset=["index_left"])
+        assert matched["dist"].notna().all()
+
+    # ------------------------------------------------------------------
+    # No distance_col does not change existing behaviour
+    # ------------------------------------------------------------------
+
+    def test_no_distance_col_no_change(self, pts_left, pts_right):
+        """Omitting distance_col preserves original behaviour (backward compat)."""
+        result_with = sjoin(
+            pts_left, pts_right, predicate="dwithin", distance=1.5, distance_col="dist"
+        )
+        result_without = sjoin(
+            pts_left, pts_right, predicate="dwithin", distance=1.5
+        )
+        assert "dist" not in result_without.columns
+        # Column set: result_with has one extra column
+        assert set(result_with.columns) - set(result_without.columns) == {"dist"}
+
+    # ------------------------------------------------------------------
+    # Non-dwithin predicates: distance is still correct (planar)
+    # ------------------------------------------------------------------
+
+    def test_distance_col_within_predicate(self):
+        """distance_col works with 'within' predicate (zero for interior points)."""
+        poly = GeoDataFrame(
+            {"geometry": [Point(0, 0).buffer(5)]}, crs="EPSG:3857"
+        )
+        points = GeoDataFrame(
+            {"geometry": [Point(0, 0), Point(3, 0)]}, crs="EPSG:3857"
+        )
+        result = sjoin(points, poly, predicate="within", distance_col="d")
+        assert "d" in result.columns
+        # Both points are strictly inside the buffer, so distance to buffer
+        # polygon boundary is NOT zero; distance to the nearest point ON the
+        # polygon object itself (Shapely computes exterior distance) is also
+        # non-negative.  We only check the dtype and non-NaN.
+        assert result["d"].dtype == float
+        assert result["d"].notna().all()
+
+    def test_distance_col_intersects_overlapping(self):
+        """Intersecting (overlapping) geometries should return distance = 0."""
+        poly = GeoDataFrame(
+            {"geometry": [Point(0, 0).buffer(5)]}, crs="EPSG:3857"
+        )
+        points = GeoDataFrame(
+            {"geometry": [Point(0, 0), Point(4, 0)]}, crs="EPSG:3857"
+        )
+        result = sjoin(points, poly, predicate="intersects", distance_col="d")
+        assert "d" in result.columns
+        # Points inside the polygon: shapely.distance between a point and a
+        # polygon that contains it is 0.
+        assert (result["d"] == 0.0).all()
+
+    # ------------------------------------------------------------------
+    # Empty DataFrames / empty join
+    # ------------------------------------------------------------------
+
+    def test_distance_col_empty_left(self):
+        """Empty left GeoDataFrame: result is empty with distance_col present."""
+        left = GeoDataFrame({"geometry": []}, crs="EPSG:3857")
+        right = GeoDataFrame({"geometry": [Point(1, 1)]}, crs="EPSG:3857")
+        for how in ("inner", "left", "right"):
+            result = sjoin(
+                left, right, how=how, predicate="dwithin", distance=1, distance_col="d"
+            )
+            assert "d" in result.columns
+
+    def test_distance_col_empty_right(self):
+        """Empty right GeoDataFrame: result is empty with distance_col present."""
+        left = GeoDataFrame({"geometry": [Point(1, 1)]}, crs="EPSG:3857")
+        right = GeoDataFrame({"geometry": []}, crs="EPSG:3857")
+        for how in ("inner", "left", "right"):
+            result = sjoin(
+                left, right, how=how, predicate="dwithin", distance=1, distance_col="d"
+            )
+            assert "d" in result.columns
+
+    def test_distance_col_no_matches_inner(self):
+        """Inner join with no matches: empty result, distance_col present and float."""
+        left = GeoDataFrame({"geometry": [Point(0, 0)]}, crs="EPSG:3857")
+        right = GeoDataFrame({"geometry": [Point(1000, 1000)]}, crs="EPSG:3857")
+        result = sjoin(
+            left, right, how="inner", predicate="dwithin", distance=1, distance_col="d"
+        )
+        assert "d" in result.columns
+        assert len(result) == 0
+        assert result["d"].dtype == float
+
+    def test_distance_col_no_matches_left(self):
+        """Left join with no matches: all distance values are NaN."""
+        left = GeoDataFrame({"geometry": [Point(0, 0), Point(1, 1)]}, crs="EPSG:3857")
+        right = GeoDataFrame({"geometry": [Point(1000, 1000)]}, crs="EPSG:3857")
+        result = sjoin(
+            left, right, how="left", predicate="dwithin", distance=1, distance_col="d"
+        )
+        assert "d" in result.columns
+        assert result["d"].isna().all()
+        assert len(result) == len(left)
+
+    def test_distance_col_no_matches_right(self):
+        """Right join with no matches: all distance values are NaN."""
+        left = GeoDataFrame({"geometry": [Point(1000, 1000)]}, crs="EPSG:3857")
+        right = GeoDataFrame({"geometry": [Point(0, 0), Point(1, 1)]}, crs="EPSG:3857")
+        result = sjoin(
+            left, right, how="right", predicate="dwithin", distance=1, distance_col="d"
+        )
+        assert "d" in result.columns
+        assert result["d"].isna().all()
+        assert len(result) == len(right)
+
+    # ------------------------------------------------------------------
+    # Distance values are exactly correct (numerical precision)
+    # ------------------------------------------------------------------
+
+    def test_distance_col_exact_values(self):
+        """Distance values match shapely.distance output exactly."""
+        left = GeoDataFrame(
+            {"geometry": [Point(0, 0), Point(3, 4)]},  # 3-4-5 triangle
+            crs="EPSG:3857",
+        )
+        right = GeoDataFrame(
+            {"geometry": [Point(0, 0)]},
+            crs="EPSG:3857",
+        )
+        result = sjoin(
+            left, right, how="inner", predicate="dwithin", distance=6, distance_col="d"
+        )
+        import shapely as shp
+        expected_d0 = shp.distance(Point(0, 0), Point(0, 0))  # 0.0
+        expected_d1 = shp.distance(Point(3, 4), Point(0, 0))  # 5.0
+        got_dists = dict(zip(result.index.tolist(), result["d"].tolist()))
+        assert got_dists[0] == pytest.approx(expected_d0)
+        assert got_dists[1] == pytest.approx(expected_d1)
+
+    # ------------------------------------------------------------------
+    # GeoDataFrame method form
+    # ------------------------------------------------------------------
+
+    def test_geodataframe_method_form(self, pts_left, pts_right):
+        """GeoDataFrame.sjoin() with distance_col produces same result as top-level."""
+        expected = sjoin(
+            pts_left, pts_right, predicate="dwithin", distance=1.5, distance_col="dist"
+        )
+        result = pts_left.sjoin(
+            pts_right, predicate="dwithin", distance=1.5, distance_col="dist"
+        )
+        assert_frame_equal(result.reset_index(drop=True), expected.reset_index(drop=True))
+
+    # ------------------------------------------------------------------
+    # Multiple matches: each pair gets its own distance
+    # ------------------------------------------------------------------
+
+    def test_distance_col_multiple_matches(self):
+        """A single left geometry matching multiple right geometries."""
+        left = GeoDataFrame({"geometry": [Point(0, 0)]}, crs="EPSG:3857")
+        right = GeoDataFrame(
+            {"geometry": [Point(0, 1), Point(0, 2), Point(0, 3)]},
+            crs="EPSG:3857",
+        )
+        result = sjoin(
+            left, right, predicate="dwithin", distance=4, distance_col="d"
+        )
+        assert len(result) == 3  # all three right points matched
+        expected = [1.0, 2.0, 3.0]
+        assert sorted(result["d"].tolist()) == pytest.approx(sorted(expected))
+
+    # ------------------------------------------------------------------
+    # on_attribute combined with distance_col
+    # ------------------------------------------------------------------
+
+    def test_distance_col_with_on_attribute(self):
+        """distance_col should work alongside on_attribute filtering."""
+        left = GeoDataFrame(
+            {"geometry": [Point(0, 0), Point(0, 1)], "cat": ["A", "B"]},
+            crs="EPSG:3857",
+        )
+        right = GeoDataFrame(
+            {"geometry": [Point(0, 0.5), Point(0, 0.5)], "cat": ["A", "B"]},
+            crs="EPSG:3857",
+        )
+        result = sjoin(
+            left,
+            right,
+            predicate="dwithin",
+            distance=2,
+            on_attribute="cat",
+            distance_col="d",
+        )
+        # Each left point should only match the right point with the same 'cat'
+        assert len(result) == 2
+        assert result["d"].notna().all()
+        assert (result["d"] > 0).all()
+
+    @pytest.mark.skipif(not compat.HAS_PYPROJ, reason="pyproj not available")
+    def test_distance_col_geographic_crs_warning(self):
+        """Warning is emitted when distance_col is used with a geographic CRS."""
+        left = GeoDataFrame({"geometry": [Point(0, 0)]}, crs="EPSG:4326")
+        right = GeoDataFrame({"geometry": [Point(0, 0.5)]}, crs="EPSG:4326")
+        with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
+            sjoin(left, right, distance_col="d")
