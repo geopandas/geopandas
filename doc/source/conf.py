@@ -397,8 +397,8 @@ intersphinx_mapping = {
         "https://geopy.readthedocs.io/en/stable/objects.inv",
     ),
     "libpysal": (
-        "https://pysal.org/libpysal/",
-        "https://pysal.org/libpysal/objects.inv",
+        "https://pysal.org/libpysal/stable/",
+        "https://pysal.org/libpysal/stable/objects.inv",
     ),
     "mapclassify": (
         "https://pysal.org/mapclassify/",

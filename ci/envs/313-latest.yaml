@@ -21,20 +21,23 @@ dependencies:
   - fiona
   - matplotlib
   - mapclassify
+  - libpysal
   - folium
   - xyzservices
+  - contextily
   - scipy
   - geopy
   - pointpats
   - geodatasets
   # installed in tests.yaml, because not available on windows
   # - postgis
-  - SQLalchemy
+  - sqlalchemy
   - psycopg
   - psycopg2
   - libspatialite
   - geoalchemy2
   - pyarrow
   - geoarrow-pyarrow
+  - libgdal-arrow-parquet
   # doctest testing
   - pytest-doctestplus

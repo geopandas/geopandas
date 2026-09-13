@@ -265,6 +265,9 @@ def engine(request):
     return request.param
 
 
+@pytest.mark.filterwarnings(
+    "ignore:Unexpected data type for geometry column:RuntimeWarning"
+)  # https://github.com/OSGeo/gdal/issues/15096
 def test_to_file_roundtrip(tmpdir, geodataframe, ogr_driver, engine):
     driver, ext = ogr_driver
     output_file = os.path.join(str(tmpdir), "output_file" + ext)

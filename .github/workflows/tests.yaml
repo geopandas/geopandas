@@ -67,7 +67,7 @@ jobs:
             dev: true
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Install Conda environment with Micromamba
         uses: mamba-org/setup-micromamba@v3
@@ -109,4 +109,4 @@ jobs:
         run: |
           pytest -v --color=yes --doctest-only geopandas --ignore=geopandas/datasets
 
-      - uses: codecov/codecov-action@v6
+      - uses: codecov/codecov-action@v7

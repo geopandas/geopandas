@@ -1,5 +1,6 @@
 import warnings
 from functools import reduce
+from typing import Literal
 
 import numpy as np
 import pandas as pd
@@ -39,9 +40,13 @@ def _overlay_intersection(df1, df2):
     # Create pairs of geometries in both dataframes to be intersected
     if idx1.size > 0 and idx2.size > 0:
         left = df1.geometry.take(idx1)
-        left.reset_index(drop=True, inplace=True)
         right = df2.geometry.take(idx2)
-        right.reset_index(drop=True, inplace=True)
+        if PANDAS_GE_30:
+            left = left.reset_index(drop=True)
+            right = right.reset_index(drop=True)
+        else:
+            left.reset_index(drop=True, inplace=True)
+            right.reset_index(drop=True, inplace=True)
         intersections = left.intersection(right)
         poly_ix = intersections.geom_type.isin(POLYGON_GEOM_TYPES)
         intersections.loc[poly_ix] = intersections[poly_ix].make_valid()
@@ -151,8 +156,12 @@ def _overlay_symmetric_diff(df1, df2):
     geometry.loc[dfsym.geometry_1.isnull()] = dfsym.loc[
         dfsym.geometry_1.isnull(), "geometry_2"
     ]
-    dfsym.drop(["geometry_1", "geometry_2"], axis=1, inplace=True)
-    dfsym.reset_index(drop=True, inplace=True)
+    if PANDAS_GE_30:
+        dfsym = dfsym.drop(["geometry_1", "geometry_2"], axis=1)
+        dfsym = dfsym.reset_index(drop=True)
+    else:
+        dfsym.drop(["geometry_1", "geometry_2"], axis=1, inplace=True)
+        dfsym.reset_index(drop=True, inplace=True)
     dfsym = GeoDataFrame(dfsym, geometry=geometry, crs=df1.crs)
     return dfsym
 
@@ -169,7 +178,15 @@ def _overlay_union(df1, df2):
     return dfunion.reindex(columns=columns)
 
 
-def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
+def overlay(
+    df1: GeoDataFrame,
+    df2: GeoDataFrame,
+    how: Literal[
+        "intersection", "union", "identity", "symmetric_difference", "difference"
+    ] = "intersection",
+    keep_geom_type: bool | None = None,
+    make_valid: bool = True,
+):
     """Perform spatial overlay between two GeoDataFrames.
 
     Currently only supports data GeoDataFrames with uniform geometry types,
@@ -333,7 +350,15 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
 
     # Determine the geometry type before make_valid, as make_valid may change it
     if keep_geom_type:
-        geom_type = df1.geom_type.iloc[0]
+        if len(df1) == 0:
+            msg = (
+                "`keep_geom_type=True` is invalid when df1 is empty as "
+                "there is no geometry type to keep. Setting `keep_geom_type=False`"
+            )
+            warnings.warn(msg, stacklevel=3)
+            keep_geom_type = False
+        else:
+            geom_type = df1.geom_type.iloc[0]
 
     df1 = _make_valid(df1)
     df2 = _make_valid(df2)
@@ -352,12 +377,18 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
             result = _overlay_identity(df1, df2)
 
         if how in ["intersection", "symmetric_difference", "union", "identity"]:
-            result.drop(["__idx1", "__idx2"], axis=1, inplace=True)
+            if PANDAS_GE_30:
+                result = result.drop(["__idx1", "__idx2"], axis=1)
+            else:
+                result.drop(["__idx1", "__idx2"], axis=1, inplace=True)
 
     if keep_geom_type:
         result = _collection_extract(result, geom_type, keep_geom_type_warning)
 
-    result.reset_index(drop=True, inplace=True)
+    if PANDAS_GE_30:
+        result = result.reset_index(drop=True)
+    else:
+        result.reset_index(drop=True, inplace=True)
     return result
 
 

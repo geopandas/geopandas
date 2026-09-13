@@ -41,6 +41,7 @@ all = [
     "pyarrow>=15.0.0",
     "scipy",
     "pointpats>=2.5.3",
+    'contextily',
 ]
 
 # Minimum supported additional deps, not installed as part of `all` extra
@@ -48,6 +49,7 @@ all = [
 # fiona>=1.8.21
 # scipy>=1.10.0
 
+[dependency-groups]
 dev = [
     "pytest>=3.1.0",
     "pytest-cov",
@@ -105,6 +107,7 @@ filterwarnings = [
     # dateutil incompatibility with python 3.12 (https://github.com/dateutil/dateutil/issues/1284)
     "ignore:datetime.datetime.utcfromtimestamp:DeprecationWarning:dateutil",
     "ignore:Cannot set the CRS, falling back to None:UserWarning:geopandas",
+    "ignore:Use `@` matmul instead of `\\*` mul operator for matrix multiplication:PendingDeprecationWarning:rasterio",
 ]
 
 [tool.ruff]

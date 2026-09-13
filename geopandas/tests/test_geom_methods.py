@@ -345,8 +345,8 @@ class TestGeomMethods:
             "intersection", self.all_none, self.g1, self.empty, align=True
         )
 
-        assert len(self.g0.intersection(self.g9, align=True) == 8)
-        assert len(self.g0.intersection(self.g9, align=False) == 7)
+        assert len(self.g0.intersection(self.g9, align=True)) == 8
+        assert len(self.g0.intersection(self.g9, align=False)) == 7
 
     @pytest.mark.parametrize(
         "grid_size, expected",
@@ -378,8 +378,8 @@ class TestGeomMethods:
     def test_union_series(self):
         self._test_binary_topological("union", self.sq, self.g1, self.g2)
 
-        assert len(self.g0.union(self.g9, align=True) == 8)
-        assert len(self.g0.union(self.g9, align=False) == 7)
+        assert len(self.g0.union(self.g9, align=True)) == 8
+        assert len(self.g0.union(self.g9, align=False)) == 7
 
     def test_union_polygon(self):
         self._test_binary_topological("union", self.sq, self.g1, self.t2)
@@ -407,8 +407,8 @@ class TestGeomMethods:
     def test_symmetric_difference_series(self):
         self._test_binary_topological("symmetric_difference", self.sq, self.g3, self.g4)
 
-        assert len(self.g0.symmetric_difference(self.g9, align=True) == 8)
-        assert len(self.g0.symmetric_difference(self.g9, align=False) == 7)
+        assert len(self.g0.symmetric_difference(self.g9, align=True)) == 8
+        assert len(self.g0.symmetric_difference(self.g9, align=False)) == 7
 
     def test_symmetric_difference_poly(self):
         expected = GeoSeries([GeometryCollection(), self.sq], crs=self.g3.crs)
@@ -451,8 +451,8 @@ class TestGeomMethods:
         expected = GeoSeries([GeometryCollection(), self.t2])
         self._test_binary_topological("difference", expected, self.g1, self.g2)
 
-        assert len(self.g0.difference(self.g9, align=True) == 8)
-        assert len(self.g0.difference(self.g9, align=False) == 7)
+        assert len(self.g0.difference(self.g9, align=True)) == 8
+        assert len(self.g0.difference(self.g9, align=False)) == 7
 
     def test_difference_poly(self):
         expected = GeoSeries([self.t1, self.t1])
@@ -1852,6 +1852,54 @@ class TestGeomMethods:
         exploded_df = gdf.explode(column="col1", ignore_index=True)
         assert_geodataframe_equal(exploded_df, expected_df)
 
+    def test_explode_pandas_fallback_multiple_columns(self):
+        # GH2753: exploding multiple non-geometry columns falls back to pandas
+        gdf = GeoDataFrame(
+            {
+                "col1": [[1, 2, 3], [4, 5], [6]],
+                "col2": [[7, 8, 9], [10, 11], [12]],
+                "geometry": [Point(0, 0), Point(1, 1), Point(2, 2)],
+            }
+        )
+        expected_df = GeoDataFrame(
+            {
+                "col1": [1, 2, 3, 4, 5, 6],
+                "col2": [7, 8, 9, 10, 11, 12],
+                "geometry": [
+                    Point(0, 0),
+                    Point(0, 0),
+                    Point(0, 0),
+                    Point(1, 1),
+                    Point(1, 1),
+                    Point(2, 2),
+                ],
+            },
+            index=[0, 0, 0, 1, 1, 2],
+        )
+        # exploding object-dtype list columns keeps the object dtype
+        expected_df[["col1", "col2"]] = expected_df[["col1", "col2"]].astype(object)
+
+        exploded_df = gdf.explode(["col1", "col2"])
+        assert_geodataframe_equal(exploded_df, expected_df)
+
+        # A singleton list of a non-geometry column behaves like the scalar form
+        assert_geodataframe_equal(gdf.explode(["col1"]), gdf.explode("col1"))
+
+    def test_explode_multiple_columns_with_geometry_raises(self):
+        # GH2753: exploding multiple columns including a geometry is unsupported
+        gdf = GeoDataFrame(
+            {
+                "col1": [[1, 2, 3], [4, 5], [6]],
+                "geometry": [
+                    MultiPoint([(1, 2), (3, 4)]),
+                    MultiPoint([(2, 1), (0, 0)]),
+                    MultiPoint([(5, 5), (6, 6)]),
+                ],
+            }
+        )
+        with pytest.raises(ValueError, match="geometry column is not supported"):
+            gdf.explode(["col1", "geometry"])
+
     @pytest.mark.parametrize("outer_index", [1, (1, 2), "1"])
     def test_explode_pandas_multi_index(self, outer_index):
         index = MultiIndex.from_arrays(
@@ -2206,15 +2254,17 @@ class TestGeomMethods:
             self.a1,
             self.na_none,
         ):
-            output = gs.sample_points(size)
+            output = gs.sample_points(size, rng=0)
             assert_index_equal(gs.index, output.index)
             assert (
                 len(output.explode(ignore_index=True))
                 == len(gs[~(gs.is_empty | gs.isna())]) * size
             )
+            x = output.get_coordinates()["x"]
+            assert not x.equals(x.sort_values())
 
     def test_sample_points_array(self):
-        output = concat([self.g1, self.g1]).sample_points([10, 15, 20, 25])
+        output = concat([self.g1, self.g1]).sample_points([10, 15, 20, 25], rng=0)
         expected = Series(
             [10, 15, 20, 25], index=[0, 1, 0, 1], name="sampled_points", dtype="int32"
         )
@@ -2243,6 +2293,9 @@ class TestGeomMethods:
                 else:
                     with pytest.raises(AssertionError, match="2 out of"):
                         assert_geoseries_equal(output1, output2)
+
+            x = output1.get_coordinates()["x"]
+            assert not x.equals(x.sort_values())
 
         with pytest.raises(
             AttributeError, match=re.escape("pointpats.random module has no")

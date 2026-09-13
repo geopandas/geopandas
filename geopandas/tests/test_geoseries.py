@@ -495,7 +495,7 @@ class TestSeries:
             self.landmarks, GeoSeries.from_xy(x, y, index=x.index, crs=crs)
         )
         unindexed_landmarks = self.landmarks.copy()
-        unindexed_landmarks.reset_index(inplace=True, drop=True)
+        unindexed_landmarks = unindexed_landmarks.reset_index(drop=True)
         assert_geoseries_equal(
             unindexed_landmarks,
             GeoSeries.from_xy(x, y, crs=crs),

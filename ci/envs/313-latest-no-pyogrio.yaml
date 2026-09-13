@@ -23,7 +23,7 @@ dependencies:
   - xyzservices
   - scipy
   - geopy
-  - SQLalchemy
+  - sqlalchemy
   - libspatialite
   - pyarrow
   - fiona

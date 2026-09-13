@@ -27,7 +27,7 @@ dependencies:
   - geopy
   # - pointpats
   - geodatasets
-  # - SQLalchemy>=2
+  # - sqlalchemy>=2
   # - psycopg2
   # - libspatialite
   # - geoalchemy2

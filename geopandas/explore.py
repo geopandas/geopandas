@@ -93,11 +93,8 @@ def _explore(
         Map tileset to use. Can choose from the list supported by folium, query a
         :class:`xyzservices.TileProvider` by a name from ``xyzservices.providers``,
         pass :class:`xyzservices.TileProvider` object or pass custom XYZ URL.
-        The current list of built-in providers (when ``xyzservices`` is not available):
-
-        ``["OpenStreetMap", "CartoDB positron", “CartoDB dark_matter"]``
-
-        You can pass a custom tileset to Folium by passing a Leaflet-style URL
+        When ``xyzservices`` is not available, it defaults to OpenStreetMap Mapnik
+        tiles. You can pass a custom tileset to Folium by passing a Leaflet-style URL
         to the tiles parameter: ``http://{s}.yourtiles.com/{z}/{x}/{y}.png``.
         Be sure to check their terms and conditions and to provide attribution with
         the ``attr`` keyword.
@@ -223,6 +220,12 @@ def _explore(
 
         caption : string
             Custom caption of the legend. Defaults to the column name.
+        labels : list-like
+            A list of legend labels to override the auto-generated labels.
+            Needs to have the same number of elements as the number of unique
+            categories (for categorical or boolean columns) or the number of
+            classes ``k`` (for ``scheme``-based classification). For
+            ``scheme``-based classification it applies only if ``colorbar=False``.
 
         Additional accepted keywords when ``scheme`` is specified:
 
@@ -236,10 +239,6 @@ def _explore(
             A formatting specification for the bin edges of the classes in the
             legend. For example, to have no decimals: ``{"fmt": "{:.0f}"}``. Applies
             if ``colorbar=False``.
-        labels : list-like
-            A list of legend labels to override the auto-generated labels.
-            Needs to have the same number of elements as the number of
-            classes (`k`). Applies if ``colorbar=False``.
         interval : boolean (default False)
             An option to control brackets from mapclassify legend.
             If True, open/closed interval brackets are shown in the legend.
@@ -316,9 +315,7 @@ def _explore(
     # convert LinearRing to LineString
     rings_mask = df.geom_type == "LinearRing"
     if rings_mask.any():
-        gdf.geometry[rings_mask] = gdf.geometry[rings_mask].apply(
-            lambda g: LineString(g)
-        )
+        gdf.geometry[rings_mask] = gdf.geometry[rings_mask].apply(LineString)
     if isinstance(gdf, geopandas.GeoSeries):
         gdf = gdf.to_frame()
 
@@ -677,6 +674,15 @@ def _explore(
             categories = cat.categories.to_list()
             legend_colors = legend_colors.tolist()
 
+            labels = legend_kwds.pop("labels", None)
+            if labels is not None:
+                if len(labels) != len(categories):
+                    raise ValueError(
+                        f"The number of legend labels ({len(labels)}) does not "
+                        f"match the number of categories ({len(categories)})."
+                    )
+                categories = list(labels)
+
             if nan_idx.any() and nan_color:
                 categories.append(missing_kwds.pop("label", "NaN"))
                 legend_colors.append(nan_color)
@@ -709,7 +715,7 @@ def _explore(
                 else:
                     fmt = legend_kwds.pop("fmt", "{:.2f}")
                     if "labels" in legend_kwds:
-                        categories = legend_kwds["labels"]
+                        categories = legend_kwds.pop("labels")
                     else:
                         categories = binning.get_legend_classes(fmt)
                         show_interval = legend_kwds.pop("interval", False)
@@ -932,11 +938,8 @@ def _explore_geoseries(
         Map tileset to use. Can choose from the list supported by folium, query a
         :class:`xyzservices.TileProvider` by a name from ``xyzservices.providers``,
         pass :class:`xyzservices.TileProvider` object or pass custom XYZ URL.
-        The current list of built-in providers (when ``xyzservices`` is not available):
-
-        ``["OpenStreetMap", "CartoDB positron", “CartoDB dark_matter"]``
-
-        You can pass a custom tileset to Folium by passing a Leaflet-style URL
+        When ``xyzservices`` is not available, it defaults to OpenStreetMap Mapnik
+        tiles. You can pass a custom tileset to Folium by passing a Leaflet-style URL
         to the tiles parameter: ``http://{s}.yourtiles.com/{z}/{x}/{y}.png``.
         Be sure to check their terms and conditions and to provide attribution with
         the ``attr`` keyword.
