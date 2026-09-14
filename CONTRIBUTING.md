@@ -1,7 +1,7 @@
 # Contributing to GeoPandas
 
 (Contribution guidelines largely copied from
-[pandas](http://pandas.pydata.org/pandas-docs/stable/contributing.html))
+[pandas](http://pandas.pydata.org/pandas-docs/stable/development/contributing.html))
 
 ## Overview
 
@@ -71,7 +71,7 @@ Some great resources for learning Git:
 
 ### Getting started with Git
 
-[GitHub has instructions](http://help.github.com/set-up-git-redirect) for installing
+[GitHub has instructions](https://github.com/git-guides/install-git) for installing
 git, setting up your SSH key, and configuring git. All these steps need to be completed
 before you can work seamlessly between your local repository and GitHub.
 
@@ -128,8 +128,7 @@ with code) in another.
 
 An easy way to create a GeoPandas development environment is as follows:
 
-- Install either [Anaconda](http://docs.continuum.io/anaconda/) or
-  [miniconda](http://conda.pydata.org/miniconda.html)
+- Install either [Anaconda or miniconda](https://www.anaconda.com/docs/getting-started/concepts/anaconda-or-miniconda)
 - Make sure that you have cloned the repository
 - `cd` to the `geopandas` source directory
 
@@ -218,10 +217,10 @@ convenient extensions in
 
 ### Writing tests
 
-All tests should go into the `tests` directory. This folder contains many current
+All tests should go into each module's `tests` sub-directory. This folder contains many current
 examples of tests, and we suggest looking to these for inspiration.
 
-The `.util` module has some special `assert` functions that make it easier to make
+The `geopandas.testing` module has some special `assert` functions that make it easier to make
 statements about whether GeoSeries or GeoDataFrame objects are equivalent. The easiest
 way to verify that your code is correct is to explicitly construct the result you
 expect, then compare the actual result to the expected correct result, using eg the
