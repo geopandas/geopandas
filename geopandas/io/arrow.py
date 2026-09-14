@@ -962,7 +962,7 @@ def _read_parquet(
             geometry = geo_metadata["primary_column"]
 
             filtered_fragments = []
-            for fragment in dsdataset.fragments:
+            for fragment in dataset.fragments:
                 geometry_idx = fragment.metadata.schema.names.index(geometry)
                 row_group_ids = [
                     rg.id
