@@ -23,7 +23,7 @@ with the detailed borough boundary file included within GeoPandas.
 
     boros = geopandas.read_file(geodatasets.get_path("nybb"))
     boros.BoroName
-    boro_locations = geopandas.tools.geocode(boros.BoroName)
+    boro_locations = geopandas.geocode(boros.BoroName)
     boro_locations
 
     import matplotlib.pyplot as plt
@@ -34,7 +34,7 @@ with the detailed borough boundary file included within GeoPandas.
     boro_locations.plot(ax=ax, color="red");
 
 
-By default, the :func:`~geopandas.tools.geocode` function uses the
+By default, the :func:`~geopandas.geocode` function uses the
 `Photon geocoding API <https://photon.komoot.io>`__.
 But a different geocoding service can be specified with the
 ``provider`` keyword.
@@ -44,14 +44,14 @@ services, such as ``'google'``, ``'bing'``, ``'yahoo'``, and
 ``'openmapquest'``, or an instance of a :mod:`Geocoder <geopy.geocoders>` from :mod:`geopy`. See
 ``geopy.geocoders.SERVICE_TO_GEOCODER`` for the full list.
 For many providers, parameters such as API keys need to be passed as
-``**kwargs`` in the :func:`~geopandas.tools.geocode` call.
+``**kwargs`` in the :func:`~geopandas.geocode` call.
 
 For example, to use the OpenStreetMap Nominatim geocoder, you need to specify
 a user agent:
 
 .. code-block:: python
 
-    geopandas.tools.geocode(boros.BoroName, provider='nominatim', user_agent="my-application")
+    geopandas.geocode(boros.BoroName, provider='nominatim', user_agent="my-application")
 
 .. attention::
 

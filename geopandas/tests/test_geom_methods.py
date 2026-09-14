@@ -345,8 +345,8 @@ class TestGeomMethods:
             "intersection", self.all_none, self.g1, self.empty, align=True
         )
 
-        assert len(self.g0.intersection(self.g9, align=True) == 8)
-        assert len(self.g0.intersection(self.g9, align=False) == 7)
+        assert len(self.g0.intersection(self.g9, align=True)) == 8
+        assert len(self.g0.intersection(self.g9, align=False)) == 7
 
     @pytest.mark.parametrize(
         "grid_size, expected",
@@ -378,8 +378,8 @@ class TestGeomMethods:
     def test_union_series(self):
         self._test_binary_topological("union", self.sq, self.g1, self.g2)
 
-        assert len(self.g0.union(self.g9, align=True) == 8)
-        assert len(self.g0.union(self.g9, align=False) == 7)
+        assert len(self.g0.union(self.g9, align=True)) == 8
+        assert len(self.g0.union(self.g9, align=False)) == 7
 
     def test_union_polygon(self):
         self._test_binary_topological("union", self.sq, self.g1, self.t2)
@@ -407,8 +407,8 @@ class TestGeomMethods:
     def test_symmetric_difference_series(self):
         self._test_binary_topological("symmetric_difference", self.sq, self.g3, self.g4)
 
-        assert len(self.g0.symmetric_difference(self.g9, align=True) == 8)
-        assert len(self.g0.symmetric_difference(self.g9, align=False) == 7)
+        assert len(self.g0.symmetric_difference(self.g9, align=True)) == 8
+        assert len(self.g0.symmetric_difference(self.g9, align=False)) == 7
 
     def test_symmetric_difference_poly(self):
         expected = GeoSeries([GeometryCollection(), self.sq], crs=self.g3.crs)
@@ -451,8 +451,8 @@ class TestGeomMethods:
         expected = GeoSeries([GeometryCollection(), self.t2])
         self._test_binary_topological("difference", expected, self.g1, self.g2)
 
-        assert len(self.g0.difference(self.g9, align=True) == 8)
-        assert len(self.g0.difference(self.g9, align=False) == 7)
+        assert len(self.g0.difference(self.g9, align=True)) == 8
+        assert len(self.g0.difference(self.g9, align=False)) == 7
 
     def test_difference_poly(self):
         expected = GeoSeries([self.t1, self.t1])

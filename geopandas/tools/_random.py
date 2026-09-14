@@ -70,6 +70,8 @@ def _uniform_line(geom, size, generator):
 
 def _uniform_polygon(geom, size, generator):
     """Sample uniformly from within a polygon using batched sampling."""
+    if geom.area == 0:
+        return MultiPoint()
     xmin, ymin, xmax, ymax = geom.bounds
     candidates = []
     while len(candidates) < size:
