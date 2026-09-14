@@ -721,6 +721,10 @@ def _open_parquet_dataset(path, filesystem, kwargs, bbox):
 
     This has a fallback ParquetFile in case pyarrow.dataset is not available,
     mimicking the logic of pyarrow.parquet.read_table().
+
+    TODO: unless pyarrow.parquet starts to provide more of this functionality
+    out of the box, we should deprecate the fallback here (indicating in the
+    warning / error that you should ensure to have pyarrow.dataset available)
     """
     import pyarrow
     from pyarrow import parquet
