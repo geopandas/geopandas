@@ -22,7 +22,6 @@ from . import _compat as compat
 from ._decorator import doc
 from .array import (
     GeometryDtype,
-    from_geojson,
     from_shapely,
     from_wkb,
     from_wkt,
@@ -533,73 +532,6 @@ class GeoSeries(GeoPandasBase, Series):
         """
         return cls._from_wkb_or_wkt(
             from_wkt, data, index=index, crs=crs, on_invalid=on_invalid, **kwargs
-        )
-
-    @classmethod
-    def from_geojson(
-        cls,
-        data,
-        index=None,
-        crs: Any | None = None,
-        on_invalid: str = "raise",
-        **kwargs,
-    ) -> GeoSeries:
-        """Alternate constructor to create a ``GeoSeries``
-        from a list or array of GeoJSON strings.
-
-        Parameters
-        ----------
-        data : array-like, Series
-            Series, list, or array of GeoJSON strings. Each element must
-            represent a GeoJSON geometry object (e.g. ``"Point"``,
-            ``"LineString"``, ``"Polygon"``).  A ``"Feature"`` element
-            has its geometry extracted.  Pass ``None`` at any position to
-            produce a missing (``None``) geometry.
-        index : array-like or Index
-            The index for the GeoSeries.
-        crs : value, optional
-            Coordinate Reference System of the geometry objects. Can be
-            anything accepted by
-            :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
-            such as an authority string (eg ``"EPSG:4326"``) or a WKT string.
-        on_invalid : {"raise", "warn", "ignore"}, default "raise"
-            - ``"raise"``: an exception will be raised if a GeoJSON input
-              geometry is invalid.
-            - ``"warn"``: a warning will be raised and invalid GeoJSON
-              geometries will be returned as ``None``.
-            - ``"ignore"``: invalid GeoJSON geometries will be returned as
-              ``None`` without a warning.
-
-        kwargs
-            Additional arguments passed to the Series constructor,
-            e.g. ``name``.
-
-        Returns
-        -------
-        GeoSeries
-
-        See Also
-        --------
-        GeoSeries.from_wkt : equivalent method for WKT strings
-        GeoSeries.from_wkb : equivalent method for WKB bytes
-
-        Examples
-        --------
-        >>> import json
-        >>> geojsons = [
-        ...     json.dumps({"type": "Point", "coordinates": [1, 1]}),
-        ...     json.dumps({"type": "Point", "coordinates": [2, 2]}),
-        ...     json.dumps({"type": "Point", "coordinates": [3, 3]}),
-        ... ]
-        >>> s = geopandas.GeoSeries.from_geojson(geojsons)
-        >>> s
-        0    POINT (1 1)
-        1    POINT (2 2)
-        2    POINT (3 3)
-        dtype: geometry
-        """
-        return cls._from_wkb_or_wkt(
-            from_geojson, data, index=index, crs=crs, on_invalid=on_invalid, **kwargs
         )
 
     @classmethod

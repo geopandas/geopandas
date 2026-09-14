@@ -290,52 +290,6 @@ def to_wkt(geoms: GeometryArray, **kwargs):
     return shapely.to_wkt(geoms, **kwargs)
 
 
-def from_geojson(
-    data,
-    crs: Any | None = None,
-    on_invalid: Literal["raise", "warn", "ignore"] = "raise",
-) -> GeometryArray:
-    """
-    Convert a list or array of GeoJSON strings to a GeometryArray.
-
-    Parameters
-    ----------
-    data : str, bytes, or array-like of str/bytes
-        A single GeoJSON string or bytes, or an array-like of GeoJSON
-        geometry strings/bytes.  Each element must represent a GeoJSON
-        geometry object (``Point``, ``LineString``, ``Polygon``, etc.) or
-        a ``Feature`` (the geometry is extracted) or a
-        ``FeatureCollection`` (treated as a single geometry).
-
-        Pass ``None`` in an array-like to produce a ``None`` geometry
-        at that position.
-    crs : value, optional
-        Coordinate Reference System of the geometry objects. Can be
-        anything accepted by
-        :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
-        such as an authority string (e.g. ``"EPSG:4326"``) or a WKT string.
-    on_invalid : {"raise", "warn", "ignore"}, default "raise"
-        - ``"raise"``: an exception will be raised if a GeoJSON input
-          geometry is invalid.
-        - ``"warn"``: a warning will be raised and invalid GeoJSON
-          geometries will be returned as ``None``.
-        - ``"ignore"``: invalid GeoJSON geometries will be returned as
-          ``None`` without a warning.
-
-    Returns
-    -------
-    GeometryArray
-
-    See Also
-    --------
-    GeoSeries.from_geojson : classmethod that creates a GeoSeries from GeoJSON
-    GeoSeries.from_wkt : similar method for WKT strings
-    """
-    if isinstance(data, ExtensionArray):
-        data = data.to_numpy(na_value=None)
-    return GeometryArray(shapely.from_geojson(data, on_invalid=on_invalid), crs=crs)
-
-
 def points_from_xy(
     x: npt.ArrayLike, y: npt.ArrayLike, z: npt.ArrayLike = None, crs: Any | None = None
 ) -> GeometryArray:
