@@ -4480,9 +4480,6 @@ GeometryCollection
         question; see the discussion on the pull request that introduced
         this method.
         """
-        scipy = compat.import_optional_dependency(
-            "scipy", "The 'distance_matrix' method requires the scipy package."
-        )
         from .geodataframe import GeoDataFrame
         from .geoseries import GeoSeries
 
@@ -4520,6 +4517,9 @@ GeometryCollection
         this_xy = _points_to_coords(this)
         other_xy = this_xy if self_only else _points_to_coords(other)
 
+        scipy = compat.import_optional_dependency(
+            "scipy", "The 'distance_matrix' method requires the scipy package."
+        )
         values = scipy.spatial.distance.cdist(this_xy, other_xy)
 
         return pd.DataFrame(values, index=this.index, columns=other.index)

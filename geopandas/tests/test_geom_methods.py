@@ -30,6 +30,14 @@ from geopandas.tests.util import assert_geoseries_equal, geom_almost_equals, geo
 from numpy.testing import assert_array_equal
 from pandas.testing import assert_frame_equal, assert_index_equal, assert_series_equal
 
+try:
+    import scipy  # noqa: F401
+
+    HAS_SCIPY = True
+except ImportError:
+    HAS_SCIPY = False
+SCIPY_MARK = pytest.mark.skipif(not HAS_SCIPY, reason="scipy not installed")
+
 
 def assert_array_dtype_equal(a, b, *args, **kwargs):
     a = np.asanyarray(a)
@@ -889,6 +897,7 @@ class TestGeomMethods:
             expected, self.g12.frechet_distance(self.g13, densify=0.25)
         )
 
+    @SCIPY_MARK
     def test_distance_matrix(self):
         points = GeoSeries([Point(0, 0), Point(1, 0), Point(1, 1)])
 
@@ -932,6 +941,7 @@ class TestGeomMethods:
         with pytest.raises(TypeError, match="'to_crs' must be a CRS-like value"):
             points.distance_matrix(to_crs=True)
 
+    @SCIPY_MARK
     @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
     def test_distance_matrix_crs_warning(self):
         with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
@@ -941,6 +951,7 @@ class TestGeomMethods:
         with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
             other.distance_matrix(self.landmarks)
 
+    @SCIPY_MARK
     @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
     def test_distance_matrix_to_crs(self):
         with warnings.catch_warnings():
@@ -949,10 +960,13 @@ class TestGeomMethods:
         expected = self.landmarks.to_crs("EPSG:32618").distance_matrix()
         assert_frame_equal(expected, result)
 
+    @SCIPY_MARK
     @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
     def test_distance_matrix_crs_mismatch_warning(self):
+        # both projected (rather than one geographic) so only the CRS
+        # mismatch warning fires, not also the geographic-CRS warning
         points = GeoSeries([Point(0, 0), Point(1, 0)], crs="EPSG:3857")
-        other = GeoSeries([Point(0, 1)], crs="EPSG:4326")
+        other = GeoSeries([Point(0, 1)], crs="EPSG:32618")
         with pytest.warns(UserWarning, match="CRS mismatch"):
             points.distance_matrix(other)
 
