@@ -139,6 +139,19 @@ def _crs_mismatch_warn(
     )
 
 
+def _points_to_coords(geoseries: GeoPandasBase) -> np.ndarray:
+    """Return the x/y coordinates of a Point GeoSeries as an (N, 2) array.
+
+    Raises a ValueError if any geometry is not a Point.
+    """
+    if not (geoseries.geom_type == "Point").all():
+        raise ValueError(
+            "Point geometries are required, but the input contains other "
+            "geometry types."
+        )
+    return np.column_stack([geoseries.x.to_numpy(), geoseries.y.to_numpy()])
+
+
 def isna(value: None | float | pd.NA) -> bool:
     """
     Check if scalar value is NA-like (None, np.nan or pd.NA).

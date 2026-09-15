@@ -9,7 +9,13 @@ from shapely.geometry import MultiPoint, box
 from shapely.geometry.base import BaseGeometry
 
 from . import _compat as compat
-from .array import GeometryArray, GeometryDtype, _check_crs, _crs_mismatch_warn
+from .array import (
+    GeometryArray,
+    GeometryDtype,
+    _check_crs,
+    _crs_mismatch_warn,
+    _points_to_coords,
+)
 
 
 def is_geometry_type(data):
@@ -128,17 +134,6 @@ def _delegate_geo_method(op, this, **kwargs):
     a_this = GeometryArray(this.geometry.values)
     data = getattr(a_this, op)(**kwargs)
     return GeoSeries(data, index=this.index, crs=this.crs)
-
-
-def _points_to_coords(geoseries):
-    # type: (GeoSeries) -> np.ndarray
-    """Extract an (N, 2) array of x/y coordinates, requiring Point geometries."""
-    if not (geoseries.geom_type == "Point").all():
-        raise ValueError(
-            "'distance_matrix' currently only supports Point geometries, but "
-            "the input contains other geometry types."
-        )
-    return np.column_stack([geoseries.x.to_numpy(), geoseries.y.to_numpy()])
 
 
 class GeoPandasBase:
@@ -4424,24 +4419,28 @@ GeometryCollection
 
         This method currently only supports Point geometries.
 
+        .. versionadded:: 1.2.0
+
         Parameters
         ----------
-        other : GeoSeries | GeoDataFrame | None (default None)
-            The geometries to compute the distance matrix against. If None,
-            the distance matrix is computed against `self`.
-        to_crs : CRS-like, optional (default None)
+        other : GeoSeries or GeoDataFrame, optional
+            The geometries to compute the distance matrix against. If not
+            specified (default), the distance matrix is computed against
+            `self`.
+        to_crs : pyproj.CRS, optional
             Reproject the geometries to this CRS before computing distances.
-            Accepts anything :meth:`pyproj.CRS.from_user_input` accepts, such
-            as an authority string (e.g. ``"EPSG:32633"``) or a
-            :class:`pyproj.CRS` object. If None, distances are computed in
-            the units of the current CRS.
+            The value can be anything accepted
+            by :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
+            such as an authority string (eg "EPSG:32633") or a WKT string. If
+            not specified (default), distances are computed using the
+            current CRS.
 
         Returns
         -------
         DataFrame (float)
             A DataFrame of shape ``(len(self), len(other))``, indexed by
             `self`'s index with columns labelled by `other`'s index (or by
-            `self`'s index again, if `other` is None).
+            `self`'s index again, if `other` is not specified).
 
         Examples
         --------
@@ -4470,8 +4469,9 @@ GeometryCollection
         -----
         This method raises a ``UserWarning`` if the CRS is geographic, since
         distances computed on unprojected coordinates are generally not
-        meaningful. Use :meth:`~GeoSeries.to_crs` (or the `to_crs` parameter
-        above) to reproject to a projected CRS first.
+        meaningful (the same behaviour as :attr:`~GeoSeries.area`). Use
+        :meth:`~GeoSeries.to_crs` (or the `to_crs` parameter above) to
+        reproject to a projected CRS first.
 
         `to_crs` does not accept a boolean shorthand to automatically
         estimate and reproject to a suitable projected CRS (e.g. via

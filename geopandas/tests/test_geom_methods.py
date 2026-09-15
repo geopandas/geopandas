@@ -915,11 +915,11 @@ class TestGeomMethods:
         assert_frame_equal(expected, gdf.distance_matrix(other_gdf))
 
     def test_distance_matrix_non_point_raises(self):
-        with pytest.raises(ValueError, match="only supports Point geometries"):
+        with pytest.raises(ValueError, match="Point geometries are required"):
             self.g1.distance_matrix()
 
         points = GeoSeries([Point(0, 0), Point(1, 0)])
-        with pytest.raises(ValueError, match="only supports Point geometries"):
+        with pytest.raises(ValueError, match="Point geometries are required"):
             points.distance_matrix(self.g1)
 
     def test_distance_matrix_other_type_raises(self):
