@@ -9,7 +9,7 @@ from shapely.geometry import MultiPoint, box
 from shapely.geometry.base import BaseGeometry
 
 from . import _compat as compat
-from .array import GeometryArray, GeometryDtype
+from .array import GeometryArray, GeometryDtype, _check_crs, _crs_mismatch_warn
 
 
 def is_geometry_type(data):
@@ -128,6 +128,17 @@ def _delegate_geo_method(op, this, **kwargs):
     a_this = GeometryArray(this.geometry.values)
     data = getattr(a_this, op)(**kwargs)
     return GeoSeries(data, index=this.index, crs=this.crs)
+
+
+def _points_to_coords(geoseries):
+    # type: (GeoSeries) -> np.ndarray
+    """Extract an (N, 2) array of x/y coordinates, requiring Point geometries."""
+    if not (geoseries.geom_type == "Point").all():
+        raise ValueError(
+            "'distance_matrix' currently only supports Point geometries, but "
+            "the input contains other geometry types."
+        )
+    return np.column_stack([geoseries.x.to_numpy(), geoseries.y.to_numpy()])
 
 
 class GeoPandasBase:
@@ -4397,6 +4408,121 @@ GeometryCollection
         dtype: float64
         """
         return _binary_op("frechet_distance", self, other, align, densify=densify)
+
+    def distance_matrix(self, other=None, to_crs=None):
+        """Return a ``DataFrame`` containing the pairwise distance matrix.
+
+        Computes the Euclidean distance between every geometry in `self` and
+        every geometry in `other`, using :func:`scipy.spatial.distance.cdist`
+        under the hood. If `other` is not provided, the pairwise distance
+        matrix of `self` against itself is returned.
+
+        Unlike :meth:`~GeoSeries.distance`, which compares geometries
+        element-wise (1-to-1), this method compares every geometry against
+        every other geometry, producing a full ``(len(self), len(other))``
+        matrix.
+
+        This method currently only supports Point geometries.
+
+        Parameters
+        ----------
+        other : GeoSeries | GeoDataFrame | None (default None)
+            The geometries to compute the distance matrix against. If None,
+            the distance matrix is computed against `self`.
+        to_crs : CRS-like, optional (default None)
+            Reproject the geometries to this CRS before computing distances.
+            Accepts anything :meth:`pyproj.CRS.from_user_input` accepts, such
+            as an authority string (e.g. ``"EPSG:32633"``) or a
+            :class:`pyproj.CRS` object. If None, distances are computed in
+            the units of the current CRS.
+
+        Returns
+        -------
+        DataFrame (float)
+            A DataFrame of shape ``(len(self), len(other))``, indexed by
+            `self`'s index with columns labelled by `other`'s index (or by
+            `self`'s index again, if `other` is None).
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point
+        >>> s = geopandas.GeoSeries(
+        ...     [Point(0, 0), Point(1, 0), Point(1, 1)],
+        ... )
+        >>> s.distance_matrix()
+                  0    1         2
+        0  0.000000  1.0  1.414214
+        1  1.000000  0.0  1.000000
+        2  1.414214  1.0  0.000000
+
+        >>> s2 = geopandas.GeoSeries([Point(0, 1)], index=[3])
+        >>> s.distance_matrix(s2)
+                  3
+        0  1.000000
+        1  1.414214
+        2  1.000000
+
+        See Also
+        --------
+        GeoSeries.distance
+
+        Notes
+        -----
+        This method raises a ``UserWarning`` if the CRS is geographic, since
+        distances computed on unprojected coordinates are generally not
+        meaningful. Use :meth:`~GeoSeries.to_crs` (or the `to_crs` parameter
+        above) to reproject to a projected CRS first.
+
+        `to_crs` does not accept a boolean shorthand to automatically
+        estimate and reproject to a suitable projected CRS (e.g. via
+        :meth:`~GeoSeries.estimate_utm_crs`) -- an explicit CRS must be
+        passed instead. Whether such a shorthand should be added is an open
+        question; see the discussion on the pull request that introduced
+        this method.
+        """
+        scipy = compat.import_optional_dependency(
+            "scipy", "The 'distance_matrix' method requires the scipy package."
+        )
+        from .geodataframe import GeoDataFrame
+        from .geoseries import GeoSeries
+
+        this = self.geometry
+        self_only = other is None
+
+        if self_only:
+            other = this
+        else:
+            if not isinstance(other, (GeoSeries, GeoDataFrame)):
+                raise TypeError(
+                    "'other' must be a GeoSeries, a GeoDataFrame, or None (to "
+                    "compute the distance matrix against `self`), got "
+                    f"{type(other)!r}."
+                )
+            other = other.geometry
+            if not _check_crs(this, other):
+                _crs_mismatch_warn(this, other, stacklevel=3)
+
+        if to_crs is not None:
+            if isinstance(to_crs, bool):
+                raise TypeError(
+                    "'to_crs' must be a CRS-like value accepted by "
+                    "'pyproj.CRS.from_user_input' (for example an EPSG code "
+                    "or a 'pyproj.CRS' object); passing a boolean is not "
+                    "currently supported."
+                )
+            this = this.to_crs(to_crs)
+            other = this if self_only else other.to_crs(to_crs)
+
+        this.values.check_geographic_crs(stacklevel=3)
+        if not self_only:
+            other.values.check_geographic_crs(stacklevel=3)
+
+        this_xy = _points_to_coords(this)
+        other_xy = this_xy if self_only else _points_to_coords(other)
+
+        values = scipy.spatial.distance.cdist(this_xy, other_xy)
+
+        return pd.DataFrame(values, index=this.index, columns=other.index)
 
     #
     # Binary operations that return a GeoSeries

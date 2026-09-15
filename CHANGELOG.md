@@ -4,6 +4,11 @@
 
 New features and improvements:
 
+- Added ``distance_matrix()`` to ``GeoSeries``/``GeoDataFrame``, returning the
+  pairwise distance matrix between all (Point) geometries in `self` and all
+  (Point) geometries in `other` (or in `self`, if `other` is not provided),
+  using ``scipy.spatial.distance.cdist`` under the hood. ``scipy`` remains an
+  optional dependency.
 - Static plotting in GeoPandas has been re-implemented. The new tooling shall be mostly
   backwards compatible while bringing a set of enhancements:
     - Categorical plotting now allows dict-based mapping of categories to colors and 
