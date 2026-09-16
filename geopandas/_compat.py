@@ -13,8 +13,10 @@ PANDAS_GE_23 = Version(pd.__version__) >= Version("2.3.0")
 PANDAS_GE_30 = Version(pd.__version__) >= Version("3.0.0")
 PANDAS_GE_31 = Version(pd.__version__) >= Version("3.1.0.dev0")
 PANDAS_GE_40 = Version(pd.__version__) >= Version("4.0.0.dev0")
-PANDAS_INFER_STR = PANDAS_GE_40 or (PANDAS_GE_23 and pd.options.future.infer_string)
-
+if PANDAS_GE_30:
+    PANDAS_INFER_STR = True
+else:
+    PANDAS_INFER_STR = PANDAS_GE_23 and pd.options.future.infer_string
 
 # -----------------------------------------------------------------------------
 # Shapely / GEOS compat
