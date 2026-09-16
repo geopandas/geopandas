@@ -42,6 +42,9 @@ New features and improvements:
 - `read_parquet` now support direct reading from HTTP/HTTPS protocols (#3699)
 - Document how to access the feature ID (`fid`) as the index when reading files
   with `read_file` and the pyogrio engine, using `fid_as_index=True` (#3829)
+- `GeoDataFrame.dissolve()` can now take `method="collect"` that collects geometries
+  within a group to a respective multi-part geometry or a GeometryCollection instead
+  of performing more costly union of geometries (#3848).
 
 Deprecations and compatibility notes:
 
@@ -49,6 +52,8 @@ Deprecations and compatibility notes:
   `quad_segs` should be used instead (#3600).
 - Expired deprecations; option `use_pygeos` which had no functionality,
   `seed` keyword in sample_points (replaced by `rng`) (#3613)
+- `geopandas.tools.collect` function has been deprecated. You can use the 
+  `method='collect'` option in `GeoDataFrame.dissolve()` instead (#3848).
 
 Bug fixes:
 

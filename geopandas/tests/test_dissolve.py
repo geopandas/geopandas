@@ -3,7 +3,13 @@ import warnings
 import numpy as np
 import pandas as pd
 
-from shapely import MultiPolygon, Polygon
+from shapely import (
+    MultiPoint,
+    MultiPolygon,
+    Polygon,
+    geometrycollections,
+    multilinestrings,
+)
 
 import geopandas
 from geopandas import GeoDataFrame, read_file
@@ -375,4 +381,96 @@ def test_dissolve_method(nybb_polydf, method):
     merged_shapes["BoroCode"] = [5, 1]
 
     test = nybb_polydf.dissolve("manhattan_bronx", method=method)
+    assert_frame_equal(merged_shapes, test, check_column_type=False)
+
+
+def test_dissolve_collect(nybb_polydf):
+    manhattan_bronx = nybb_polydf.loc[3:4]
+    others = nybb_polydf.loc[0:2]
+
+    collapsed = [
+        MultiPolygon(others.geometry.explode()),
+        MultiPolygon(manhattan_bronx.geometry.explode()),
+    ]
+    merged_shapes = GeoDataFrame(
+        {"myshapes": collapsed},
+        geometry="myshapes",
+        index=pd.Index([5, 6], name="manhattan_bronx"),
+        crs=nybb_polydf.crs,
+    )
+
+    merged_shapes["BoroName"] = ["Staten Island", "Manhattan"]
+    merged_shapes["BoroCode"] = [5, 1]
+
+    test = nybb_polydf.dissolve("manhattan_bronx", method="collect")
+    assert_frame_equal(merged_shapes, test, check_column_type=False)
+
+
+def test_dissolve_collect_points(nybb_polydf):
+    nybb_polydf = nybb_polydf.set_geometry(nybb_polydf.centroid)
+    manhattan_bronx = nybb_polydf.loc[3:4]
+    others = nybb_polydf.loc[0:2]
+
+    collapsed = [
+        MultiPoint(others.geometry),
+        MultiPoint(manhattan_bronx.geometry),
+    ]
+    merged_shapes = GeoDataFrame(
+        {"myshapes": collapsed},
+        geometry="myshapes",
+        index=pd.Index([5, 6], name="manhattan_bronx"),
+        crs=nybb_polydf.crs,
+    )
+
+    merged_shapes["BoroName"] = ["Staten Island", "Manhattan"]
+    merged_shapes["BoroCode"] = [5, 1]
+
+    test = nybb_polydf.dissolve("manhattan_bronx", method="collect")
+    assert_frame_equal(merged_shapes, test, check_column_type=False)
+
+
+def test_dissolve_collect_lines(nybb_polydf):
+    nybb_polydf = nybb_polydf.set_geometry(nybb_polydf.boundary)
+    manhattan_bronx = nybb_polydf.loc[3:4]
+    others = nybb_polydf.loc[0:2]
+
+    collapsed = [
+        multilinestrings(others.geometry.explode()),
+        multilinestrings(manhattan_bronx.geometry.explode()),
+    ]
+    merged_shapes = GeoDataFrame(
+        {"myshapes": collapsed},
+        geometry="myshapes",
+        index=pd.Index([5, 6], name="manhattan_bronx"),
+        crs=nybb_polydf.crs,
+    )
+
+    merged_shapes["BoroName"] = ["Staten Island", "Manhattan"]
+    merged_shapes["BoroCode"] = [5, 1]
+
+    test = nybb_polydf.dissolve("manhattan_bronx", method="collect")
+    assert_frame_equal(merged_shapes, test, check_column_type=False)
+
+
+def test_dissolve_collect_mixed(nybb_polydf):
+    nybb_polydf.loc[3, "myshapes"] = nybb_polydf.loc[3, "myshapes"].centroid
+
+    manhattan_bronx = nybb_polydf.loc[3:4]
+    others = nybb_polydf.loc[0:2]
+
+    collapsed = [
+        MultiPolygon(others.geometry.explode()),
+        geometrycollections(manhattan_bronx.geometry.to_numpy()),
+    ]
+    merged_shapes = GeoDataFrame(
+        {"myshapes": collapsed},
+        geometry="myshapes",
+        index=pd.Index([5, 6], name="manhattan_bronx"),
+        crs=nybb_polydf.crs,
+    )
+
+    merged_shapes["BoroName"] = ["Staten Island", "Manhattan"]
+    merged_shapes["BoroCode"] = [5, 1]
+
+    test = nybb_polydf.dissolve("manhattan_bronx", method="collect")
     assert_frame_equal(merged_shapes, test, check_column_type=False)

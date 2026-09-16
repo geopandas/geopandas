@@ -2336,6 +2336,7 @@ default 'snappy'
 
         def collect_geometries(geometries):
             """Collect geometries without performing an expensive union."""
+            geometries = geometries.to_numpy()
             type_ids = shapely.get_type_id(geometries)
 
             if np.all((type_ids == 0) | (type_ids == 4)):
