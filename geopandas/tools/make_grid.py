@@ -35,6 +35,8 @@ def make_grid(
     the grid is filtered to only include elements that spatially overlap with
     any of the individual geometries when ``intersect`` is ``True``.
 
+    .. versionadded:: 1.2
+
     Parameters
     ----------
     input_geometry : (Multi)Polygon, GeoSeries, GeoDataFrame
