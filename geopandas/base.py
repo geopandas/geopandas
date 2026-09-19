@@ -6652,6 +6652,8 @@ GeometryCollection
         The origin of the grid is at the lower left corner of the bounding box
         of the GeoSeries.
 
+        .. versionadded:: 1.2
+
         Parameters
         ----------
         cell_size : float
