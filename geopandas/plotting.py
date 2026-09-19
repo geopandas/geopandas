@@ -958,6 +958,7 @@ def plot_dataframe(
             autolim=autolim,
             tiles=tiles,
             attr=attr,
+            add_labels=add_labels,
             **style_kwds,
         )
 
@@ -968,6 +969,15 @@ def plot_dataframe(
 
     if add_labels:
         _set_axis_labels(ax, df.crs)
+
+    if df.empty:
+        warnings.warn(
+            "The GeoDataFrame you are attempting to plot is "
+            "empty. Nothing has been displayed.",
+            UserWarning,
+            stacklevel=3,
+        )
+        return ax
 
     # set correct aspect to preserve proportions in geographic CRS
     _set_aspect(aspect, df, ax)
@@ -1147,6 +1157,7 @@ def plot_dataframe(
                     cmap=cmap,
                     ax=ax,
                     aspect=None,
+                    autolim=autolim,
                     **group_style_kwds,
                 )
 
