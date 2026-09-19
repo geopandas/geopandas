@@ -35,6 +35,12 @@ New features and improvements:
   plotting-related bugs has been fixed along as a side effect. All changes are reflected
   in an updated user guide. 
   (#3708, #3728, #3748, #3752, #3753, #3763, #3767, #3689)
+- GeoPandas can now compute area and length of a geometry using geodesic computation
+  instead of a planar one, when geometries are in a geographic CRS. This can be
+  controlled by `geopandas.options.geodesic_calculation`, which is `False` by default.
+  When changed to `True`, both `.area` and `.length` attributes will automatically use
+  geodesic computation when needed. In GeoPandas 2.0, geodesic calculations will 
+  be enabled by default (#3615).
 - `GeoDataFrame.to_parquet` and `read_parquet` will now write and read ``attrs``
   respectively (#3597)
 - Add ``grid_size`` parameter to ``union``, ``difference``, ``symmetric_difference``
