@@ -1298,9 +1298,22 @@ def test_to_parquet_bbox_values(tmpdir, geometry, expected_bbox):
     assert result["bbox"][0] == expected_bbox
 
 
-@pytest.mark.parametrize(
-    "write_kargs", [{"write_covering_bbox": True}, {"schema_version": "2.0.0"}]
+bbox_write_kwargs = pytest.mark.parametrize(
+    "write_kargs",
+    [
+        {"write_covering_bbox": True, "schema_version": "1.1.0"},
+        pytest.param(
+            {"schema_version": "2.0.0"},
+            marks=pytest.mark.skipif(
+                Version(pyarrow.__version__) < Version("21.0.0"),
+                reason="Writing GeoParquet 2.0 files requires pyarrow>=21.0",
+            ),
+        ),
+    ],
 )
+
+
+@bbox_write_kwargs
 def test_read_parquet_bbox_single_point(tmpdir, write_kargs):
     # confirm that on a single point, bbox will pick it up.
     df = GeoDataFrame(data=[[1, 2]], columns=["a", "b"], geometry=[Point(1, 1)])
@@ -1311,9 +1324,7 @@ def test_read_parquet_bbox_single_point(tmpdir, write_kargs):
     assert pq_df.geometry[0] == Point(1, 1)
 
 
-@pytest.mark.parametrize(
-    "write_kargs", [{"write_covering_bbox": True}, {"schema_version": "2.0.0"}]
-)
+@bbox_write_kwargs
 @pytest.mark.parametrize("geometry_name", ["geometry", "custum_geom_col"])
 def test_read_parquet_bbox(tmpdir, naturalearth_lowres, geometry_name, write_kargs):
     # check bbox is being used to filter results.
@@ -1339,9 +1350,7 @@ def test_read_parquet_bbox(tmpdir, naturalearth_lowres, geometry_name, write_kar
     ]
 
 
-@pytest.mark.parametrize(
-    "write_kargs", [{"write_covering_bbox": True}, {"schema_version": "2.0.0"}]
-)
+@bbox_write_kwargs
 @pytest.mark.parametrize("geometry_name", ["geometry", "custum_geom_col"])
 def test_read_parquet_bbox_partitioned(
     tmpdir, naturalearth_lowres, geometry_name, write_kargs
@@ -1372,9 +1381,7 @@ def test_read_parquet_bbox_partitioned(
     ]
 
 
-@pytest.mark.parametrize(
-    "write_kargs", [{"write_covering_bbox": True}, {"schema_version": "2.0.0"}]
-)
+@bbox_write_kwargs
 @pytest.mark.parametrize(
     "geometry, bbox",
     [
@@ -1452,9 +1459,7 @@ def test_read_parquet_bbox_column_default_behaviour(tmpdir, naturalearth_lowres)
     assert list(result2.columns) == ["name", "geometry"]
 
 
-@pytest.mark.parametrize(
-    "write_kargs", [{"write_covering_bbox": True}, {"schema_version": "2.0.0"}]
-)
+@bbox_write_kwargs
 @pytest.mark.parametrize(
     "filters",
     [
@@ -1481,9 +1486,7 @@ def test_read_parquet_filters_and_bbox(
     ]
 
 
-@pytest.mark.parametrize(
-    "write_kargs", [{"write_covering_bbox": True}, {"schema_version": "2.0.0"}]
-)
+@bbox_write_kwargs
 @pytest.mark.parametrize(
     "filters",
     [
