@@ -21,11 +21,13 @@ def make_grid(
 ) -> GeoSeries:
     """Provide the centers, corners, or polygons of a square or hexagonal grid.
 
-    The output covers the area of the ``input_geometry``. The origin of the grid is
-    at the lower left corner of the bounding box of the ``input_geometry``. By
-    default, the grid is filtered to only include elements that spatially overlap
-    with the ``input_geometry``. This filtering can be disabled by setting the
-    ``intersect`` parameter to ``False``.
+    The output covers the area of the ``input_geometry``. By default, only
+    grid elements that spatially overlap with the ``input_geometry`` are
+    returned. This filtering can be disabled by setting the ``intersect``
+    parameter to ``False``.
+
+    The origin of the grid is at the lower left corner of the bounding box
+    of the ``input_geometry``.
 
     If there are multiple geometries in a GeoSeries/GeoDataFrame, the grid will
     be created over the total bounds of the GeoSeries/GeoDataFrame. Subsequently,
@@ -37,25 +39,25 @@ def make_grid(
     input_geometry : (Multi)Polygon, GeoSeries, GeoDataFrame
         Polygon within its boundaries the grid is made.
     cell_size : float
-        Side length of the square. For hexagonal cells the distance between opposite
-        edges (edge length is ``cellsize/sqrt(3)``).
+        Side length of the square. For hexagonal cells the distance between
+        opposite edges (edge length is ``cellsize/sqrt(3)``).
     cell_type : str, one of "square", "hexagon", default "square"
-        Grid type that is returned. All cell types reflect naive tiling of a plane,
-        not a tiling of the globe (like H3 or S2).
+        Grid type that is returned. All cell types reflect naive tiling of a
+        plane, not a tiling of the globe (like H3 or S2).
     what : str, one of "centers", "corners", "polygons", default "polygons"
         Grid feature that is returned. ``"centers"`` returns points at the
         center of each grid cell. ``"corners"`` returns points at all unique
         vertices of the grid cells (i.e., the points where cell edges meet).
         ``"polygons"`` returns the grid cell polygons.
-    offset : tuple | None, default None
+    offset : tuple, optional
         Lower left corner coordinates (x, y) of the grid. By default uses
         the lower left corner of the bounding box of the input geometry.
     intersect : bool, default True
         If False, the grid is not filtered by the ``input_geometry`` and the
         full grid covering the bounding box is returned.
     flat_topped : bool, default False
-        If True generate flat topped hexagons. If False, the orientation of the
-        hexagonal cells is such that a corner points upwards.
+        If True, generate flat topped hexagons. By default (False), the
+        orientation of the hexagonal cells is such that a corner points upwards.
 
     Returns
     -------
@@ -69,11 +71,11 @@ def make_grid(
     spatial predicate. The filtering behavior depends on ``what``:
 
     - ``"polygons"``: All grid cell polygons that share any area or boundary
-      with the ``input_geometry`` are returned.
+      with the input geometries are returned.
     - ``"centers"``: Only center points that fall within or on the boundary of
-      the ``input_geometry`` are returned.
+      the input geometries are returned.
     - ``"corners"``: Only corner points that fall within or on the boundary of
-      the ``input_geometry`` are returned.
+      the input geometries are returned.
 
     As a result, the set of corners returned when ``what="corners"`` may not
     correspond exactly to the vertices of the polygons returned when
