@@ -38,5 +38,6 @@ dependencies:
   - geoalchemy2
   - pyarrow
   - geoarrow-pyarrow
+  - libgdal-arrow-parquet
   # doctest testing
   - pytest-doctestplus

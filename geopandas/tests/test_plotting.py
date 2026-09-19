@@ -326,6 +326,17 @@ class TestPointPlotting:
         with pytest.warns(UserWarning):
             ax = df.plot()
         assert len(ax.collections) == 0
+        with pytest.warns(UserWarning):
+            ax = (
+                GeoDataFrame(
+                    {"pop": [1.0, 2.0]},
+                    geometry=[Point(0, 0), Point(1, 1)],
+                    crs="EPSG:4326",
+                )
+                .query("pop > 5")
+                .plot(column="pop")
+            )
+        assert len(ax.collections) == 0
 
     def test_empty_geometry(self):
         s = GeoSeries([Polygon([(0, 0), (1, 0), (1, 1)]), Polygon()])
@@ -739,6 +750,18 @@ class TestPolygonPlotting:
         ax = self.df[:1].plot()
         xlim = ax.get_xlim()
         self.df.plot(ax=ax, autolim=True)
+        assert ax.get_xlim() != xlim
+
+    def test_autolim_categorical(self):
+        """Test categorical polygon plot respecting autolim."""
+        ax = self.df[:1].plot()
+        xlim = ax.get_xlim()
+        self.df.plot(ax=ax, column="values", categorical=True, autolim=False)
+        assert ax.get_xlim() == xlim
+
+        ax = self.df[:1].plot()
+        xlim = ax.get_xlim()
+        self.df.plot(ax=ax, column="values", categorical=True, autolim=True)
         assert ax.get_xlim() != xlim
 
     def test_single_color(self):
@@ -2834,10 +2857,17 @@ class TestAxisLabels:
         assert ax.get_ylabel() == "Northing [US survey foot]"
 
     def test_no_labels(self):
+        # gdf route
         ax = self.nybb.plot("forhis06", add_labels=False)
         assert ax.get_xlabel() == ""
         assert ax.get_ylabel() == ""
 
+        # gdf -> gs
+        ax = self.nybb.plot(add_labels=False)
+        assert ax.get_xlabel() == ""
+        assert ax.get_ylabel() == ""
+
+        # gs
         ax2 = self.nybb.geometry.plot(add_labels=False)
         assert ax2.get_xlabel() == ""
         assert ax2.get_ylabel() == ""
@@ -2884,15 +2914,18 @@ class TestTilesPlotting:
         )
 
     def test_tiles_custom_xyzservices(self):
-        ax = self.nybb.plot(tiles="CartoDBPositron")
+        ax = self.nybb.plot(tiles="Esri.WorldImagery")
         im = next(iter(ax.images))
         assert im.get_array().shape == (1023, 1030, 4)
 
         attr = next(iter(ax.texts)).get_text()
-        assert attr == "(C) OpenStreetMap contributors (C) CARTO"
+        assert (
+            attr == "Tiles (C) Esri -- Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, "
+            "Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community"
+        )
 
     def test_tiles_custom_attribution(self):
-        ax = self.nybb.plot(tiles="CartoDBPositron", attr="Custom attribution")
+        ax = self.nybb.plot(tiles="Esri.WorldImagery", attr="Custom attribution")
         im = next(iter(ax.images))
         assert im.get_array().shape == (1023, 1030, 4)
 
