@@ -12,6 +12,7 @@ from geopandas.array import from_shapely
 
 def make_grid(
     input_geometry: Polygon | MultiPolygon | GeoSeries | GeoDataFrame,
+    /,
     cell_size: float,
     cell_type: Literal["square", "hexagon"] = "square",
     what: Literal["centers", "corners", "polygons"] = "polygons",
