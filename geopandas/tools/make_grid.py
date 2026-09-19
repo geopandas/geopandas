@@ -15,7 +15,7 @@ def make_grid(
     /,
     cell_size: float,
     grid_type: Literal["square", "hexagon"] = "square",
-    what: Literal["centers", "corners", "polygons"] = "polygons",
+    feature_type: Literal["centers", "corners", "polygons"] = "polygons",
     offset: tuple[float, float] | None = None,
     intersect: bool = True,
     flat_topped: bool = False,
@@ -45,7 +45,7 @@ def make_grid(
     grid_type : str, one of "square", "hexagon", default "square"
         Grid type that is returned. All cell types reflect naive tiling of a
         plane, not a tiling of the globe (like H3 or S2).
-    what : str, one of "centers", "corners", "polygons", default "polygons"
+    feature_type : str, one of "centers", "corners", "polygons", default "polygons"
         Grid feature that is returned. ``"centers"`` returns points at the
         center of each grid cell. ``"corners"`` returns points at all unique
         vertices of the grid cells (i.e., the points where cell edges meet).
@@ -69,7 +69,7 @@ def make_grid(
     Notes
     -----
     When ``intersect=True``, the grid is filtered using the ``"intersects"``
-    spatial predicate. The filtering behavior depends on ``what``:
+    spatial predicate. The filtering behavior depends on ``feature_type``:
 
     - ``"polygons"``: All grid cell polygons that share any area or boundary
       with the input geometries are returned.
@@ -78,9 +78,9 @@ def make_grid(
     - ``"corners"``: Only corner points that fall within or on the boundary of
       the input geometries are returned.
 
-    As a result, the set of corners returned when ``what="corners"`` may not
-    correspond exactly to the vertices of the polygons returned when
-    ``what="polygons"``.
+    As a result, the set of corners returned when ``feature_type="corners"``
+    may not correspond exactly to the vertices of the polygons returned when
+    ``feature_type="polygons"``.
 
     Examples
     --------
@@ -109,10 +109,12 @@ def make_grid(
 
     .. plot:: _static/code/make_grid.py
 
-    Specify the ``what`` keyword to get the centers or corners of the grid
+    Specify the ``feature_type`` keyword to get the centers or corners of the grid
     cells, instead of the polygons:
 
-    >>> sq_grid_centers = geopandas.make_grid(madagascar, cell_size=1, what="centers")
+    >>> sq_grid_centers = geopandas.make_grid(
+    ...     madagascar, cell_size=1, feature_type="centers"
+    ... )
     >>> sq_grid_centers.head(3)
     0    POINT (43.75419 -24.10143)
     1    POINT (43.75419 -23.10143)
@@ -126,7 +128,7 @@ def make_grid(
 
     """
     # Run basic checks
-    _basic_checks(input_geometry, cell_size, offset, what, grid_type, intersect)
+    _basic_checks(input_geometry, cell_size, offset, feature_type, grid_type, intersect)
 
     output_grid = None
 
@@ -151,18 +153,18 @@ def make_grid(
         y_coords_corn = np.arange(grid_origin_y, bounds[3] + cell_size, cell_size)
         xv, yv = np.meshgrid(x_coords_corn, y_coords_corn)
 
-        if what == "corners":
+        if feature_type == "corners":
             sq_corners_np = np.array([xv, yv]).T.reshape(-1, 2)
             output_grid = points_from_xy(sq_corners_np[:, 0], sq_corners_np[:, 1])
 
-        elif what == "centers":
+        elif feature_type == "centers":
             sq_centers_np = (
                 np.array([xv[:-1, :-1], yv[:-1, :-1]]).T.reshape(-1, 2) + cell_size / 2
             )
 
             output_grid = points_from_xy(sq_centers_np[:, 0], sq_centers_np[:, 1])
 
-        elif what == "polygons":
+        elif feature_type == "polygons":
             # Extracting corners of all square-grid cells.
             bt_left_corners = np.array([xv[:-1, :-1], yv[:-1, :-1]]).T.reshape(-1, 1, 2)
             bt_right_corners = np.array([xv[1:, 1:], yv[:-1, :-1]]).T.reshape(-1, 1, 2)
@@ -209,7 +211,7 @@ def make_grid(
         mask_center[1::2, 2::3] = True
         mask_center[::2, 1::3] = True
 
-        if what == "centers":
+        if feature_type == "centers":
             hex_centers_np = np.array([xv[mask_center], yv[mask_center]]).T.reshape(
                 -1, 2
             )
@@ -221,7 +223,7 @@ def make_grid(
                 hex_centers_np[:, 1] + grid_origin_y,
             )
 
-        elif what == "corners":
+        elif feature_type == "corners":
             # The inverted center mask is the corner mask. Now consider all corners
             mask_corners = np.invert(mask_center)
 
@@ -237,7 +239,7 @@ def make_grid(
                 hex_corners_np[:, 1] + grid_origin_y,
             )
 
-        elif what == "polygons":
+        elif feature_type == "polygons":
             hex_coords_a = _hex_polygon_corners(xv, yv, (0, 1))
             hex_coords_b = _hex_polygon_corners(xv, yv, (2, 0))
 
@@ -370,21 +372,21 @@ def _basic_checks(
     input_geometry: Polygon | MultiPolygon | GeoSeries | GeoDataFrame,
     cell_size: float,
     offset: tuple[float, float] | None,
-    what: str,
+    feature_type: str,
     grid_type: str,
     intersect: bool,
 ) -> None:
     """Check the validity of make_grid input parameters.
 
     `cell_size` must be larger than 0.
-    `what` and `grid_type` must be a valid option.
+    `feature_type` and `grid_type` must be a valid option.
 
     Parameters
     ----------
     input_geometry : (Multi)Polygon, GeoSeries, GeoDataFrame
     cell_size : float
     offset : tuple
-    what : str, one of "centers", "corners", "polygons"
+    feature_type : str, one of "centers", "corners", "polygons"
         type of return
     grid_type : str, one of "square", "hexagon"
         grid type
@@ -404,13 +406,13 @@ def _basic_checks(
     if cell_size <= 0:
         raise ValueError(f"`cell_size` should be positive, got {cell_size}")
 
-    allowed_what = ["centers", "corners", "polygons"]
-    if what not in allowed_what:
+    allowed_feature_type = ["centers", "corners", "polygons"]
+    if feature_type not in allowed_feature_type:
         raise ValueError(
             f"""
-            Invalid value for parameter `what`.
-            Only {allowed_what} are supported.
-            '{what}' was given.
+            Invalid value for parameter `feature_type`.
+            Only {allowed_feature_type} are supported.
+            '{feature_type}' was given.
             """
         )
 

@@ -6637,7 +6637,7 @@ GeometryCollection
         self,
         cell_size: float,
         grid_type: Literal["square", "hexagon"] = "square",
-        what: Literal["centers", "corners", "polygons"] = "polygons",
+        feature_type: Literal["centers", "corners", "polygons"] = "polygons",
         offset: tuple[float, float] | None = None,
         intersect: bool = True,
         flat_topped: bool = False,
@@ -6660,7 +6660,7 @@ GeometryCollection
         grid_type : str, one of "square", "hexagon", default "square"
             Grid type that is returned. All cell types reflect naive tiling of a
             plane, not a tiling of the globe (like H3 or S2).
-        what : str, one of "centers", "corners", "polygons", default "polygons"
+        feature_type : str, one of "centers", "corners", "polygons", default "polygons"
             Grid feature that is returned. ``"centers"`` returns points at the
             center of each grid cell. ``"corners"`` returns points at all unique
             vertices of the grid cells (i.e., the points where cell edges meet).
@@ -6688,7 +6688,7 @@ GeometryCollection
         Notes
         -----
         When ``intersect=True``, the grid is filtered using the ``"intersects"``
-        spatial predicate. The filtering behavior depends on ``what``:
+        spatial predicate. The filtering behavior depends on ``feature_type``:
 
         - ``"polygons"``: All grid cell polygons that share any area or boundary
           with the input geometries are returned.
@@ -6697,9 +6697,9 @@ GeometryCollection
         - ``"corners"``: Only corner points that fall within or on the boundary of
           the input geometries are returned.
 
-        As a result, the set of corners returned when ``what="corners"`` may not
-        correspond exactly to the vertices of the polygons returned when
-        ``what="polygons"``.
+        As a result, the set of corners returned when ``feature_type="corners"``
+        may not correspond exactly to the vertices of the polygons returned when
+        ``feature_type="polygons"``.
 
         Examples
         --------
@@ -6728,10 +6728,12 @@ GeometryCollection
 
         .. plot:: _static/code/make_grid.py
 
-        Specify the ``what`` keyword to get the centers or corners of the grid
+        Specify the ``feature_type`` keyword to get the centers or corners of the grid
         cells, instead of the polygons:
 
-        >>> sq_grid_centers = madagascar.geometry.make_grid(cell_size=1, what="centers")
+        >>> sq_grid_centers = madagascar.geometry.make_grid(
+        ...     cell_size=1, feature_type="centers"
+        ... )
         >>> sq_grid_centers.head(3)
         0    POINT (43.75419 -24.10143)
         1    POINT (43.75419 -23.10143)
@@ -6749,7 +6751,7 @@ GeometryCollection
             self.geometry,
             cell_size=cell_size,
             grid_type=grid_type,
-            what=what,
+            feature_type=feature_type,
             offset=offset,
             intersect=intersect,
             flat_topped=flat_topped,

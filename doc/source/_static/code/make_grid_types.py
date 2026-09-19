@@ -12,8 +12,8 @@ world = geopandas.read_file(
 madagascar = world.cx[45:50, -25:-15]
 
 sq_grid = geopandas.make_grid(madagascar, cell_size=1)
-sq_grid_centers = geopandas.make_grid(madagascar, cell_size=1, what="centers")
-sq_grid_corners = geopandas.make_grid(madagascar, cell_size=1, what="corners")
+sq_grid_centers = geopandas.make_grid(madagascar, cell_size=1, feature_type="centers")
+sq_grid_corners = geopandas.make_grid(madagascar, cell_size=1, feature_type="corners")
 
 hex_grid = geopandas.make_grid(madagascar, cell_size=1, grid_type="hexagon")
 
@@ -26,8 +26,8 @@ fig, (ax0, ax1) = plt.subplots(1, 2, figsize=(12, 8), sharey=True)
 
 madagascar.plot(ax=ax0, alpha=0.5)
 sq_grid.plot(ax=ax0, facecolor="none", alpha=0.5)
-sq_grid_centers.plot(ax=ax0, color="C1", marker="o", label='what="centers"')
-sq_grid_corners.plot(ax=ax0, color="C2", marker="x", label='what="corners"')
+sq_grid_centers.plot(ax=ax0, color="C1", marker="o", label='feature_type="centers"')
+sq_grid_corners.plot(ax=ax0, color="C2", marker="x", label='feature_type="corners"')
 ax0.legend(loc="upper left")
 
 madagascar.plot(ax=ax1, alpha=0.5)
