@@ -14,7 +14,7 @@ def make_grid(
     input_geometry: Polygon | MultiPolygon | GeoSeries | GeoDataFrame,
     /,
     cell_size: float,
-    cell_type: Literal["square", "hexagon"] = "square",
+    grid_type: Literal["square", "hexagon"] = "square",
     what: Literal["centers", "corners", "polygons"] = "polygons",
     offset: tuple[float, float] | None = None,
     intersect: bool = True,
@@ -42,7 +42,7 @@ def make_grid(
     cell_size : float
         Side length of the square. For hexagonal cells the distance between
         opposite edges (edge length is ``cellsize/sqrt(3)``).
-    cell_type : str, one of "square", "hexagon", default "square"
+    grid_type : str, one of "square", "hexagon", default "square"
         Grid type that is returned. All cell types reflect naive tiling of a
         plane, not a tiling of the globe (like H3 or S2).
     what : str, one of "centers", "corners", "polygons", default "polygons"
@@ -119,14 +119,14 @@ def make_grid(
     2    POINT (43.75419 -22.10143)
     dtype: geometry
 
-    Specify the ``cell_type="hexagon`` keyword to get hexagons instead of the
+    Specify the ``grid_type="hexagon`` keyword to get hexagons instead of the
     default squares.
 
     .. plot:: _static/code/make_grid_types.py
 
     """
     # Run basic checks
-    _basic_checks(input_geometry, cell_size, offset, what, cell_type, intersect)
+    _basic_checks(input_geometry, cell_size, offset, what, grid_type, intersect)
 
     output_grid = None
 
@@ -145,7 +145,7 @@ def make_grid(
     x_dist = bounds[2] - grid_origin_x
     y_dist = bounds[3] - grid_origin_y
 
-    if cell_type == "square":
+    if grid_type == "square":
         # Set corner coordinates of square grid.
         x_coords_corn = np.arange(grid_origin_x, bounds[2] + cell_size, cell_size)
         y_coords_corn = np.arange(grid_origin_y, bounds[3] + cell_size, cell_size)
@@ -182,7 +182,7 @@ def make_grid(
 
             output_grid = from_shapely(sq_polygons)
 
-    elif cell_type == "hexagon":
+    elif grid_type == "hexagon":
         if not flat_topped:
             x_dist, y_dist = y_dist, x_dist
 
@@ -371,13 +371,13 @@ def _basic_checks(
     cell_size: float,
     offset: tuple[float, float] | None,
     what: str,
-    cell_type: str,
+    grid_type: str,
     intersect: bool,
 ) -> None:
     """Check the validity of make_grid input parameters.
 
     `cell_size` must be larger than 0.
-    `what` and `cell_type` must be a valid option.
+    `what` and `grid_type` must be a valid option.
 
     Parameters
     ----------
@@ -386,7 +386,7 @@ def _basic_checks(
     offset : tuple
     what : str, one of "centers", "corners", "polygons"
         type of return
-    cell_type : str, one of "square", "hexagon"
+    grid_type : str, one of "square", "hexagon"
         grid type
     """
     if not isinstance(input_geometry, (GeoDataFrame, GeoSeries, Polygon, MultiPolygon)):
@@ -414,13 +414,13 @@ def _basic_checks(
             """
         )
 
-    allowed_cell_type = ["square", "hexagon"]
-    if cell_type not in allowed_cell_type:
+    allowed_grid_type = ["square", "hexagon"]
+    if grid_type not in allowed_grid_type:
         raise ValueError(
             f"""
-            Invalid value for parameter `cell_type`.
-            Only {allowed_cell_type} are supported.
-            '{cell_type}' was given.
+            Invalid value for parameter `grid_type`.
+            Only {allowed_grid_type} are supported.
+            '{grid_type}' was given.
             """
         )
 

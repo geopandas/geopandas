@@ -6636,7 +6636,7 @@ GeometryCollection
     def make_grid(
         self,
         cell_size: float,
-        cell_type: Literal["square", "hexagon"] = "square",
+        grid_type: Literal["square", "hexagon"] = "square",
         what: Literal["centers", "corners", "polygons"] = "polygons",
         offset: tuple[float, float] | None = None,
         intersect: bool = True,
@@ -6657,7 +6657,7 @@ GeometryCollection
         cell_size : float
             Side length of the square. For hexagonal cells the distance between
             opposite edges (edge length is ``cellsize/sqrt(3)``).
-        cell_type : str, one of "square", "hexagon", default "square"
+        grid_type : str, one of "square", "hexagon", default "square"
             Grid type that is returned. All cell types reflect naive tiling of a
             plane, not a tiling of the globe (like H3 or S2).
         what : str, one of "centers", "corners", "polygons", default "polygons"
@@ -6738,7 +6738,7 @@ GeometryCollection
         2    POINT (43.75419 -22.10143)
         dtype: geometry
 
-        Specify the ``cell_type="hexagon`` keyword to get hexagons instead of the
+        Specify the ``grid_type="hexagon`` keyword to get hexagons instead of the
         default squares.
 
         .. plot:: _static/code/make_grid_types.py
@@ -6748,7 +6748,7 @@ GeometryCollection
         return make_grid(
             self.geometry,
             cell_size=cell_size,
-            cell_type=cell_type,
+            grid_type=grid_type,
             what=what,
             offset=offset,
             intersect=intersect,

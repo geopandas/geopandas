@@ -15,7 +15,7 @@ sq_grid = geopandas.make_grid(madagascar, cell_size=1)
 sq_grid_centers = geopandas.make_grid(madagascar, cell_size=1, what="centers")
 sq_grid_corners = geopandas.make_grid(madagascar, cell_size=1, what="corners")
 
-hex_grid = geopandas.make_grid(madagascar, cell_size=1, cell_type="hexagon")
+hex_grid = geopandas.make_grid(madagascar, cell_size=1, grid_type="hexagon")
 
 
 fig, (ax0, ax1) = plt.subplots(1, 2, figsize=(12, 8), sharey=True)
@@ -33,7 +33,7 @@ ax0.legend(loc="upper left")
 madagascar.plot(ax=ax1, alpha=0.5)
 hex_grid.plot(ax=ax1, facecolor="none", edgecolor="C2")
 
-ax0.set_title('cell_type="square"')
-ax1.set_title('cell_type="hexagon"')
+ax0.set_title('grid_type="square"')
+ax1.set_title('grid_type="hexagon"')
 
 fig.tight_layout()
