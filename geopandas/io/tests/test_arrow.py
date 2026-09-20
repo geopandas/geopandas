@@ -3,11 +3,13 @@ import json
 import os
 import pathlib
 import re
+import sys
 from io import BytesIO
 from itertools import product
 from packaging.version import Version
 
 import numpy as np
+import pandas as pd
 from pandas import ArrowDtype, DataFrame, Index, Series
 from pandas import read_parquet as pd_read_parquet
 
@@ -393,13 +395,17 @@ def test_pandas_parquet_roundtrip2(test_dataset, tmpdir, request):
     assert_frame_equal(df, pq_df)
 
 
+@pytest.mark.parametrize("schema_version", [None, "1.0.0", "1.1.0", "2.0.0"])
 @pytest.mark.parametrize(
     "test_dataset", ["naturalearth_lowres", "naturalearth_cities", "nybb_filename"]
 )
-def test_roundtrip(tmpdir, file_format, test_dataset, request):
+def test_roundtrip(tmpdir, file_format, test_dataset, schema_version, request):
     """Writing to parquet should not raise errors, and should not alter original
     GeoDataFrame
     """
+    if schema_version == "2.0.0" and Version(pyarrow.__version__) < Version("21.0.0"):
+        pytest.skip("Writing GeoParquet 2.0 files requires pyarrow>=21.0")
+
     path = request.getfixturevalue(test_dataset)
     reader, writer = file_format
 
@@ -408,7 +414,7 @@ def test_roundtrip(tmpdir, file_format, test_dataset, request):
 
     filename = os.path.join(str(tmpdir), "test.pq")
 
-    writer(df, filename)
+    writer(df, filename, schema_version=schema_version)
 
     assert os.path.exists(filename)
 
@@ -931,6 +937,9 @@ def test_write_spec_version(tmpdir, format, schema_version):
     else:
         from pyarrow.parquet import read_table
 
+    if schema_version == "2.0.0" and Version(pyarrow.__version__) < Version("21.0.0"):
+        pytest.skip("Writing GeoParquet 2.0 files requires pyarrow>=21.0")
+
     filename = os.path.join(str(tmpdir), f"test.{format}")
     gdf = geopandas.GeoDataFrame(geometry=[box(0, 0, 10, 10)], crs="EPSG:4326")
     write = getattr(gdf, f"to_{format}")
@@ -1072,6 +1081,134 @@ def test_parquet_read_partitioned_dataset_fsspec(tmpdir, naturalearth_lowres):
 
     result = read_parquet("memory://partitioned_dataset")
     assert_geodataframe_equal(result, df)
+
+
+def test_parquet_read_partitioned_dataset_partitioning_none(
+    tmpdir, naturalearth_lowres
+):
+    # https://github.com/geopandas/geopandas/issues/3459
+    # passing partitioning=None should omit the hive partition columns, also
+    # when geopandas auto-detects the columns to read (triggered here by the
+    # presence of a bbox covering column)
+    df = read_file(naturalearth_lowres)
+
+    # manually create hive-partitioned dataset with a bbox covering column
+    basedir = tmpdir / "partitioned_dataset"
+    basedir.mkdir()
+    (basedir / "key=1").mkdir()
+    (basedir / "key=2").mkdir()
+    df[:100].to_parquet(basedir / "key=1" / "data.parquet", write_covering_bbox=True)
+    df[100:].to_parquet(basedir / "key=2" / "data.parquet", write_covering_bbox=True)
+
+    result = read_parquet(basedir, partitioning=None)
+    assert "key" not in result.columns
+    assert len(result) == len(df)
+
+
+@pytest.fixture
+def pyarrow_dataset_unavailable():
+    import pyarrow.dataset as ds
+
+    sys.modules["pyarrow.dataset"] = None
+    yield
+    sys.modules["pyarrow.dataset"] = ds
+
+
+def test_parquet_dataset_availability(
+    tmp_path, naturalearth_lowres, pyarrow_dataset_unavailable
+):
+    # basic roundtrip test (subset of test_roundtrip) to ensure basic files
+    # can be read if pyarrow.dataset is not available
+    df = read_file(naturalearth_lowres)
+    orig = df.copy()
+
+    filename = str(tmp_path / "test.parquet")
+
+    # Write to single file
+    df.to_parquet(filename)
+    assert os.path.exists(filename)
+    assert_geodataframe_equal(df, orig)
+
+    # Read from single file
+    pq_df = geopandas.read_parquet(filename)
+    assert_geodataframe_equal(pq_df, df)
+
+    pq_df = geopandas.read_parquet(filename, columns=["name", "geometry"])
+    assert_geodataframe_equal(pq_df, df[["name", "geometry"]])
+
+    # and with file-like object
+    buf = BytesIO()
+    df.to_parquet(buf)
+    buf.seek(0)
+    assert_geodataframe_equal(df, orig)
+
+    pq_df = geopandas.read_parquet(BytesIO(buf.getvalue()))
+    assert_geodataframe_equal(pq_df, df)
+
+
+def test_parquet_dataset_availability_partitioned(
+    tmpdir, naturalearth_lowres, pyarrow_dataset_unavailable
+):
+    # reading a directory is not supported in this case
+
+    # manually create partitioned dataset
+    df = read_file(naturalearth_lowres)
+    basedir = tmpdir / "partitioned_dataset"
+    basedir.mkdir()
+    df[:100].to_parquet(basedir / "data1.parquet")
+    df[100:].to_parquet(basedir / "data2.parquet")
+
+    with pytest.raises(Exception, match=r"is a directory|Failed to open local file"):
+        geopandas.read_parquet(str(basedir))
+
+
+def test_parquet_dataset_availability_filters(
+    tmpdir, naturalearth_lowres, pyarrow_dataset_unavailable
+):
+    # reading with filters is not supported in this case
+    df = read_file(naturalearth_lowres)
+    filename = os.path.join(str(tmpdir), "test.pq")
+    df.to_parquet(filename, write_covering_bbox=True)
+
+    with pytest.raises(ValueError, match="not supported"):
+        geopandas.read_parquet(filename, bbox=(0, 0, 1, 1))
+
+    with pytest.raises(ValueError, match="not supported"):
+        geopandas.read_parquet(filename, filters=[("gdp_md_est", ">", 20000)])
+
+
+@pytest.mark.parametrize(
+    "index",
+    [
+        pd.Index(["a", "b", "c"], name="named_index"),
+        pd.RangeIndex(1, 4, name="named_index"),
+    ],
+)
+def test_read_parquet_pandas_metadata(tmp_path, index):
+    gdf = GeoDataFrame(
+        {
+            "col1": pd.array([1, 2, 3], dtype="Int64"),
+            "col2": pd.period_range("2012-01-01", periods=3, freq="D"),
+        },
+        index=index,
+        geometry=geopandas.points_from_xy([1, 2, 3], [1, 2, 3]),
+        crs="EPSG:4326",
+    )
+    gdf.to_parquet(tmp_path / "test.parquet")
+
+    result = geopandas.read_parquet(tmp_path / "test.parquet")
+    # index and dtypes should be preserved
+    assert result.index.name == "named_index"
+    assert result["col1"].dtype == "Int64"
+    assert_geodataframe_equal(result, gdf)
+
+    # also when reading a subset of columns, the index gets preserved
+    result = geopandas.read_parquet(
+        tmp_path / "test.parquet", columns=["col1", "geometry"]
+    )
+    assert result.index.name == "named_index"
+    assert result["col1"].dtype == "Int64"
+    assert_geodataframe_equal(result, gdf[["col1", "geometry"]])
 
 
 @pytest.mark.parametrize(
@@ -1484,3 +1621,76 @@ def test_read_parquet_2_0_error_old_pyarrow():
     data_dir = DATA_PATH / "arrow" / "geoparquet"
     with pytest.raises(OSError, match=r"Reading GeoParquet 2\.0 files"):
         geopandas.read_parquet(data_dir / "2.0.0" / "data-point-encoding_wkb.parquet")
+
+
+@pytest.mark.skipif(
+    Version(pyarrow.__version__) < Version("21.0.0"),
+    reason="Writing GeoParquet 2.0 files requires pyarrow>=21.0",
+)
+@pytest.mark.parametrize("extension_type_registered", [False, True])
+def test_write_parquet_2_0(tmp_path, extension_type_registered):
+    if extension_type_registered:
+        context = with_geoarrow_extension_types
+    else:
+        context = contextlib.nullcontext
+
+    gdf = GeoDataFrame(
+        {"col": [1, 2, 3]},
+        geometry=geopandas.points_from_xy([1, 2, 3], [1, 2, 3]),
+        crs="EPSG:4326",
+    )
+    with context():
+        gdf.to_parquet(tmp_path / "test-2_0.parquet", schema_version="2.0.0")
+
+    meta = pq.read_metadata(tmp_path / "test-2_0.parquet")
+    metadata = json.loads(meta.metadata[b"geo"])
+    assert metadata["version"] == "2.0.0"
+
+    # verify the Parquet file is indeed using the Parquet logical types
+    geo_col = meta.schema.column(1)
+    assert geo_col.name == "geometry"
+    assert geo_col.physical_type == "BYTE_ARRAY"
+    assert str(geo_col.logical_type).startswith("Geometry")
+
+    # also verify the statistics were written by default
+    col_chunk = meta.row_group(0).column(1)
+    assert col_chunk.is_geo_stats_set
+    assert col_chunk.geo_statistics is not None
+
+
+@pytest.mark.skipif(
+    Version(pyarrow.__version__) >= Version("21.0.0"),
+    reason="Writing GeoParquet 2.0 files requires pyarrow>=21.0",
+)
+def test_write_parquet_2_0_old_pyarrow(tmp_path):
+    gdf = GeoDataFrame(
+        {"col": [1, 2, 3]},
+        geometry=geopandas.points_from_xy([1, 2, 3], [1, 2, 3]),
+        crs="EPSG:4326",
+    )
+    with pytest.raises(
+        ValueError,
+        match=re.escape("Writing GeoParquet 2.0 files requires pyarrow>=21.0"),
+    ):
+        gdf.to_parquet(tmp_path / "test-2_0.parquet", schema_version="2.0.0")
+
+
+@pytest.mark.filterwarnings("ignore:.*proxy.*:RuntimeWarning")
+@pytest.mark.skipif(
+    Version(pyarrow.__version__) < Version("21.0.0"),
+    reason="Writing GeoParquet 2.0 files requires pyarrow>=21.0",
+)
+def test_write_parquet_2_0_gdal_readable(tmp_path):
+    pyogrio = pytest.importorskip("pyogrio")
+    if "Parquet" not in pyogrio.list_drivers():
+        pytest.skip("Test needs pyogrio/GDAL with Parquet support")
+
+    gdf = GeoDataFrame(
+        {"col": [1, 2, 3]},
+        geometry=geopandas.points_from_xy([1, 2, 3], [1, 2, 3]),
+        crs="EPSG:4326",
+    )
+    gdf.to_parquet(tmp_path / "test-2_0.parquet", schema_version="2.0.0")
+
+    result = geopandas.read_file(tmp_path / "test-2_0.parquet")
+    assert_geodataframe_equal(result, gdf)
