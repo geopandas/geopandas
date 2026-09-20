@@ -42,6 +42,8 @@ New features and improvements:
 - `read_parquet` now support direct reading from HTTP/HTTPS protocols (#3699)
 - Document how to access the feature ID (`fid`) as the index when reading files
   with `read_file` and the pyogrio engine, using `fid_as_index=True` (#3829)
+- Added `geopandas.make_grid` and `GeoSeries.make_grid` to generate a square
+  or hexagonal grids covering the input geometry (#2062).
 
 Deprecations and compatibility notes:
 

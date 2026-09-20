@@ -15,6 +15,7 @@ from geopandas.tools import (
     overlay,
     clip,
     geocode,
+    make_grid,
     reverse_geocode,
 )
 from geopandas.tools._show_versions import show_versions
