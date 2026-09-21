@@ -30,6 +30,14 @@ from geopandas.tests.util import assert_geoseries_equal, geom_almost_equals, geo
 from numpy.testing import assert_array_equal
 from pandas.testing import assert_frame_equal, assert_index_equal, assert_series_equal
 
+try:
+    import scipy  # noqa: F401
+
+    HAS_SCIPY = True
+except ImportError:
+    HAS_SCIPY = False
+SCIPY_MARK = pytest.mark.skipif(not HAS_SCIPY, reason="scipy not installed")
+
 
 def assert_array_dtype_equal(a, b, *args, **kwargs):
     a = np.asanyarray(a)
@@ -888,6 +896,79 @@ class TestGeomMethods:
         assert_array_dtype_equal(
             expected, self.g12.frechet_distance(self.g13, densify=0.25)
         )
+
+    @SCIPY_MARK
+    def test_distance_matrix(self):
+        points = GeoSeries([Point(0, 0), Point(1, 0), Point(1, 1)])
+
+        expected = DataFrame(
+            [
+                [0.0, 1.0, np.sqrt(2)],
+                [1.0, 0.0, 1.0],
+                [np.sqrt(2), 1.0, 0.0],
+            ],
+            index=points.index,
+            columns=points.index,
+        )
+        assert_frame_equal(expected, points.distance_matrix())
+
+        other = GeoSeries([Point(0, 1)], index=[3])
+        expected = DataFrame(
+            [[1.0], [np.sqrt(2)], [1.0]], index=points.index, columns=other.index
+        )
+        assert_frame_equal(expected, points.distance_matrix(other))
+
+        # also usable on a GeoDataFrame, and against a GeoDataFrame
+        gdf = GeoDataFrame({"name": ["a", "b", "c"]}, geometry=points)
+        other_gdf = GeoDataFrame({"name": ["d"]}, geometry=other, index=other.index)
+        assert_frame_equal(expected, gdf.distance_matrix(other_gdf))
+
+    def test_distance_matrix_non_point_raises(self):
+        with pytest.raises(ValueError, match="Point geometries are required"):
+            self.g1.distance_matrix()
+
+        points = GeoSeries([Point(0, 0), Point(1, 0)])
+        with pytest.raises(ValueError, match="Point geometries are required"):
+            points.distance_matrix(self.g1)
+
+    def test_distance_matrix_other_type_raises(self):
+        points = GeoSeries([Point(0, 0), Point(1, 0)])
+        with pytest.raises(TypeError, match="must be a GeoSeries"):
+            points.distance_matrix([Point(0, 0)])
+
+    def test_distance_matrix_to_crs_bool_raises(self):
+        points = GeoSeries([Point(0, 0), Point(1, 0)], crs="EPSG:3857")
+        with pytest.raises(TypeError, match="'to_crs' must be a CRS-like value"):
+            points.distance_matrix(to_crs=True)
+
+    @SCIPY_MARK
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
+    def test_distance_matrix_crs_warning(self):
+        with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
+            self.landmarks.distance_matrix()
+
+        other = GeoSeries([self.pt2d], crs="EPSG:4326")
+        with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
+            other.distance_matrix(self.landmarks)
+
+    @SCIPY_MARK
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
+    def test_distance_matrix_to_crs(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", UserWarning)
+            result = self.landmarks.distance_matrix(to_crs="EPSG:32618")
+        expected = self.landmarks.to_crs("EPSG:32618").distance_matrix()
+        assert_frame_equal(expected, result)
+
+    @SCIPY_MARK
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
+    def test_distance_matrix_crs_mismatch_warning(self):
+        # both projected (rather than one geographic) so only the CRS
+        # mismatch warning fires, not also the geographic-CRS warning
+        points = GeoSeries([Point(0, 0), Point(1, 0)], crs="EPSG:3857")
+        other = GeoSeries([Point(0, 1)], crs="EPSG:32618")
+        with pytest.warns(UserWarning, match="CRS mismatch"):
+            points.distance_matrix(other)
 
     def test_intersects(self):
         expected = [True, True, True, True, True, False, False]
