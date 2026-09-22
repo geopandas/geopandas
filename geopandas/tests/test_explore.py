@@ -789,43 +789,35 @@ class TestExplore:
     def test_xyzservices_providers(self):
         xyzservices = pytest.importorskip("xyzservices")
 
-        m = self.nybb.explore(tiles=xyzservices.providers.CartoDB.PositronNoLabels)
+        m = self.nybb.explore(tiles=xyzservices.providers.OpenStreetMap.DE)
         out_str = self._fetch_map_string(m)
 
-        assert (
-            '"https://a.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png"'
-            in out_str
-        )
+        assert '"https://tile.openstreetmap.de/{z}/{x}/{y}.png"' in out_str
         assert (
             'attribution":"\\u0026copy;\\u003cahref=\\"https://www.openstreetmap.org'
             in out_str
         )
-        assert '"maxZoom":20' in out_str
+        assert '"maxZoom":18' in out_str
 
     @pytest.mark.skipif(not HAS_PYPROJ, reason="requires pyproj")
     def test_xyzservices_query_name(self):
         pytest.importorskip("xyzservices")
 
-        m = self.nybb.explore(tiles="CartoDB Positron No Labels")
+        m = self.nybb.explore(tiles="OpenStreetMap DE")
         out_str = self._fetch_map_string(m)
 
-        assert (
-            '"https://a.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png"'
-            in out_str
-        )
+        assert '"https://tile.openstreetmap.de/{z}/{x}/{y}.png"' in out_str
         assert (
             'attribution":"\\u0026copy;\\u003cahref=\\"https://www.openstreetmap.org'
             in out_str
         )
-        assert '"maxZoom":20' in out_str
+        assert '"maxZoom":18' in out_str
 
     @pytest.mark.skipif(not HAS_PYPROJ, reason="requires pyproj")
     def test_xyzservices_providers_min_zoom_override(self):
         xyzservices = pytest.importorskip("xyzservices")
 
-        m = self.nybb.explore(
-            tiles=xyzservices.providers.CartoDB.PositronNoLabels, min_zoom=3
-        )
+        m = self.nybb.explore(tiles=xyzservices.providers.OpenStreetMap.DE, min_zoom=3)
         out_str = self._fetch_map_string(m)
 
         assert '"minZoom":3' in out_str
@@ -834,9 +826,7 @@ class TestExplore:
     def test_xyzservices_providers_max_zoom_override(self):
         xyzservices = pytest.importorskip("xyzservices")
 
-        m = self.nybb.explore(
-            tiles=xyzservices.providers.CartoDB.PositronNoLabels, max_zoom=12
-        )
+        m = self.nybb.explore(tiles=xyzservices.providers.OpenStreetMap.DE, max_zoom=12)
         out_str = self._fetch_map_string(m)
 
         assert '"maxZoom":12' in out_str
@@ -846,7 +836,7 @@ class TestExplore:
         xyzservices = pytest.importorskip("xyzservices")
 
         m = self.nybb.explore(
-            tiles=xyzservices.providers.CartoDB.PositronNoLabels,
+            tiles=xyzservices.providers.OpenStreetMap.DE,
             min_zoom=3,
             max_zoom=12,
         )
