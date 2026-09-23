@@ -7,6 +7,7 @@ import sys
 from io import BytesIO
 from itertools import product
 from packaging.version import Version
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
@@ -1381,6 +1382,44 @@ def test_read_parquet_bbox_partitioned(
     ]
 
 
+@pytest.mark.skipif(
+    Version(pyarrow.__version__) < Version("21.0.0"),
+    reason="Writing GeoParquet 2.0 files requires pyarrow>=21.0",
+)
+@pytest.mark.parametrize("geometry_name", ["geometry", "custum_geom_col"])
+def test_read_parquet_bbox_partitioned_inconsistent_schema(
+    tmpdir, naturalearth_lowres, geometry_name
+):
+    # in the case of a GeoParquet 2.0 file with statistics, filtering a
+    # partitioned dataset should work fine if the geometry column is not the
+    # same index in the schema in each of the files
+    df = read_file(naturalearth_lowres)
+    if geometry_name != "geometry":
+        df = df.rename_geometry(geometry_name)
+
+    # manually create partitioned dataset
+    basedir = tmpdir / "partitioned_dataset"
+    basedir.mkdir()
+    df[:100].to_parquet(basedir / "data1.parquet", schema_version="2.0.0")
+    df[100:][["name", geometry_name]].to_parquet(
+        basedir / "data2.parquet", schema_version="2.0.0"
+    )
+
+    pq_df = read_parquet(basedir, bbox=(0, 0, 10, 10))
+
+    assert pq_df["name"].values.tolist() == [
+        "France",
+        "Benin",
+        "Nigeria",
+        "Cameroon",
+        "Togo",
+        "Ghana",
+        "Burkina Faso",
+        "Gabon",
+        "Eq. Guinea",
+    ]
+
+
 @bbox_write_kwargs
 @pytest.mark.parametrize(
     "geometry, bbox",
@@ -1565,6 +1604,29 @@ def test_read_parquet_bbox_points(tmp_path):
     assert len(result) == 10
     result = geopandas.read_parquet(tmp_path / "test.parquet", bbox=(3, 3, 5, 5))
     assert len(result) == 3
+
+
+@pytest.mark.skipif(
+    Version(pyarrow.__version__) < Version("21.0.0"),
+    reason="Writing GeoParquet 2.0 files requires pyarrow>=21.0",
+)
+@patch("geopandas.io.arrow._bbox_intersects")
+def test_read_parquet_bbox_column_and_statistics(bbox_intersects, tmp_path):
+    # if a GeoParquet file has both a bbox column and geospatial statistics,
+    # reading the file with a bbox filter should work fine, but we prefer
+    # using the bbox column (slighty more efficient)
+    df = geopandas.GeoDataFrame(
+        {"col": range(10)}, geometry=[Point(i, i) for i in range(10)]
+    )
+    df.to_parquet(
+        tmp_path / "test.parquet", write_covering_bbox=True, schema_version="2.0.0"
+    )
+
+    result = geopandas.read_parquet(tmp_path / "test.parquet", bbox=(3, 3, 5, 5))
+    assert len(result) == 3
+
+    # filtering manually based on the statistics would use the _bbox_intersects function
+    bbox_intersects.assert_not_called()
 
 
 def test_non_geo_parquet_read_with_proper_error(tmp_path):
