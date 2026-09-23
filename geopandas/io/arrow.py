@@ -864,8 +864,10 @@ def _read_parquet(
         the ``filesystem`` keyword if you wish to use its implementation.
     bbox : tuple, optional
         Bounding box to be used to filter selection from geoparquet data. This
-        is only usable if the data was saved with the bbox covering metadata.
-        Input is of the tuple format (xmin, ymin, xmax, ymax).
+        is only usable if the data was saved with the bbox covering metadata
+        or with GeoParquet >= 2.0 files.
+        Input is of the tuple format (xmin, ymin, xmax, ymax). Filtering on Z
+        or M coordinates is not supported.
     to_pandas_kwargs : dict, optional
         Arguments passed to the `pa.Table.to_pandas` method for non-geometry columns.
         This can be used to control the behavior of the conversion of the non-geometry
@@ -956,9 +958,8 @@ def _read_parquet(
         if bbox is not None and bbox_filter is None:
             # if bbox is specified, but the dataset does not have a bbox column,
             # we need to filter the row groups manually.
-            ds = import_optional_dependency(
-                "pyarrow.dataset", extra="pyarrow is required for Parquet support."
-            )
+            import pyarrow.dataset as ds
+
             geometry = geo_metadata["primary_column"]
 
             filtered_fragments = []
