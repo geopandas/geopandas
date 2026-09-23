@@ -1299,7 +1299,7 @@ def test_to_parquet_bbox_values(tmpdir, geometry, expected_bbox):
 
 
 bbox_write_kwargs = pytest.mark.parametrize(
-    "write_kargs",
+    "write_kwargs",
     [
         {"write_covering_bbox": True, "schema_version": "1.1.0"},
         pytest.param(
@@ -1314,11 +1314,11 @@ bbox_write_kwargs = pytest.mark.parametrize(
 
 
 @bbox_write_kwargs
-def test_read_parquet_bbox_single_point(tmpdir, write_kargs):
+def test_read_parquet_bbox_single_point(tmpdir, write_kwargs):
     # confirm that on a single point, bbox will pick it up.
     df = GeoDataFrame(data=[[1, 2]], columns=["a", "b"], geometry=[Point(1, 1)])
     filename = os.path.join(str(tmpdir), "test.pq")
-    df.to_parquet(filename, **write_kargs)
+    df.to_parquet(filename, **write_kwargs)
     pq_df = read_parquet(filename, bbox=(1, 1, 1, 1))
     assert len(pq_df) == 1
     assert pq_df.geometry[0] == Point(1, 1)
@@ -1326,14 +1326,14 @@ def test_read_parquet_bbox_single_point(tmpdir, write_kargs):
 
 @bbox_write_kwargs
 @pytest.mark.parametrize("geometry_name", ["geometry", "custum_geom_col"])
-def test_read_parquet_bbox(tmpdir, naturalearth_lowres, geometry_name, write_kargs):
+def test_read_parquet_bbox(tmpdir, naturalearth_lowres, geometry_name, write_kwargs):
     # check bbox is being used to filter results.
     df = read_file(naturalearth_lowres)
     if geometry_name != "geometry":
         df = df.rename_geometry(geometry_name)
 
     filename = os.path.join(str(tmpdir), "test.pq")
-    df.to_parquet(filename, **write_kargs)
+    df.to_parquet(filename, **write_kwargs)
 
     pq_df = read_parquet(filename, bbox=(0, 0, 10, 10))
 
@@ -1353,7 +1353,7 @@ def test_read_parquet_bbox(tmpdir, naturalearth_lowres, geometry_name, write_kar
 @bbox_write_kwargs
 @pytest.mark.parametrize("geometry_name", ["geometry", "custum_geom_col"])
 def test_read_parquet_bbox_partitioned(
-    tmpdir, naturalearth_lowres, geometry_name, write_kargs
+    tmpdir, naturalearth_lowres, geometry_name, write_kwargs
 ):
     # check bbox is being used to filter results on partitioned data.
     df = read_file(naturalearth_lowres)
@@ -1363,8 +1363,8 @@ def test_read_parquet_bbox_partitioned(
     # manually create partitioned dataset
     basedir = tmpdir / "partitioned_dataset"
     basedir.mkdir()
-    df[:100].to_parquet(basedir / "data1.parquet", **write_kargs)
-    df[100:].to_parquet(basedir / "data2.parquet", **write_kargs)
+    df[:100].to_parquet(basedir / "data1.parquet", **write_kwargs)
+    df[100:].to_parquet(basedir / "data2.parquet", **write_kwargs)
 
     pq_df = read_parquet(basedir, bbox=(0, 0, 10, 10))
 
@@ -1396,11 +1396,11 @@ def test_read_parquet_bbox_partitioned(
     ],
 )
 def test_read_parquet_bbox_partial_overlap_of_geometry(
-    tmpdir, geometry, bbox, write_kargs
+    tmpdir, geometry, bbox, write_kwargs
 ):
     df = GeoDataFrame(data=[[1, 2]], columns=["a", "b"], geometry=[geometry])
     filename = os.path.join(str(tmpdir), "test.pq")
-    df.to_parquet(filename, **write_kargs)
+    df.to_parquet(filename, **write_kwargs)
 
     pq_df = read_parquet(filename, bbox=bbox)
     assert len(pq_df) == 1
@@ -1468,11 +1468,11 @@ def test_read_parquet_bbox_column_default_behaviour(tmpdir, naturalearth_lowres)
     ],
 )
 def test_read_parquet_filters_and_bbox(
-    tmpdir, naturalearth_lowres, filters, write_kargs
+    tmpdir, naturalearth_lowres, filters, write_kwargs
 ):
     df = read_file(naturalearth_lowres)
     filename = os.path.join(str(tmpdir), "test.pq")
-    df.to_parquet(filename, **write_kargs)
+    df.to_parquet(filename, **write_kwargs)
 
     result = read_parquet(filename, filters=filters, bbox=(0, 0, 20, 20))
     assert result["name"].values.tolist() == [
@@ -1495,11 +1495,11 @@ def test_read_parquet_filters_and_bbox(
     ],
 )
 def test_read_parquet_filters_without_bbox(
-    tmpdir, naturalearth_lowres, filters, write_kargs
+    tmpdir, naturalearth_lowres, filters, write_kwargs
 ):
     df = read_file(naturalearth_lowres)
     filename = os.path.join(str(tmpdir), "test.pq")
-    df.to_parquet(filename, **write_kargs)
+    df.to_parquet(filename, **write_kwargs)
 
     result = read_parquet(filename, filters=filters)
     assert result["name"].values.tolist() == ["Burkina Faso", "Mozambique", "Albania"]
