@@ -553,11 +553,12 @@ def all_arithmetic_operators(request):
     return request.param
 
 
-# an inherited test from pandas creates a Series from a list of geometries, which
-# triggers the warning from Shapely, out of control of GeoPandas, so ignoring here
-@pytest.mark.filterwarnings(
-    "ignore:The array interface is deprecated and will no longer work in Shapely 2.0"
-)
+@pytest.fixture
+def using_python_scalars() -> bool:
+    """Fixture from pandas conftest re-exposed here"""
+    return pd.options.future.python_scalars is True
+
+
 class TestArithmeticOps(extension_tests.BaseArithmeticOpsTests):
     @pytest.mark.skip(reason="not applicable")
     def test_divmod_series_array(self, data, data_for_twos):
@@ -568,11 +569,6 @@ class TestArithmeticOps(extension_tests.BaseArithmeticOpsTests):
         pass
 
 
-# an inherited test from pandas creates a Series from a list of geometries, which
-# triggers the warning from Shapely, out of control of GeoPandas, so ignoring here
-@pytest.mark.filterwarnings(
-    "ignore:The array interface is deprecated and will no longer work in Shapely 2.0"
-)
 class TestComparisonOps(extension_tests.BaseComparisonOpsTests):
     def _compare_other(self, s, data, op_name, other):
         op = getattr(operator, op_name.strip("_"))
