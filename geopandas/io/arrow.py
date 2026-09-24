@@ -864,8 +864,10 @@ def _read_parquet(
         the ``filesystem`` keyword if you wish to use its implementation.
     bbox : tuple, optional
         Bounding box to be used to filter selection from geoparquet data. This
-        is only usable if the data was saved with the bbox covering metadata.
-        Input is of the tuple format (xmin, ymin, xmax, ymax).
+        is only usable if the data was saved with the bbox covering metadata
+        or with GeoParquet >= 2.0 files.
+        Input is of the tuple format (xmin, ymin, xmax, ymax). Filtering on Z
+        or M coordinates is not supported.
     to_pandas_kwargs : dict, optional
         Arguments passed to the `pa.Table.to_pandas` method for non-geometry columns.
         This can be used to control the behavior of the conversion of the non-geometry
@@ -951,7 +953,38 @@ def _read_parquet(
     if isinstance(dataset, parquet.ParquetFile):
         table = dataset.read(columns=columns, use_threads=use_threads)
     else:
-        table = dataset._dataset.to_table(
+        dsdataset = dataset._dataset
+
+        if bbox is not None and bbox_filter is None:
+            # if bbox is specified, but the dataset does not have a bbox column,
+            # we need to filter the row groups manually.
+            import pyarrow.dataset as ds
+
+            geometry = geo_metadata["primary_column"]
+
+            filtered_fragments = []
+            for fragment in dataset.fragments:
+                geometry_idx = fragment.metadata.schema.names.index(geometry)
+                row_group_ids = [
+                    rg.id
+                    for rg in fragment.row_groups
+                    if _bbox_intersects(
+                        rg.metadata.column(geometry_idx).geo_statistics, bbox
+                    )
+                ]
+                fragment_filtered = fragment.subset(row_group_ids=row_group_ids)
+
+                filtered_fragments.append(fragment_filtered)
+
+            dsdataset = ds.FileSystemDataset(
+                filtered_fragments,
+                dsdataset.schema,
+                dsdataset.format,
+                filesystem=dsdataset.filesystem,
+                root_partition=dsdataset.partition_expression,
+            )
+
+        table = dsdataset.to_table(
             columns=columns, filter=filters, use_threads=use_threads
         )
 
@@ -963,7 +996,23 @@ def _read_parquet(
     else:
         df_attrs = None
 
-    return _arrow_to_geopandas(table, geo_metadata, to_pandas_kwargs, df_attrs)
+    result = _arrow_to_geopandas(table, geo_metadata, to_pandas_kwargs, df_attrs)
+
+    if bbox is not None and bbox_filter is None:
+        # post-filtering step: manual filtering above only filtered up to the row group
+        # level -> further filter at the row level to give consistent behaviour
+        bbox_bounds = result.bounds
+        result_bbox = shapely.box(
+            bbox_bounds["minx"],
+            bbox_bounds["miny"],
+            bbox_bounds["maxx"],
+            bbox_bounds["maxy"],
+        )
+        result = result[
+            shapely.intersects(result_bbox, shapely.box(*bbox))
+        ].reset_index(drop=True)
+
+    return result
 
 
 def _read_feather(path, columns=None, to_pandas_kwargs=None, **kwargs):
@@ -1055,10 +1104,15 @@ def _get_parquet_bbox_filter(geo_metadata, bbox):
             & (pc.field((primary_column, "y")) <= bbox[3])
         )
 
+    elif geo_metadata["version"] == "2.0.0":
+        # this case gets handled later manually
+        return None
+
     else:
         raise ValueError(
             "Specifying 'bbox' not supported for this Parquet file (it should either "
-            "have a bbox covering column or use 'point' encoding)."
+            "have a bbox covering column, use 'point' encoding, or use GeoParquet 2.0 "
+            "logical geometry types)."
         )
 
 
@@ -1089,3 +1143,19 @@ def _get_non_bbox_columns(schema, geo_metadata):
     if bbox_column_name in columns:
         columns.remove(bbox_column_name)
     return columns
+
+
+def _bbox_intersects(geo_stats, bbox):
+    stats_xmin, stats_ymin, stats_xmax, stats_ymax = (
+        geo_stats.xmin,
+        geo_stats.ymin,
+        geo_stats.xmax,
+        geo_stats.ymax,
+    )
+    xmin, ymin, xmax, ymax = bbox
+    return (
+        (stats_xmin <= xmax)
+        and (stats_xmax >= xmin)
+        and (stats_ymin <= ymax)
+        and (stats_ymax >= ymin)
+    )
