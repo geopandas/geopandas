@@ -176,7 +176,9 @@ class GeoPandasBase:
         -----
         Area may be invalid for a geographic CRS using degrees as units;
         use :meth:`GeoSeries.to_crs` to project geometries to a planar
-        CRS before using this function.
+        CRS before using this function, or set
+        ``geopandas.options.geodesic_calculation = True`` to compute the
+        geodesic area (in square meters) on the ellipsoid of the geographic CRS.
 
         Every operation in GeoPandas is planar, i.e. the potential third
         dimension is not taken into account.
@@ -249,8 +251,9 @@ class GeoPandasBase:
         """Return a ``Series`` containing the length of each geometry
         expressed in the units of the CRS.
 
-        In the case of a (Multi)Polygon it measures the length
-        of its exterior (i.e. perimeter).
+        In the case of a (Multi)Polygon it measures the length of its
+        boundary, i.e. the perimeter of its exterior and of its interior
+        rings (holes).
 
         Examples
         --------
@@ -293,7 +296,9 @@ GeometryCollection
         -----
         Length may be invalid for a geographic CRS using degrees as units;
         use :meth:`GeoSeries.to_crs` to project geometries to a planar
-        CRS before using this function.
+        CRS before using this function, or set
+        ``geopandas.options.geodesic_calculation = True`` to compute the
+        geodesic length (in meters) on the ellipsoid of the geographic CRS.
 
         Every operation in GeoPandas is planar, i.e. the potential third
         dimension is not taken into account.

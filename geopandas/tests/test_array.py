@@ -512,6 +512,26 @@ def test_unary_float(attr):
     np.testing.assert_allclose(result, expected)
 
 
+@pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not installed")
+@pytest.mark.parametrize("attr", ["area", "length"])
+def test_geodesic_unary_float(attr, monkeypatch):
+    monkeypatch.setattr(geopandas.options, "geodesic_calculation", True)
+    for arr, geoms in ((T, triangles), (P, points)):
+        arr = arr.copy()
+        arr.crs = 4326
+        result = getattr(arr, attr)
+        assert isinstance(result, np.ndarray)
+        assert result.dtype == np.dtype("float64")
+        assert result.shape == (len(arr),)
+        missing = np.array([g is None for g in geoms])
+        np.testing.assert_array_equal(np.isnan(result), missing)
+        assert (result[~missing] >= 0).all()
+
+    result = getattr(from_shapely([], crs=4326), attr)
+    assert result.dtype == np.dtype("float64")
+    assert len(result) == 0
+
+
 def test_geom_types():
     cat = T.geom_type
     # empty polygon has GeometryCollection type
