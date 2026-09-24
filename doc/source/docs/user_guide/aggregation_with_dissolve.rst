@@ -8,7 +8,7 @@
 
 
 Aggregation with dissolve
-=============================
+=========================
 
 Spatial data are often more granular than needed. For example, you might have data on sub-national units, but you're actually interested in studying patterns at the level of countries.
 
@@ -16,7 +16,7 @@ In a non-spatial setting, when you need summary statistics of the data, you can 
 
 :meth:`~geopandas.GeoDataFrame.dissolve` can be thought of as doing three things:
 
-(a) it dissolves all the geometries within a given group together into a single geometric feature (using the :meth:`~geopandas.GeoSeries.union_all` method), and
+(a) it combines all the geometries within a given group together into a single geometric feature, and
 (b) it aggregates all the rows of data in a group using :ref:`groupby.aggregate <groupby.aggregate>`, and
 (c) it combines those two results.
 
@@ -71,8 +71,8 @@ If you are interested in aggregate populations, however, you can pass different 
 .. toctree::
    :maxdepth: 2
 
-Dissolve arguments
-~~~~~~~~~~~~~~~~~~
+Attribute aggregation
+~~~~~~~~~~~~~~~~~~~~~
 
 The ``aggfunc =`` argument defaults to 'first' which means that the first row of attributes values found in the dissolve routine will be assigned to the resultant dissolved geodataframe.
 However it also accepts other summary statistic options as allowed by :meth:`pandas.groupby <pandas.DataFrame.groupby>` including:
@@ -104,3 +104,26 @@ and the ``'pop_est'`` column using ``'min'`` and ``'max'``:
         },
     )
    zones.head()
+
+
+Geometry aggregation
+~~~~~~~~~~~~~~~~~~~~
+
+Geometries within a group can be combined using different methods, which can be specified in ``method`` keyword. The current options are:
+
+* ``"unary"``: use the unary union algorithm. This option is the most robust
+  but can be slow for large numbers of geometries (default).
+* ``"coverage"``: use the coverage union algorithm. This option is optimized
+  for non-overlapping polygons and can be significantly faster than the
+  unary union algorithm. However, it can produce invalid geometries if the
+  polygons overlap.
+* ``"disjoint_subset``: use the disjoint subset union algorithm. This
+  option is optimized for inputs that can be divided into subsets that do
+  not intersect. If there is only one such subset, performance can be
+  expected to be worse than ``"unary"``.  Requires Shapely >= 2.1.
+* ``"collect"``: collect geometries to a multi-part geometry without
+  performing union. Heterogeneous geometry types will be collected to a
+  GeometryCollection.
+
+The first three options are methods of :meth:`~geopandas.GeoSeries.union_all`, the last
+is a custom internal function similar to `ST_Collect <https://postgis.net/docs/ST_Collect.html>`__ in PostGIS.
