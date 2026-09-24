@@ -83,3 +83,4 @@ doc/test_pyogrio.gpkg
 *.egg-info
 pixi.toml
 pixi.lock
+.venv/
