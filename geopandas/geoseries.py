@@ -814,6 +814,16 @@ class GeoSeries(GeoPandasBase, Series):
                 result.set_crs(self.crs, inplace=True)
         return result
 
+    @doc(pd.Series)
+    def map(self, *args, **kwargs):
+        # signature is passed through, as the name of the first parameter
+        # differs between pandas versions ("arg" vs "func")
+        result = super().map(*args, **kwargs)
+        if isinstance(result, GeoSeries):
+            if self.crs is not None:
+                result.set_crs(self.crs, inplace=True)
+        return result
+
     def isna(self) -> Series:
         """
         Detect missing values.
