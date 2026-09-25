@@ -380,7 +380,8 @@ def test_crs_mismatch(dfs, how):
     df1.crs = 4326
     df2.crs = 3857
     with pytest.warns(UserWarning, match="CRS mismatch between the CRS"):
-        overlay(df1, df2, how=how)
+        result = overlay(df1, df2, how=how)
+    assert result.crs == df1.crs
 
 
 def test_empty_intersection(dfs):
