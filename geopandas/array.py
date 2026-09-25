@@ -139,7 +139,7 @@ def _crs_mismatch_warn(
     )
 
 
-def isna(value: None | float | pd.NA) -> bool:
+def isna(value: None | float | pd.api.typing.NAType | pd.api.typing.NaTType) -> bool:
     """
     Check if scalar value is NA-like (None, np.nan or pd.NA).
 
@@ -151,6 +151,8 @@ def isna(value: None | float | pd.NA) -> bool:
     elif isinstance(value, float) and np.isnan(value):
         return True
     elif value is pd.NA:
+        return True
+    elif value is pd.NaT:
         return True
     else:
         return False
@@ -1920,12 +1922,29 @@ class GeometryArray(ExtensionArray):
         if len(lvalues) != len(rvalues):
             raise ValueError("Lengths must match to compare")
 
-        # If the operator is not defined for the underlying objects,
-        # a TypeError should be raised
-        res = [op(a, b) for (a, b) in zip(lvalues, rvalues)]
+        if not np.all(shapely.is_valid_input(other)):
+            # In case of non-geometry objects, we fallback
+            # to Python's `for` loop.
 
-        res = np.asarray(res, dtype=bool)
-        return res
+            # If the operator is not defined for the underlying objects,
+            # a TypeError should be raised
+            res = [op(a, b) for (a, b) in zip(lvalues, rvalues)]
+            res = np.asarray(res, dtype=bool)
+            return res
+
+        none_mask = np.logical_and((self._data == None), (np.array(other) == None))  # noqa: E711
+        match op:
+            case operator.eq:
+                # shapely.equals_identical() considers [None] and [None] as False.
+                # Hence, np.logical_or() is applied on shapely.equals_identical()
+                # and none_mask.
+                return np.logical_or(
+                    shapely.equals_identical(lvalues, rvalues), none_mask
+                )
+            case operator.ne:
+                return ~np.logical_or(
+                    shapely.equals_identical(lvalues, rvalues), none_mask
+                )
 
     def __eq__(self, other):
         return self._binop(other, operator.eq)

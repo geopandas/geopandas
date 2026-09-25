@@ -7,7 +7,7 @@ dependencies:
     - pyogrio>=0.7.2
     - pandas>=2.0
     - pyproj>=3.5.0
-    - shapely>=2.0.0
+    - shapely>=2.1.0
     - packaging
 
     # testing
