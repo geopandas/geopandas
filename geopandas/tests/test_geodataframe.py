@@ -2,6 +2,7 @@ import json
 import os
 import re
 import shutil
+import struct
 import tempfile
 from enum import Enum
 
@@ -1043,32 +1044,62 @@ class TestDataFrame:
         assert self.df.estimate_utm_crs("NAD83") == pyproj.CRS("EPSG:26918")
 
     def test_to_wkb(self):
+        def point_wkb(x, y, byte_order):
+            # endianness-independent WKB serialization of POINT (x y)
+            return struct.pack(
+                "<bidd" if byte_order == 1 else ">bidd", byte_order, 1, x, y
+            )
+
         wkbs0 = [
-            (  # POINT (0 0)
-                b"\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-                b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-            ),
-            (  # POINT (1 1)
-                b"\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00"
-                b"\x00\xf0?\x00\x00\x00\x00\x00\x00\xf0?"
-            ),
+            point_wkb(0, 0, byte_order=1),  # POINT (0 0)
+            point_wkb(1, 1, byte_order=1),  # POINT (1 1)
         ]
         wkbs1 = [
-            (  # POINT (2 2)
-                b"\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00"
-                b"\x00\x00@\x00\x00\x00\x00\x00\x00\x00@"
-            ),
-            (  # POINT (3 3)
-                b"\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00"
-                b"\x00\x08@\x00\x00\x00\x00\x00\x00\x08@"
-            ),
+            point_wkb(2, 2, byte_order=1),  # POINT (2 2)
+            point_wkb(3, 3, byte_order=1),  # POINT (3 3)
         ]
         gs0 = GeoSeries.from_wkb(wkbs0)
         gs1 = GeoSeries.from_wkb(wkbs1)
         gdf = GeoDataFrame({"geom_col0": gs0, "geom_col1": gs1})
 
         expected_df = pd.DataFrame({"geom_col0": wkbs0, "geom_col1": wkbs1})
-        assert_frame_equal(expected_df, gdf.to_wkb())
+        # the default output uses the native byte order of the machine, which
+        # is little-endian on most platforms but not on all (e.g. s390x);
+        # explicitly request little-endian so the comparison is portable (#3866)
+        assert_frame_equal(expected_df, gdf.to_wkb(byte_order=1))
+        # requesting big-endian output is verified against an independently
+        # constructed reference, not against the little-endian bytes
+        expected_be_df = pd.DataFrame(
+            {
+                "geom_col0": [
+                    point_wkb(0, 0, byte_order=0),
+                    point_wkb(1, 1, byte_order=0),
+                ],
+                "geom_col1": [
+                    point_wkb(2, 2, byte_order=0),
+                    point_wkb(3, 3, byte_order=0),
+                ],
+            }
+        )
+        assert_frame_equal(expected_be_df, gdf.to_wkb(byte_order=0))
+
+        # hex output round-trips regardless of the requested byte order
+        for byte_order in (0, 1):
+            hex_df = gdf.to_wkb(hex=True, byte_order=byte_order)
+            round_tripped = GeoDataFrame(
+                {
+                    col: GeoSeries.from_wkb(
+                        [
+                            bytes.fromhex(v.decode() if isinstance(v, bytes) else v)
+                            for v in hex_df[col]
+                        ]
+                    )
+                    for col in hex_df.columns
+                }
+            )
+            assert_geodataframe_equal(
+                round_tripped, gdf, check_dtype=False, check_crs=False
+            )
 
     def test_to_wkt(self):
         wkts0 = ["POINT (0 0)", "POINT (1 1)"]
