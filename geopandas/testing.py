@@ -8,24 +8,6 @@ from geopandas import GeoDataFrame, GeoSeries
 from geopandas.array import GeometryDtype
 
 
-def _isna(this):
-    """Version of isna that works for both scalars and (Geo)Series."""
-    with warnings.catch_warnings():
-        # GeoSeries.isna will raise a warning about no longer returning True
-        # for empty geometries. This helper is used below always in combination
-        # with an is_empty check to preserve behaviour, and thus we ignore the
-        # warning here to avoid it bubbling up to the user
-        warnings.filterwarnings(
-            "ignore", r"GeoSeries.isna\(\) previously returned", UserWarning
-        )
-        if hasattr(this, "isna"):
-            return this.isna()
-        elif hasattr(this, "isnull"):
-            return this.isnull()
-        else:
-            return pd.isnull(this)
-
-
 def _geom_equals_mask(this, that):
     """
     Test for geometric equality. Empty or missing geometries are considered
@@ -44,7 +26,7 @@ def _geom_equals_mask(this, that):
     return (
         this.geom_equals(that)
         | (this.is_empty & that.is_empty)
-        | (_isna(this) & _isna(that))
+        | (pd.isna(this) & pd.isna(that))
     )
 
 
@@ -86,7 +68,7 @@ def _geom_almost_equals_mask(this, that):
     return (
         this.geom_equals_exact(that, tolerance=0.5 * 10 ** (-6))
         | (this.is_empty & that.is_empty)
-        | (_isna(this) & _isna(that))
+        | (pd.isna(this) & pd.isna(that))
     )
 
 
