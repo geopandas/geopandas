@@ -117,9 +117,8 @@ def _find_stack_level() -> int:
     n = 0
     while frame is not None:
         fname = frame.f_code.co_filename
-        if not fname.startswith(pkg_dir):
-            break
-        if f"{os.sep}tests{os.sep}" in fname.removeprefix(pkg_dir):
+        in_package = fname.startswith(pkg_dir)
+        if not in_package or f"{os.sep}tests{os.sep}" in fname.removeprefix(pkg_dir):
             break
         frame = frame.f_back
         n += 1
