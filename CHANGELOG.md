@@ -68,6 +68,9 @@ Bug fixes:
 - Fix `GeoDataFrame.from_features` raising a `ValueError` for an empty list of
   features when a `crs` is provided; it now returns an empty `GeoDataFrame` with
   a `geometry` column (#3777).
+- Fix the index level of the parts created by `explode(index_parts=True)` and
+  `get_coordinates(index_parts=True)` being `int32` instead of `int64` on 32-bit
+  platforms (#3865).
 
 
 Community:
