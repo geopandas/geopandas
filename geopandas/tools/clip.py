@@ -191,7 +191,7 @@ def clip(gdf, mask, keep_geom_type=False, sort=False):
 
     if isinstance(mask, GeoDataFrame | GeoSeries):
         if not _check_crs(gdf, mask):
-            _crs_mismatch_warn(gdf, mask, stacklevel=3)
+            _crs_mismatch_warn(gdf, mask)
 
     if isinstance(mask, GeoDataFrame | GeoSeries):
         box_mask = mask.total_bounds
