@@ -553,12 +553,6 @@ def all_arithmetic_operators(request):
     return request.param
 
 
-@pytest.fixture
-def using_python_scalars() -> bool:
-    """Fixture from pandas conftest re-exposed here"""
-    return pd.options.future.python_scalars is True
-
-
 class TestArithmeticOps(extension_tests.BaseArithmeticOpsTests):
     @pytest.mark.skip(reason="not applicable")
     def test_divmod_series_array(self, data, data_for_twos):
