@@ -44,6 +44,8 @@ New features and improvements:
   with `read_file` and the pyogrio engine, using `fid_as_index=True` (#3829)
 - Added `geopandas.read_file_info` to expose information about file layers, including layer
   metadata (this is an alias for `pyogrio.read_info`) (#3759)
+- Added `geopandas.make_grid` and `GeoSeries.make_grid` to generate a square
+  or hexagonal grids covering the input geometry (#2062).
 
 Deprecations and compatibility notes:
 

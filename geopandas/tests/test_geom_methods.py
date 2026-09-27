@@ -2702,3 +2702,10 @@ class TestGeomMethods:
             crs=4326,
         )
         assert_series_equal(expected, self.g14.get_geometry([0, 1, 1, -1, 0]))
+
+    def test_make_grid(self):
+        # test make_grid exposed as a method, otherwise in test_make_grid.py
+        expected = GeoSeries([Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])])
+
+        assert_geoseries_equal(self.g1.make_grid(1), expected)
+        assert_geoseries_equal(self.gdf1.make_grid(1), expected)

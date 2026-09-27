@@ -113,6 +113,7 @@ Constructive methods and attributes
    GeoSeries.extract_unique_points
    GeoSeries.force_2d
    GeoSeries.force_3d
+   GeoSeries.make_grid
    GeoSeries.make_valid
    GeoSeries.minimum_bounding_circle
    GeoSeries.maximum_inscribed_circle

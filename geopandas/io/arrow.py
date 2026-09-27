@@ -716,24 +716,43 @@ def _validate_and_decode_metadata(metadata):
     return decoded_geo_metadata
 
 
-def _read_parquet_schema_and_metadata(path, filesystem, partitioning="hive"):
-    """Open the Parquet file/dataset a first time to get the schema and metadata.
+def _open_parquet_dataset(path, filesystem, kwargs, bbox):
+    """Open the Parquet file/dataset and get the schema and metadata.
 
-    TODO: we should look into how we can reuse opened dataset for reading the
-    actual data, to avoid discovering the dataset twice (problem right now is
-    that the ParquetDataset interface doesn't allow passing the filters on read)
+    This has a fallback ParquetFile in case pyarrow.dataset is not available,
+    mimicking the logic of pyarrow.parquet.read_table().
 
+    TODO: unless pyarrow.parquet starts to provide more of this functionality
+    out of the box, we should deprecate the fallback here (indicating in the
+    warning / error that you should ensure to have pyarrow.dataset available)
     """
     import pyarrow
     from pyarrow import parquet
 
     try:
         try:
-            schema = parquet.ParquetDataset(
-                path, filesystem=filesystem, partitioning=partitioning
-            ).schema
-        except Exception:
-            schema = parquet.read_schema(path, filesystem=filesystem)
+            dataset = parquet.ParquetDataset(path, filesystem=filesystem, **kwargs)
+            schema = dataset.schema
+        except ImportError:
+            # the above can fail if pyarrow.dataset submodule is not available
+            if kwargs.get("filters") is not None:
+                raise ValueError(
+                    "the 'filters' keyword is not supported when the "
+                    "pyarrow.dataset module is not available"
+                )
+            if bbox is not None:
+                raise ValueError(
+                    "the 'bbox' keyword is not supported when the "
+                    "pyarrow.dataset module is not available"
+                )
+
+            if filesystem is not None:
+                pa_filesystem = _ensure_arrow_fs(filesystem)
+                source = pa_filesystem.open_input_file(path)
+            else:
+                source = path
+            dataset = parquet.ParquetFile(source, **kwargs)
+            schema = dataset.schema_arrow
     except OSError as exc:
         if "Thrift LogicalType that is not recognized" in str(exc):
             raise OSError(
@@ -743,18 +762,51 @@ def _read_parquet_schema_and_metadata(path, filesystem, partitioning="hive"):
             ) from exc
         raise
 
-    metadata = schema.metadata
+    metadata = schema.metadata or {}
 
     # read metadata separately to get the raw Parquet FileMetaData metadata
     # (pyarrow doesn't properly exposes those in schema.metadata for files
     # created by GDAL - https://issues.apache.org/jira/browse/ARROW-16688)
-    if metadata is None or b"geo" not in metadata:
+    if b"geo" not in metadata:
         try:
             metadata = parquet.read_metadata(path, filesystem=filesystem).metadata
         except Exception:
             pass
 
-    return schema, metadata
+    return dataset, schema, metadata
+
+
+def _add_index_columns_from_pandas_metadata(columns, metadata):
+    """
+    When a user specifies a subset of columns to read, we by default still
+    include the index columns in the read as well to be able to restore the
+    index.
+
+    Adapted from pyarrow.parquet.core.ParquetDataset.read()
+    """
+    if metadata and b"pandas" in metadata:
+        pandas_metadata = _decode_metadata(metadata[b"pandas"])
+
+        # RangeIndex can be represented as dict instead of column name
+        index_columns = [
+            col for col in pandas_metadata["index_columns"] if not isinstance(col, dict)
+        ]
+        columns = list(columns) + list(set(index_columns) - set(columns))
+    return columns
+
+
+def _restore_pandas_metadata(table, metadata):
+    """
+    If use_pandas_metadata, restore the pandas metadata (which gets
+    lost if doing a specific `columns` selection in to_table).
+
+    Adapted from pyarrow.parquet.core.ParquetDataset.read()
+    """
+    if b"pandas" in metadata:
+        new_metadata = table.schema.metadata or {}
+        new_metadata.update({b"pandas": metadata[b"pandas"]})
+        table = table.replace_schema_metadata(new_metadata)
+    return table
 
 
 def _read_parquet(
@@ -812,8 +864,10 @@ def _read_parquet(
         the ``filesystem`` keyword if you wish to use its implementation.
     bbox : tuple, optional
         Bounding box to be used to filter selection from geoparquet data. This
-        is only usable if the data was saved with the bbox covering metadata.
-        Input is of the tuple format (xmin, ymin, xmax, ymax).
+        is only usable if the data was saved with the bbox covering metadata
+        or with GeoParquet >= 2.0 files.
+        Input is of the tuple format (xmin, ymin, xmax, ymax). Filtering on Z
+        or M coordinates is not supported.
     to_pandas_kwargs : dict, optional
         Arguments passed to the `pa.Table.to_pandas` method for non-geometry columns.
         This can be used to control the behavior of the conversion of the non-geometry
@@ -856,9 +910,12 @@ def _read_parquet(
         path, filesystem=filesystem, storage_options=storage_options
     )
     path = _expand_user(path)
-    schema, metadata = _read_parquet_schema_and_metadata(
-        path, filesystem, partitioning=kwargs.get("partitioning", "hive")
-    )
+
+    # those keywords are used at read() time
+    use_pandas_metadata = kwargs.pop("use_pandas_metadata", True)
+    use_threads = kwargs.pop("use_threads", True)
+
+    dataset, schema, metadata = _open_parquet_dataset(path, filesystem, kwargs, bbox)
 
     geo_metadata = _validate_and_decode_metadata(metadata)
     if len(geo_metadata["columns"]) == 0:
@@ -878,26 +935,84 @@ def _read_parquet(
     # columns are read in if it exists.
     if not columns and if_bbox_column_exists:
         columns = _get_non_bbox_columns(schema, geo_metadata)
+    elif columns is not None and use_pandas_metadata:
+        columns = _add_index_columns_from_pandas_metadata(columns, metadata)
+
+    filters = kwargs.pop("filters", None)
+    if filters is not None:
+        # support both old-style [(..)] filters and pyarrow expressions
+        filters = parquet.filters_to_expression(filters)
 
     # if both bbox and filters kwargs are used, must splice together.
-    if "filters" in kwargs:
-        filters_kwarg = kwargs.pop("filters")
-        filters = _splice_bbox_and_filters(filters_kwarg, bbox_filter)
+    if bbox_filter is not None:
+        if filters is not None:
+            filters = bbox_filter & filters
+        else:
+            filters = bbox_filter
+
+    if isinstance(dataset, parquet.ParquetFile):
+        table = dataset.read(columns=columns, use_threads=use_threads)
     else:
-        filters = bbox_filter
+        dsdataset = dataset._dataset
 
-    kwargs["use_pandas_metadata"] = True
+        if bbox is not None and bbox_filter is None:
+            # if bbox is specified, but the dataset does not have a bbox column,
+            # we need to filter the row groups manually.
+            import pyarrow.dataset as ds
 
-    table = parquet.read_table(
-        path, columns=columns, filesystem=filesystem, filters=filters, **kwargs
-    )
+            geometry = geo_metadata["primary_column"]
+
+            filtered_fragments = []
+            for fragment in dataset.fragments:
+                geometry_idx = fragment.metadata.schema.names.index(geometry)
+                row_group_ids = [
+                    rg.id
+                    for rg in fragment.row_groups
+                    if _bbox_intersects(
+                        rg.metadata.column(geometry_idx).geo_statistics, bbox
+                    )
+                ]
+                fragment_filtered = fragment.subset(row_group_ids=row_group_ids)
+
+                filtered_fragments.append(fragment_filtered)
+
+            dsdataset = ds.FileSystemDataset(
+                filtered_fragments,
+                dsdataset.schema,
+                dsdataset.format,
+                filesystem=dsdataset.filesystem,
+                root_partition=dsdataset.partition_expression,
+            )
+
+        table = dsdataset.to_table(
+            columns=columns, filter=filters, use_threads=use_threads
+        )
+
+    if use_pandas_metadata:
+        table = _restore_pandas_metadata(table, metadata)
 
     if metadata and b"PANDAS_ATTRS" in metadata:
         df_attrs = metadata[b"PANDAS_ATTRS"]
     else:
         df_attrs = None
 
-    return _arrow_to_geopandas(table, geo_metadata, to_pandas_kwargs, df_attrs)
+    result = _arrow_to_geopandas(table, geo_metadata, to_pandas_kwargs, df_attrs)
+
+    if bbox is not None and bbox_filter is None:
+        # post-filtering step: manual filtering above only filtered up to the row group
+        # level -> further filter at the row level to give consistent behaviour
+        bbox_bounds = result.bounds
+        result_bbox = shapely.box(
+            bbox_bounds["minx"],
+            bbox_bounds["miny"],
+            bbox_bounds["maxx"],
+            bbox_bounds["maxy"],
+        )
+        result = result[
+            shapely.intersects(result_bbox, shapely.box(*bbox))
+        ].reset_index(drop=True)
+
+    return result
 
 
 def _read_feather(path, columns=None, to_pandas_kwargs=None, **kwargs):
@@ -989,10 +1104,15 @@ def _get_parquet_bbox_filter(geo_metadata, bbox):
             & (pc.field((primary_column, "y")) <= bbox[3])
         )
 
+    elif geo_metadata["version"] == "2.0.0":
+        # this case gets handled later manually
+        return None
+
     else:
         raise ValueError(
             "Specifying 'bbox' not supported for this Parquet file (it should either "
-            "have a bbox covering column or use 'point' encoding)."
+            "have a bbox covering column, use 'point' encoding, or use GeoParquet 2.0 "
+            "logical geometry types)."
         )
 
 
@@ -1025,12 +1145,17 @@ def _get_non_bbox_columns(schema, geo_metadata):
     return columns
 
 
-def _splice_bbox_and_filters(kwarg_filters, bbox_filter):
-    parquet = import_optional_dependency(
-        "pyarrow.parquet", extra="pyarrow is required for Parquet support."
+def _bbox_intersects(geo_stats, bbox):
+    stats_xmin, stats_ymin, stats_xmax, stats_ymax = (
+        geo_stats.xmin,
+        geo_stats.ymin,
+        geo_stats.xmax,
+        geo_stats.ymax,
     )
-    if bbox_filter is None:
-        return kwarg_filters
-
-    filters_expression = parquet.filters_to_expression(kwarg_filters)
-    return bbox_filter & filters_expression
+    xmin, ymin, xmax, ymax = bbox
+    return (
+        (stats_xmin <= xmax)
+        and (stats_xmax >= xmin)
+        and (stats_ymin <= ymax)
+        and (stats_ymax >= ymin)
+    )

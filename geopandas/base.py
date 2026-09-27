@@ -1,3 +1,4 @@
+from typing import TYPE_CHECKING, Literal
 from warnings import warn
 
 import numpy as np
@@ -10,6 +11,9 @@ from shapely.geometry.base import BaseGeometry
 
 from . import _compat as compat
 from .array import GeometryArray, GeometryDtype
+
+if TYPE_CHECKING:
+    from .geoseries import GeoSeries
 
 
 def is_geometry_type(data):
@@ -6627,6 +6631,132 @@ GeometryCollection
         polygons = shapely.polygonize(geometry_input)
         return GeoSeries(polygons, crs=self.crs, name="polygons").explode(
             ignore_index=True
+        )
+
+    def make_grid(
+        self,
+        cell_size: float,
+        grid_type: Literal["square", "hexagon"] = "square",
+        feature_type: Literal["centers", "corners", "polygons"] = "polygons",
+        offset: tuple[float, float] | None = None,
+        intersect: bool = True,
+        flat_topped: bool = False,
+    ) -> "GeoSeries":
+        """Provide the centers, corners, or polygons of a square or hexagonal grid.
+
+        The grid covers the area of the GeoSeries' total bounds. By default, only
+        grid elements that spatially overlap with the GeoSeries geometries
+        are returned. This filtering can be disabled by setting the
+        ``intersect`` parameter to ``False``.
+
+        The origin of the grid is at the lower left corner of the bounding box
+        of the GeoSeries.
+
+        .. versionadded:: 1.2
+
+        Parameters
+        ----------
+        cell_size : float
+            Side length of the square. For hexagonal cells the distance between
+            opposite edges (edge length is ``cellsize/sqrt(3)``).
+        grid_type : str, one of "square", "hexagon", default "square"
+            Grid type that is returned. All cell types reflect naive tiling of a
+            plane, not a tiling of the globe (like H3 or S2).
+        feature_type : str, one of "centers", "corners", "polygons", default "polygons"
+            Grid feature that is returned. ``"centers"`` returns points at the
+            center of each grid cell. ``"corners"`` returns points at all unique
+            vertices of the grid cells (i.e., the points where cell edges meet).
+            ``"polygons"`` returns the grid cell polygons.
+        offset : tuple, optional
+            Lower left corner coordinates (x, y) of the grid. By default uses
+            the lower left corner of the bounding box of the input geometry.
+        intersect : bool, default True
+            If False, the grid is not filtered by the geometries and the
+            full grid covering the bounding box is returned.
+        flat_topped : bool, default False
+            If True, generate flat topped hexagons. By default (False), the
+            orientation of the hexagonal cells is such that a corner points upwards.
+
+        Returns
+        -------
+        GeoSeries
+            The returned GeoSeries contains the grid-cell centers, corners, or
+            polygons.
+
+        See Also
+        --------
+        make_grid : equivalent top-level function
+
+        Notes
+        -----
+        When ``intersect=True``, the grid is filtered using the ``"intersects"``
+        spatial predicate. The filtering behavior depends on ``feature_type``:
+
+        - ``"polygons"``: All grid cell polygons that share any area or boundary
+          with the input geometries are returned.
+        - ``"centers"``: Only center points that fall within or on the boundary of
+          the input geometries are returned.
+        - ``"corners"``: Only corner points that fall within or on the boundary of
+          the input geometries are returned.
+
+        As a result, the set of corners returned when ``feature_type="corners"``
+        may not correspond exactly to the vertices of the polygons returned when
+        ``feature_type="polygons"``.
+
+        Examples
+        --------
+        >>> import geopandas
+        >>> import geodatasets
+        >>> world = geopandas.read_file(
+        ...     geodatasets.get_path('naturalearth land'))
+        >>> madagascar = world.cx[45:50, -25:-15]
+        >>> sq_grid = madagascar.geometry.make_grid(cell_size=1)
+        >>> sq_grid.head(3)
+        0    POLYGON ((43.25419 -25.60143, 44.25419 -25.601...
+        1    POLYGON ((43.25419 -24.60143, 44.25419 -24.601...
+        2    POLYGON ((43.25419 -23.60143, 44.25419 -23.601...
+        dtype: geometry
+
+        By default, grid is aligned with the bounding box of the input geometries.
+        If instead you want to a fixed grid aligning with specific coordinates,
+        use the ``offset`` keyword. For example, to have a grid of round degrees:
+
+        >>> sq_grid2 = madagascar.geometry.make_grid(cell_size=1, offset=(30, -30))
+        >>> sq_grid2.head(3)
+        0    POLYGON ((43 -25, 44 -25, 44 -24, 43 -24, 43 -...
+        1    POLYGON ((43 -24, 44 -24, 44 -23, 43 -23, 43 -...
+        2    POLYGON ((43 -23, 44 -23, 44 -22, 43 -22, 43 -...
+        dtype: geometry
+
+        .. plot:: _static/code/make_grid.py
+
+        Specify the ``feature_type`` keyword to get the centers or corners of the grid
+        cells, instead of the polygons:
+
+        >>> sq_grid_centers = madagascar.geometry.make_grid(
+        ...     cell_size=1, feature_type="centers"
+        ... )
+        >>> sq_grid_centers.head(3)
+        0    POINT (43.75419 -24.10143)
+        1    POINT (43.75419 -23.10143)
+        2    POINT (43.75419 -22.10143)
+        dtype: geometry
+
+        Specify the ``grid_type="hexagon`` keyword to get hexagons instead of the
+        default squares.
+
+        .. plot:: _static/code/make_grid_types.py
+        """
+        from .tools.make_grid import make_grid
+
+        return make_grid(
+            self.geometry,
+            cell_size=cell_size,
+            grid_type=grid_type,
+            feature_type=feature_type,
+            offset=offset,
+            intersect=intersect,
+            flat_topped=flat_topped,
         )
 
 
