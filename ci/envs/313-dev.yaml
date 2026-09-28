@@ -33,7 +33,7 @@ dependencies:
     - pandas
     - matplotlib
     - pyarrow
-    - git+https://github.com/shapely/shapely.git@main
+    - shapely
     - git+https://github.com/python-visualization/folium.git@main
     - git+https://github.com/python-visualization/branca.git@main
     - git+https://github.com/geopandas/xyzservices.git@main
