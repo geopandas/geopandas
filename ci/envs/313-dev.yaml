@@ -4,6 +4,7 @@ channels:
 dependencies:
   - python=3.13
   - compilers
+  - pkg-config
   # required
   - pyproj
   - gdal
