@@ -1782,7 +1782,8 @@ class TestGeomMethods:
         assert_frame_equal(test_df, expected_df, check_index_type=False)
 
     def test_explode_index_parts_dtype(self, monkeypatch):
-        # GH3865 get_parts returns platform-sized (int32 on 32-bit) indices
+        # GH3865 get_parts returns platform-sized (int32 on 32-bit) indices,
+        # but we want to be consistent in using int64 for the index level
         get_parts = shapely.get_parts
 
         def get_parts_int32(geoms, return_index=False):
