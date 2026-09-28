@@ -3,12 +3,11 @@ channels:
   - conda-forge
 dependencies:
   - python=3.13
-  - cython
+  - compilers
   # required
   - pyproj
   - gdal
   - geos
-  - pkg-config  # to ensure shapely finds geos
   - packaging
   # testing
   - pytest
