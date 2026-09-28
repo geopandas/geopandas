@@ -1519,6 +1519,22 @@ def test_to_file_metadata_pyogrio(tmp_path, df_points):
     assert layer_metadata == metadata
 
 
+@pytest.mark.skipif(pyogrio is False, reason="Pyogrio not available")
+def test_read_file_info(tmp_path, df_points):
+    metadata = {"title": "test"}
+    tmp_file = tmp_path / "test.gpkg"
+
+    df_points.to_file(tmp_file, driver="GPKG", engine="pyogrio", metadata=metadata)
+
+    # Check that metadata is written and read correctly
+    layer_info = geopandas.read_file_info(tmp_file)
+    assert layer_info["layer_metadata"] == metadata
+    # basic check other properties are available as expected
+    assert layer_info["driver"] == "GPKG"
+    assert layer_info["crs"] == df_points.crs
+    assert layer_info["features"] == len(df_points)
+
+
 @pytest.mark.parametrize(
     "driver, ext", [("ESRI Shapefile", ".shp"), ("GeoJSON", ".geojson")]
 )
