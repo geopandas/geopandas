@@ -1781,6 +1781,21 @@ class TestGeomMethods:
         expected_df = expected_df.set_index(expected_index)
         assert_frame_equal(test_df, expected_df, check_index_type=False)
 
+    def test_explode_index_parts_dtype(self, monkeypatch):
+        # GH3865 get_parts returns platform-sized (int32 on 32-bit) indices,
+        # but we want to be consistent in using int64 for the index level
+        get_parts = shapely.get_parts
+
+        def get_parts_int32(geoms, return_index=False):
+            parts, idx = get_parts(geoms, return_index=True)
+            return parts, idx.astype(np.int32)
+
+        monkeypatch.setattr(shapely, "get_parts", get_parts_int32)
+        s = GeoSeries([MultiPoint([Point(1, 2), Point(2, 3)]), Point(5, 5)])
+
+        result = s.explode(index_parts=True)
+        assert result.index.levels[1].dtype == np.int64
+
     @pytest.mark.parametrize("index_name", [None, "test"])
     def test_explode_geodataframe_no_multiindex(self, index_name):
         # GH1393
