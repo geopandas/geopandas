@@ -1,6 +1,6 @@
 # Changelog
 
-## Version 1.2.0
+## Version 1.2.0  (September 28, 2026)
 
 New features and improvements:
 
@@ -77,6 +77,7 @@ Bug fixes:
 Community:
 
 - GeoPandas now uses the NumFOCUS Code of Conduct.
+- GeoPandas has a new software paper which can be used as canonical citation, see https://geopandas.org/en/latest/about/citing.html
 
 Notes on dependencies:
 
