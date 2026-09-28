@@ -34,28 +34,28 @@ New features and improvements:
   change if you rely the composition of collections, as that has changed. A number of
   plotting-related bugs has been fixed along as a side effect. All changes are reflected
   in an updated user guide. 
-  (#3708, #3728, #3748, #3752, #3753, #3763, #3767, #3689)
+  (#3708, #3728, #3748, #3752, #3753, #3763, #3767, #3689).
 - GeoParquet improvements:
   - The upcoming GeoParquet 2.0 specification is now supported for both writing
     and reading (#3632).
-  - `read_parquet` now support direct reading from HTTP/HTTPS protocols (#3699)
+  - `read_parquet` now support direct reading from HTTP/HTTPS protocols (#3699).
   - `GeoDataFrame.to_parquet` and `read_parquet` will now write and read ``attrs``
-    respectively (#3597)
+    respectively (#3597).
 - Added `geopandas.make_grid` and `GeoSeries.make_grid` to generate a square
   or hexagonal grids covering the input geometry (#2062).
 - Added `geopandas.read_file_info` to expose information about file layers, including layer
-  metadata (this is an alias for `pyogrio.read_info`) (#3759)
+  metadata (this is an alias for `pyogrio.read_info`) (#3759).
 - Add ``grid_size`` parameter to ``union``, ``difference``, ``symmetric_difference``
   and ``intersection`` (#3593).
 - Document how to access the feature ID (`fid`) as the index when reading files
-  with `read_file` and the pyogrio engine, using `fid_as_index=True` (#3829)
+  with `read_file` and the pyogrio engine, using `fid_as_index=True` (#3829).
 
 Deprecations and compatibility notes:
 
 - The `resolution` keyword to `buffer` has been deprecated to align with the convention in shapely,
   `quad_segs` should be used instead (#3600).
 - Expired deprecations: option `use_pygeos` which had no functionality,
-  `seed` keyword in sample_points (replaced by `rng`) (#3613)
+  `seed` keyword in sample_points (replaced by `rng`) (#3613).
 
 Bug fixes:
 
@@ -72,7 +72,7 @@ Bug fixes:
 - Fix the index level of the parts created by `explode(index_parts=True)` and
   `get_coordinates(index_parts=True)` being `int32` instead of `int64` on 32-bit
   platforms (#3865).
-- Various compatibility fixes for pandas 3.1 (#3802, #3831)
+- Various compatibility fixes for pandas 3.1 (#3802, #3831).
 
 Community:
 
