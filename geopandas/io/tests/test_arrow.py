@@ -7,6 +7,7 @@ import sys
 from io import BytesIO
 from itertools import product
 from packaging.version import Version
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
@@ -1298,25 +1299,42 @@ def test_to_parquet_bbox_values(tmpdir, geometry, expected_bbox):
     assert result["bbox"][0] == expected_bbox
 
 
-def test_read_parquet_bbox_single_point(tmpdir):
+bbox_write_kwargs = pytest.mark.parametrize(
+    "write_kwargs",
+    [
+        {"write_covering_bbox": True, "schema_version": "1.1.0"},
+        pytest.param(
+            {"schema_version": "2.0.0"},
+            marks=pytest.mark.skipif(
+                Version(pyarrow.__version__) < Version("21.0.0"),
+                reason="Writing GeoParquet 2.0 files requires pyarrow>=21.0",
+            ),
+        ),
+    ],
+)
+
+
+@bbox_write_kwargs
+def test_read_parquet_bbox_single_point(tmpdir, write_kwargs):
     # confirm that on a single point, bbox will pick it up.
     df = GeoDataFrame(data=[[1, 2]], columns=["a", "b"], geometry=[Point(1, 1)])
     filename = os.path.join(str(tmpdir), "test.pq")
-    df.to_parquet(filename, write_covering_bbox=True)
+    df.to_parquet(filename, **write_kwargs)
     pq_df = read_parquet(filename, bbox=(1, 1, 1, 1))
     assert len(pq_df) == 1
     assert pq_df.geometry[0] == Point(1, 1)
 
 
+@bbox_write_kwargs
 @pytest.mark.parametrize("geometry_name", ["geometry", "custum_geom_col"])
-def test_read_parquet_bbox(tmpdir, naturalearth_lowres, geometry_name):
+def test_read_parquet_bbox(tmpdir, naturalearth_lowres, geometry_name, write_kwargs):
     # check bbox is being used to filter results.
     df = read_file(naturalearth_lowres)
     if geometry_name != "geometry":
         df = df.rename_geometry(geometry_name)
 
     filename = os.path.join(str(tmpdir), "test.pq")
-    df.to_parquet(filename, write_covering_bbox=True)
+    df.to_parquet(filename, **write_kwargs)
 
     pq_df = read_parquet(filename, bbox=(0, 0, 10, 10))
 
@@ -1333,8 +1351,11 @@ def test_read_parquet_bbox(tmpdir, naturalearth_lowres, geometry_name):
     ]
 
 
+@bbox_write_kwargs
 @pytest.mark.parametrize("geometry_name", ["geometry", "custum_geom_col"])
-def test_read_parquet_bbox_partitioned(tmpdir, naturalearth_lowres, geometry_name):
+def test_read_parquet_bbox_partitioned(
+    tmpdir, naturalearth_lowres, geometry_name, write_kwargs
+):
     # check bbox is being used to filter results on partitioned data.
     df = read_file(naturalearth_lowres)
     if geometry_name != "geometry":
@@ -1343,8 +1364,8 @@ def test_read_parquet_bbox_partitioned(tmpdir, naturalearth_lowres, geometry_nam
     # manually create partitioned dataset
     basedir = tmpdir / "partitioned_dataset"
     basedir.mkdir()
-    df[:100].to_parquet(basedir / "data1.parquet", write_covering_bbox=True)
-    df[100:].to_parquet(basedir / "data2.parquet", write_covering_bbox=True)
+    df[:100].to_parquet(basedir / "data1.parquet", **write_kwargs)
+    df[100:].to_parquet(basedir / "data2.parquet", **write_kwargs)
 
     pq_df = read_parquet(basedir, bbox=(0, 0, 10, 10))
 
@@ -1361,6 +1382,45 @@ def test_read_parquet_bbox_partitioned(tmpdir, naturalearth_lowres, geometry_nam
     ]
 
 
+@pytest.mark.skipif(
+    Version(pyarrow.__version__) < Version("21.0.0"),
+    reason="Writing GeoParquet 2.0 files requires pyarrow>=21.0",
+)
+@pytest.mark.parametrize("geometry_name", ["geometry", "custum_geom_col"])
+def test_read_parquet_bbox_partitioned_inconsistent_schema(
+    tmpdir, naturalearth_lowres, geometry_name
+):
+    # in the case of a GeoParquet 2.0 file with statistics, filtering a
+    # partitioned dataset should work fine if the geometry column is not the
+    # same index in the schema in each of the files
+    df = read_file(naturalearth_lowres)
+    if geometry_name != "geometry":
+        df = df.rename_geometry(geometry_name)
+
+    # manually create partitioned dataset
+    basedir = tmpdir / "partitioned_dataset"
+    basedir.mkdir()
+    df[:100].to_parquet(basedir / "data1.parquet", schema_version="2.0.0")
+    df[100:][["name", geometry_name]].to_parquet(
+        basedir / "data2.parquet", schema_version="2.0.0"
+    )
+
+    pq_df = read_parquet(basedir, bbox=(0, 0, 10, 10))
+
+    assert pq_df["name"].values.tolist() == [
+        "France",
+        "Benin",
+        "Nigeria",
+        "Cameroon",
+        "Togo",
+        "Ghana",
+        "Burkina Faso",
+        "Gabon",
+        "Eq. Guinea",
+    ]
+
+
+@bbox_write_kwargs
 @pytest.mark.parametrize(
     "geometry, bbox",
     [
@@ -1374,10 +1434,12 @@ def test_read_parquet_bbox_partitioned(tmpdir, naturalearth_lowres, geometry_nam
         (Polygon([(0, 0), (4, 0), (4, 4), (0, 4)]), (1, 1, 5, 3)),
     ],
 )
-def test_read_parquet_bbox_partial_overlap_of_geometry(tmpdir, geometry, bbox):
+def test_read_parquet_bbox_partial_overlap_of_geometry(
+    tmpdir, geometry, bbox, write_kwargs
+):
     df = GeoDataFrame(data=[[1, 2]], columns=["a", "b"], geometry=[geometry])
     filename = os.path.join(str(tmpdir), "test.pq")
-    df.to_parquet(filename, write_covering_bbox=True)
+    df.to_parquet(filename, **write_kwargs)
 
     pq_df = read_parquet(filename, bbox=bbox)
     assert len(pq_df) == 1
@@ -1436,6 +1498,7 @@ def test_read_parquet_bbox_column_default_behaviour(tmpdir, naturalearth_lowres)
     assert list(result2.columns) == ["name", "geometry"]
 
 
+@bbox_write_kwargs
 @pytest.mark.parametrize(
     "filters",
     [
@@ -1443,10 +1506,12 @@ def test_read_parquet_bbox_column_default_behaviour(tmpdir, naturalearth_lowres)
         pc.field("gdp_md_est") > 20000,
     ],
 )
-def test_read_parquet_filters_and_bbox(tmpdir, naturalearth_lowres, filters):
+def test_read_parquet_filters_and_bbox(
+    tmpdir, naturalearth_lowres, filters, write_kwargs
+):
     df = read_file(naturalearth_lowres)
     filename = os.path.join(str(tmpdir), "test.pq")
-    df.to_parquet(filename, write_covering_bbox=True)
+    df.to_parquet(filename, **write_kwargs)
 
     result = read_parquet(filename, filters=filters, bbox=(0, 0, 20, 20))
     assert result["name"].values.tolist() == [
@@ -1460,6 +1525,7 @@ def test_read_parquet_filters_and_bbox(tmpdir, naturalearth_lowres, filters):
     ]
 
 
+@bbox_write_kwargs
 @pytest.mark.parametrize(
     "filters",
     [
@@ -1467,10 +1533,12 @@ def test_read_parquet_filters_and_bbox(tmpdir, naturalearth_lowres, filters):
         ((pc.field("gdp_md_est") > 15000) & (pc.field("gdp_md_est") < 16000)),
     ],
 )
-def test_read_parquet_filters_without_bbox(tmpdir, naturalearth_lowres, filters):
+def test_read_parquet_filters_without_bbox(
+    tmpdir, naturalearth_lowres, filters, write_kwargs
+):
     df = read_file(naturalearth_lowres)
     filename = os.path.join(str(tmpdir), "test.pq")
-    df.to_parquet(filename, write_covering_bbox=True)
+    df.to_parquet(filename, **write_kwargs)
 
     result = read_parquet(filename, filters=filters)
     assert result["name"].values.tolist() == ["Burkina Faso", "Mozambique", "Albania"]
@@ -1536,6 +1604,29 @@ def test_read_parquet_bbox_points(tmp_path):
     assert len(result) == 10
     result = geopandas.read_parquet(tmp_path / "test.parquet", bbox=(3, 3, 5, 5))
     assert len(result) == 3
+
+
+@pytest.mark.skipif(
+    Version(pyarrow.__version__) < Version("21.0.0"),
+    reason="Writing GeoParquet 2.0 files requires pyarrow>=21.0",
+)
+@patch("geopandas.io.arrow._bbox_intersects")
+def test_read_parquet_bbox_column_and_statistics(bbox_intersects, tmp_path):
+    # if a GeoParquet file has both a bbox column and geospatial statistics,
+    # reading the file with a bbox filter should work fine, but we prefer
+    # using the bbox column (slighty more efficient)
+    df = geopandas.GeoDataFrame(
+        {"col": range(10)}, geometry=[Point(i, i) for i in range(10)]
+    )
+    df.to_parquet(
+        tmp_path / "test.parquet", write_covering_bbox=True, schema_version="2.0.0"
+    )
+
+    result = geopandas.read_parquet(tmp_path / "test.parquet", bbox=(3, 3, 5, 5))
+    assert len(result) == 3
+
+    # filtering manually based on the statistics would use the _bbox_intersects function
+    bbox_intersects.assert_not_called()
 
 
 def test_non_geo_parquet_read_with_proper_error(tmp_path):

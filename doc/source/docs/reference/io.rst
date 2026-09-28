@@ -8,6 +8,7 @@ GIS vector files
 .. autosummary::
    :toctree: api/
 
+   read_file_info
    list_layers
    read_file
    GeoDataFrame.to_file

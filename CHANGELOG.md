@@ -43,6 +43,8 @@ New features and improvements:
     respectively (#3597)
 - Added `geopandas.make_grid` and `GeoSeries.make_grid` to generate a square
   or hexagonal grids covering the input geometry (#2062).
+- Added `geopandas.read_file_info` to expose information about file layers, including layer
+  metadata (this is an alias for `pyogrio.read_info`) (#3759)
 - Add ``grid_size`` parameter to ``union``, ``difference``, ``symmetric_difference``
   and ``intersection`` (#3593).
 - Document how to access the feature ID (`fid`) as the index when reading files
@@ -67,6 +69,9 @@ Bug fixes:
 - Fix `GeoDataFrame.from_features` raising a `ValueError` for an empty list of
   features when a `crs` is provided; it now returns an empty `GeoDataFrame` with
   a `geometry` column (#3777).
+- Fix the index level of the parts created by `explode(index_parts=True)` and
+  `get_coordinates(index_parts=True)` being `int32` instead of `int64` on 32-bit
+  platforms (#3865).
 - Various compatibility fixes for pandas 3.1 (#3802, #3831)
 
 Community:
