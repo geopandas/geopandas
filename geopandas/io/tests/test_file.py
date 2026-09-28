@@ -644,6 +644,56 @@ def test_read_file_url_flaky(engine, url):
     assert isinstance(gdf, geopandas.GeoDataFrame)
 
 
+def test_read_file_url_sends_user_agent(engine, monkeypatch):
+    # some servers reject requests with no User-Agent header, causing an
+    # unhandled HTTPError instead of gracefully falling back
+    # https://github.com/geopandas/geopandas/issues/3441
+    captured_requests = []
+    geojson_bytes = json.dumps(
+        {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "properties": {},
+                    "geometry": {"type": "Point", "coordinates": [0.0, 1.0]},
+                }
+            ],
+        }
+    ).encode()
+
+    class FakeResponse:
+        def __init__(self, status, headers, body=b""):
+            self.status = status
+            self.headers = headers
+            self._body = body
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def read(self):
+            return self._body
+
+    def fake_urlopen(request, *args, **kwargs):
+        captured_requests.append(request)
+        if request.get_header("Range"):
+            # probe request -> report no range support to force full download
+            return FakeResponse(200, {"Accept-Ranges": "none"})
+        return FakeResponse(200, {}, geojson_bytes)
+
+    monkeypatch.setattr("geopandas.io.file.urllib.request.urlopen", fake_urlopen)
+
+    gdf = read_file("http://example.com/data.geojson", engine=engine)
+    assert isinstance(gdf, geopandas.GeoDataFrame)
+
+    assert len(captured_requests) == 2
+    for request in captured_requests:
+        assert request.get_header("User-agent")
+
+
 def test_read_file_local_uri(file_path, engine):
     local_uri = "file://" + file_path
     gdf = read_file(local_uri, engine=engine)

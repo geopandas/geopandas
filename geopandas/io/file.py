@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import urllib.error
 import urllib.request
 import warnings
 from http import HTTPStatus
@@ -28,6 +29,7 @@ from shapely.geometry.base import BaseGeometry
 
 from geopandas import GeoDataFrame, GeoSeries
 from geopandas._compat import HAS_PYPROJ
+from geopandas._version import __version__
 from geopandas.io.util import vsi_path
 
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
@@ -301,20 +303,23 @@ def _read_file(
         # pyogrio/fiona as is (to support downloading only part of the file)
         # otherwise still download manually because pyogrio/fiona don't support
         # all types of urls (https://github.com/geopandas/geopandas/issues/2908)
+        # some servers reject requests that don't have a User-Agent header
+        # (e.g. https://github.com/geopandas/geopandas/issues/3441)
+        headers = {"User-Agent": f"geopandas/{__version__}"}
         try:
             with urllib.request.urlopen(
-                Request(filename, headers={"Range": "bytes=0-1"})
+                Request(filename, headers={**headers, "Range": "bytes=0-1"})
             ) as response:
                 if (
                     response.headers.get("Accept-Ranges") == "none"
                     or response.status != HTTPStatus.PARTIAL_CONTENT
                 ):
                     from_bytes = True
-        except ConnectionError:
+        except (ConnectionError, urllib.error.HTTPError, urllib.error.URLError):
             from_bytes = True
 
         if from_bytes:
-            with urllib.request.urlopen(filename) as response:
+            with urllib.request.urlopen(Request(filename, headers=headers)) as response:
                 filename = response.read()
 
     if engine == "pyogrio":
