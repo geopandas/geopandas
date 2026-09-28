@@ -1,6 +1,6 @@
 # Changelog
 
-## Version 1.2.0  (September 28, 2026)
+## Version 1.2.0 (September 28, 2026)
 
 New features and improvements:
 
