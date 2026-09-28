@@ -8,6 +8,7 @@ dependencies:
   - pyproj
   - gdal
   - geos
+  - pkg-config  # to ensure shapely finds geos
   - packaging
   # testing
   - pytest
