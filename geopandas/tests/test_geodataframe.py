@@ -1068,7 +1068,8 @@ class TestDataFrame:
         gdf = GeoDataFrame({"geom_col0": gs0, "geom_col1": gs1})
 
         expected_df = pd.DataFrame({"geom_col0": wkbs0, "geom_col1": wkbs1})
-        assert_frame_equal(expected_df, gdf.to_wkb())
+        # set fixed byte-order (the expected WKB blobs are in little-endian)
+        assert_frame_equal(expected_df, gdf.to_wkb(byte_order=1))
 
     def test_to_wkt(self):
         wkts0 = ["POINT (0 0)", "POINT (1 1)"]
