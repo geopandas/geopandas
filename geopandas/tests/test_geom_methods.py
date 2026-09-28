@@ -2466,10 +2466,14 @@ class TestGeomMethods:
         line = LineString([(0, 0), (0.5, 0.5), (0, 1)])
         expected = GeoSeries.from_wkt(
             [
-                "GEOMETRYCOLLECTION (MULTILINESTRING ((0 0, 0.5 0.5)),"
-                " MULTILINESTRING EMPTY)",
-                "GEOMETRYCOLLECTION (MULTILINESTRING EMPTY,"
-                " MULTILINESTRING ((0 1, 0.5 0.5)))",
+                (
+                    "GEOMETRYCOLLECTION (MULTILINESTRING ((0 0, 0.5 0.5)),"
+                    " MULTILINESTRING EMPTY)"
+                ),
+                (
+                    "GEOMETRYCOLLECTION (MULTILINESTRING EMPTY,"
+                    " MULTILINESTRING ((0 1, 0.5 0.5)))"
+                ),
             ]
         )
         assert_geoseries_equal(expected, self.crossed_lines.shared_paths(line))
@@ -2484,8 +2488,10 @@ class TestGeomMethods:
         expected = GeoSeries.from_wkt(
             [
                 None,
-                "GEOMETRYCOLLECTION (MULTILINESTRING ((0.5 0.5, 1 0)),"
-                " MULTILINESTRING EMPTY)",
+                (
+                    "GEOMETRYCOLLECTION (MULTILINESTRING ((0.5 0.5, 1 0)),"
+                    " MULTILINESTRING EMPTY)"
+                ),
                 None,
             ]
         )
@@ -2500,10 +2506,14 @@ class TestGeomMethods:
 
         expected = GeoSeries.from_wkt(
             [
-                "GEOMETRYCOLLECTION (MULTILINESTRING ((0 0, 0.5 0.5)),"
-                " MULTILINESTRING ((0.9 0.9, 1 1)))",
-                "GEOMETRYCOLLECTION (MULTILINESTRING ((0 1, 1 0)),"
-                " MULTILINESTRING EMPTY)",
+                (
+                    "GEOMETRYCOLLECTION (MULTILINESTRING ((0 0, 0.5 0.5)),"
+                    " MULTILINESTRING ((0.9 0.9, 1 1)))"
+                ),
+                (
+                    "GEOMETRYCOLLECTION (MULTILINESTRING ((0 1, 1 0)),"
+                    " MULTILINESTRING EMPTY)"
+                ),
             ]
         )
         assert_geoseries_equal(
@@ -2568,8 +2578,10 @@ class TestGeomMethods:
             [
                 "POLYGON ((0 3, 3 3, 3 0, 0 0, 0 3), (2 2, 1 2, 1 1, 2 2))",
                 "POLYGON ((13 8, 10 7, 12 10, 13 8))",
-                "POLYGON ((2 9, 8 12, 8 19, 16 16, 18 4, 4 2, 2 9), "
-                "(8 6, 15 8, 12 13, 8 6))",
+                (
+                    "POLYGON ((2 9, 8 12, 8 19, 16 16, 18 4, 4 2, 2 9), "
+                    "(8 6, 15 8, 12 13, 8 6))"
+                ),
             ],
             crs=4326,
             name="polygons",
@@ -2596,8 +2608,10 @@ class TestGeomMethods:
 
         non_noded = GeoSeries.from_wkt(
             [
-                "POLYGON ((0 15, 12 15, 12 13, 15 8, 12 7.142857, 12 0, 0 0, 0 15), "
-                "(12 7.666667, 13 8, 12 10, 12 7.666667))"
+                (
+                    "POLYGON((0 15, 12 15, 12 13, 15 8, 12 7.142857, 12 0, 0 0, 0 15),"
+                    "(12 7.666667, 13 8, 12 10, 12 7.666667))"
+                )
             ],
             crs=4326,
             name="polygons",
