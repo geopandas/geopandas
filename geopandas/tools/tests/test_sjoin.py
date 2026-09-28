@@ -165,8 +165,14 @@ class TestSpatialJoin:
     def test_crs_mismatch(self, dfs):
         _index, df1, df2, _expected = dfs
         df1.crs = "epsg:4326"
-        with pytest.warns(UserWarning, match="CRS mismatch between the CRS"):
+        with pytest.warns(UserWarning, match="CRS mismatch between the CRS") as w:
             sjoin(df1, df2)
+        assert w[0].filename == __file__
+
+        # GH2410 the method should also point to the caller
+        with pytest.warns(UserWarning, match="CRS mismatch between the CRS") as w:
+            df1.sjoin(df2)
+        assert w[0].filename == __file__
 
     @pytest.mark.parametrize("dfs", ["default-index"], indirect=True)
     def test_unknown_kwargs(self, dfs):

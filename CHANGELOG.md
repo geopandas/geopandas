@@ -70,6 +70,9 @@ Bug fixes:
 - Fix `GeoDataFrame.from_features` raising a `ValueError` for an empty list of
   features when a `crs` is provided; it now returns an empty `GeoDataFrame` with
   a `geometry` column (#3777).
+- The CRS mismatch warning raised by `sjoin`, `sjoin_nearest`, `clip`, `overlay` and
+  binary geometry methods now points to the calling user code, including when using
+  the `GeoDataFrame` methods (#2410).
 
 
 Community:

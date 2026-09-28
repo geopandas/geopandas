@@ -292,7 +292,7 @@ def overlay(
         )
 
     if not _check_crs(df1, df2):
-        _crs_mismatch_warn(df1, df2, stacklevel=3)
+        _crs_mismatch_warn(df1, df2)
 
     if keep_geom_type is None:
         keep_geom_type = True

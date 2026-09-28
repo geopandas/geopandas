@@ -186,7 +186,7 @@ def _basic_checks(left_df, right_df, how, lsuffix, rsuffix, on_attribute=None):
         raise ValueError(f'`how` was "{how}" but is expected to be in {allowed_hows}')
 
     if not _check_crs(left_df, right_df):
-        _crs_mismatch_warn(left_df, right_df, stacklevel=4)
+        _crs_mismatch_warn(left_df, right_df)
 
     if on_attribute:
         for attr in on_attribute:

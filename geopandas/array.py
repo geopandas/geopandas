@@ -3,6 +3,7 @@ from __future__ import annotations
 import inspect
 import numbers
 import operator
+import os
 import typing
 import warnings
 from functools import lru_cache
@@ -109,9 +110,22 @@ def _check_crs(
     return True
 
 
-def _crs_mismatch_warn(
-    left: GeoPandasBase, right: GeoPandasBase, stacklevel: int = 3
-) -> None:
+def _find_stack_level() -> int:
+    """Find the first frame outside of geopandas (ignoring its test modules)."""
+    pkg_dir = os.path.dirname(__file__)
+    frame = inspect.currentframe()
+    n = 0
+    while frame is not None:
+        fname = frame.f_code.co_filename
+        in_package = fname.startswith(pkg_dir)
+        if not in_package or f"{os.sep}tests{os.sep}" in fname.removeprefix(pkg_dir):
+            break
+        frame = frame.f_back
+        n += 1
+    return n
+
+
+def _crs_mismatch_warn(left: GeoPandasBase, right: GeoPandasBase) -> None:
     """Raise a CRS mismatch warning with the information on the assigned CRS."""
     if left.crs:
         left_srs = left.crs.to_string()
@@ -135,7 +149,7 @@ def _crs_mismatch_warn(
         f"Left CRS: {left_srs}\n"
         f"Right CRS: {right_srs}\n",
         UserWarning,
-        stacklevel=stacklevel,
+        stacklevel=_find_stack_level(),
     )
 
 
@@ -800,7 +814,7 @@ class GeometryArray(ExtensionArray):
                 )
                 raise ValueError(msg)
             if not _check_crs(left, right):
-                _crs_mismatch_warn(left, right, stacklevel=7)
+                _crs_mismatch_warn(left, right)
             right = right._data
 
         return getattr(shapely, op)(left._data, right, **kwargs)
