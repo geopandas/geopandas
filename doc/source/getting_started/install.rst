@@ -157,7 +157,8 @@ Further, optional dependencies are:
 - `GeoAlchemy2`_ (optional; for writing to PostGIS)
 - `geopy`_ (optional; for geocoding)
 - `pointpats`_ (optional; for advanced point sampling)
-- `scipy`_ (optional; for sparse output of spatial indexing)
+- `scipy`_ (optional; for sparse output of spatial indexing and for
+  ``distance_matrix()``)
 
 
 For plotting, these additional packages may be used:
