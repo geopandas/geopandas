@@ -2574,6 +2574,7 @@ default 'snappy'
         predicate: str = "intersects",
         lsuffix: str = "left",
         rsuffix: str = "right",
+        distance_col: str | None = None,
         **kwargs,
     ) -> GeoDataFrame:
         """Spatial join of two GeoDataFrames.
@@ -2628,6 +2629,13 @@ default 'snappy'
             of the spatial predicate. These must be found in both DataFrames.
             If set, observations are joined only if the predicate applies
             and values in specified columns match.
+        distance_col : string, default None
+            If set, save the distances computed between matching geometries under
+            a column of this name in the joined GeoDataFrame. Distances are
+            calculated in the CRS units of the input GeoDataFrames and represent
+            the Euclidean (planar) distance between each matched pair of
+            geometries.  For unmatched rows (in ``'left'`` or ``'right'`` joins),
+            the distance will be ``NaN``.
 
         Examples
         --------
@@ -2684,6 +2692,7 @@ default 'snappy'
             predicate=predicate,
             lsuffix=lsuffix,
             rsuffix=rsuffix,
+            distance_col=distance_col,
             **kwargs,
         )
 
