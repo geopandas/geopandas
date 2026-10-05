@@ -85,6 +85,9 @@ def _explore(
                     return "green"
                 return "red"
 
+        A function is not called for missing values, which use ``missing_kwds``
+        instead, and does not support a legend.
+
     color : str, array-like (default None)
         Named color or a list-like of colors (named or hex).
     m : folium.Map (default None)
@@ -471,8 +474,17 @@ def _explore(
                 )
 
         elif callable(cmap):
-            # List of colors based on Branca colormaps or self-defined functions
-            color = [cmap(x) for x in df[column]]
+            # List of colors based on Branca colormaps or self-defined functions.
+            # Missing values get the color from missing_kwds instead.
+            color = [cmap(x) for x in gdf[column][~nan_idx]]
+            if legend and not isinstance(cmap, bc.colormap.ColorMap):
+                warnings.warn(
+                    "Cannot plot a legend when 'cmap' is a function, so it is not "
+                    "shown. Pass legend=False to silence this warning.",
+                    UserWarning,
+                    stacklevel=3,
+                )
+                legend = False
 
         else:
             vmin = gdf[column].min() if vmin is None else vmin
