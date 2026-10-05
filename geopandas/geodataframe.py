@@ -2021,6 +2021,30 @@ default 'snappy'
             copied._geometry_column_name = self._geometry_column_name
         return copied
 
+    @doc(pd.DataFrame.add_prefix)
+    def add_prefix(self, prefix: str, axis=None) -> GeoDataFrame:
+        result = super().add_prefix(prefix, axis=axis)
+        return self._rename_geometry_with_columns(
+            result, axis, lambda x: f"{prefix}{x}"
+        )
+
+    @doc(pd.DataFrame.add_suffix)
+    def add_suffix(self, suffix: str, axis=None) -> GeoDataFrame:
+        result = super().add_suffix(suffix, axis=axis)
+        return self._rename_geometry_with_columns(
+            result, axis, lambda x: f"{x}{suffix}"
+        )
+
+    def _rename_geometry_with_columns(self, result, axis, rename):
+        # pandas renames the columns but keeps the old active geometry column name
+        if (
+            (axis is None or self._get_axis_number(axis) == 1)
+            and isinstance(result, GeoDataFrame)
+            and self._geometry_column_name in self.columns
+        ):
+            result._geometry_column_name = rename(self._geometry_column_name)
+        return result
+
     @doc(pd.DataFrame)
     def apply(
         self,
