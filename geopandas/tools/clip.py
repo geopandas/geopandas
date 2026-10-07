@@ -239,24 +239,12 @@ def clip(gdf, mask, keep_geom_type=False, sort=False):
                 ]
             )
 
-            # Check how many geometry types are in the clipped GeoDataFrame
-            clip_types_total = sum(
-                [
-                    clipped.geom_type.isin(POLYGON_GEOM_TYPES).any(),
-                    clipped.geom_type.isin(LINE_GEOM_TYPES).any(),
-                    clipped.geom_type.isin(POINT_GEOM_TYPES).any(),
-                ]
-            )
-
-            # Check there aren't any new geom types in the clipped GeoDataFrame
-            more_types = orig_types_total < clip_types_total
-
             if orig_types_total > 1:
                 warnings.warn(
                     "keep_geom_type can not be called on a mixed type GeoDataFrame.",
                     stacklevel=2,
                 )
-            elif new_collection or more_types:
+            else:
                 orig_type = gdf.geom_type.iloc[0]
                 if new_collection:
                     clipped = clipped.explode(index_parts=False)
