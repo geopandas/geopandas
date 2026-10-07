@@ -1006,6 +1006,49 @@ class TestExplore:
         for s in strings:
             assert s in out_str
 
+    @staticmethod
+    def _red_green(value):
+        return "#ff0000" if value > 100000000 else "#008000"
+
+    def test_custom_colormap_function_missing(self):
+        # https://github.com/geopandas/geopandas/issues/2408
+        m = self.missing.explore(
+            "pop_est",
+            cmap=self._red_green,
+            legend=False,
+            missing_kwds={"color": "#abcdef"},
+        )
+        out_str = self._fetch_map_string(m)
+        assert '"color":"#ff0000","fillColor":"#ff0000"' in out_str
+        assert '"color":"#008000","fillColor":"#008000"' in out_str
+        assert '"fillColor":"#abcdef"' in out_str
+
+    def test_custom_colormap_function_series(self):
+        m = self.world.explore(
+            self.world["pop_est"], cmap=self._red_green, legend=False
+        )
+        out_str = self._fetch_map_string(m)
+        assert '"color":"#ff0000","fillColor":"#ff0000"' in out_str
+        assert '"color":"#008000","fillColor":"#008000"' in out_str
+
+    def test_custom_colormap_function_legend(self):
+        # https://github.com/geopandas/geopandas/issues/2583
+        with pytest.warns(UserWarning, match="Cannot plot a legend"):
+            m = self.missing.explore("pop_est", cmap=self._red_green)
+        out_str = self._fetch_map_string(m)
+        assert '"color":"#ff0000","fillColor":"#ff0000"' in out_str
+        assert "legend" not in out_str
+
+    def test_custom_colormap_branca_missing(self):
+        step = StepColormap(["green", "yellow", "red"], vmin=0, vmax=100000000)
+        m = self.missing.explore(
+            "pop_est", cmap=step, legend=True, missing_kwds={"color": "#abcdef"}
+        )
+        out_str = self._fetch_map_string(m)
+        assert '"fillColor":"#008000ff"' in out_str
+        assert '"fillColor":"#abcdef"' in out_str
+        assert "legend" in out_str
+
     def test_multiple_geoseries(self):
         """
         Additional GeoSeries need to be removed as they cannot be converted to GeoJSON
