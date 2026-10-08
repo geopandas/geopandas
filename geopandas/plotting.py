@@ -704,6 +704,107 @@ def plot_series(
     return ax
 
 
+def _shrink_colorbar(ax, legend_kwds):
+    """Shrink the colorbar based on the new aspect ratio of the axes.
+
+    That way we ensure that it is never much larger than the axis without
+    complicated hacks.
+    """
+    if "shrink" in legend_kwds:
+        return
+    bbox = ax.get_position()
+    bbox_orig = ax.get_position(original=True)
+    if (
+        legend_kwds.get("location", "right") in ["top", "bottom"]
+        or legend_kwds.get("orientation", "vertical") == "horizontal"
+    ):
+        ratio = bbox.width / bbox_orig.width
+    else:
+        ratio = bbox.height / bbox_orig.height
+    legend_kwds["shrink"] = ratio
+    legend_kwds["aspect"] = ratio * 20
+
+
+def _inset_colorbar_axes(ax, legend_kwds):
+    """Create axes for a colorbar placed next to ``ax`` without resizing it.
+
+    Consumes ``shrink``, ``aspect``, ``pad``, ``anchor`` and ``orientation`` from
+    ``legend_kwds`` and sets ``location``. Offset from the axes accounts for tick
+    labels on the same side.
+    """
+    _shrink_colorbar(ax, legend_kwds)
+    location = legend_kwds.pop("location", None)
+    orientation = legend_kwds.pop("orientation", None)
+    if location is None:
+        location = "bottom" if orientation == "horizontal" else "right"
+    horizontal = location in ("top", "bottom")
+    shrink = legend_kwds.pop("shrink")
+    aspect = legend_kwds.pop("aspect")
+    pad = legend_kwds.pop("pad", 0.02)
+    anchor = legend_kwds.pop("anchor", (0.5, 0.5))
+    anchor = anchor[0] if horizontal else anchor[1]
+    legend_kwds["location"] = location
+
+    ax.apply_aspect()
+    width, height = ax.get_position().size * ax.figure.get_size_inches()
+    along, across = (width, height) if horizontal else (height, width)
+    # like matplotlib, size the colorbar relative to the original axes box
+    orig = ax.get_position(original=True).size * ax.figure.get_size_inches()
+    along_orig = orig[0] if horizontal else orig[1]
+
+    # space (in points) taken by ticks, tick labels and axis label on that side
+    axis = ax.xaxis if horizontal else ax.yaxis
+    first = location in ("bottom", "left")
+    offset = 0
+    ticks = axis.get_major_ticks()
+    if ticks:
+        tick = ticks[0]
+        line = tick.tick1line if first else tick.tick2line
+        label = tick.label1 if first else tick.label2
+        offset += line.get_markersize() if line.get_visible() else 0
+        if label.get_visible():
+            size = label.get_fontsize()
+            offset += tick.get_pad() + (size if horizontal else 4 * size)
+    if axis.label.get_text() and (axis.label_position == location):
+        offset += axis.labelpad + axis.label.get_fontsize()
+    offset = offset / 72 + pad * across
+
+    length = shrink * along_orig
+    thickness = length / aspect
+    start = (1 - length / along) * anchor
+    if location == "right":
+        bounds = [1 + offset / width, start, thickness / width, length / along]
+    elif location == "left":
+        bounds = [
+            -(offset + thickness) / width,
+            start,
+            thickness / width,
+            length / along,
+        ]
+    elif location == "top":
+        bounds = [start, 1 + offset / height, length / along, thickness / height]
+    else:
+        bounds = [
+            start,
+            -(offset + thickness) / height,
+            length / along,
+            thickness / height,
+        ]
+    from matplotlib.transforms import Bbox
+
+    def locator(_ax, _renderer):
+        to_figure = ax.transAxes + ax.figure.transFigure.inverted()
+        return Bbox.from_bounds(*bounds).transformed(to_figure)
+
+    # a get_subplotspec makes tight layout treat the colorbar as part of ``ax``
+    locator.get_subplotspec = ax.get_subplotspec
+    # a regular figure axes (so it is listed in ``fig.axes``) that follows ``ax``
+    cax = ax.figure.add_axes([0, 0, 1, 1], label="<colorbar>")
+    cax.set_axes_locator(locator)
+    ax.child_axes.append(cax)
+    return cax
+
+
 def plot_dataframe(
     df: geopandas.GeoDataFrame,
     column: ColumnLike = None,
@@ -1274,24 +1375,10 @@ def plot_dataframe(
                 elif mx < values_max:
                     legend_kwds["extend"] = "max"
 
-            # shrink the colorbar based on the new apect ratio - that way we ensure
-            # that it is never much larger than the axis without complicated hacks
-            bbox = ax.get_position()
-            bbox_orig = ax.get_position(original=True)
-            if "shrink" not in legend_kwds:
-                if (
-                    legend_kwds.get("location", "right")
-                    in [
-                        "top",
-                        "bottom",
-                    ]
-                    or legend_kwds.get("orientation", "vertical") == "horizontal"
-                ):
-                    ratio = bbox.width / bbox_orig.width
-                else:
-                    ratio = bbox.height / bbox_orig.height
-                legend_kwds["shrink"] = ratio
-                legend_kwds["aspect"] = ratio * 20
+            if cax is None:
+                cax = _inset_colorbar_axes(ax, legend_kwds)
+            else:
+                _shrink_colorbar(ax, legend_kwds)
 
             mappable = cm.ScalarMappable(
                 norm=style_kwds.get("norm", colors.Normalize(vmin=mn, vmax=mx)),
