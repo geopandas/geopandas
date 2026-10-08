@@ -1,5 +1,14 @@
 # Changelog
 
+## Development version
+
+New features and improvements:
+
+- `add_plot` keyword in `GeoDataFrame.plot` and `GeoSeries.plot` now defaults to None. 
+  If None, labels are added only to axes without an existing label and, for axes shared 
+  with others , only on the exterior of the grid (bottom for the x-axis, left for the 
+  y-axis). If True, labels are added to all axes. If False, no labels are added (#3886).
+
 ## Version 1.2.0 (September 28, 2026)
 
 New features and improvements:
