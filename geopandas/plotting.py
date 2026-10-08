@@ -495,7 +495,7 @@ def plot_series(
     autolim: bool = True,
     tiles: bool | str | TileProvider | os.PathLike | MemoryFile = False,
     attr: str | None = None,
-    add_labels: bool = True,
+    add_labels: bool | None = None,
     **style_kwds,
 ) -> Axes:
     """
@@ -555,8 +555,12 @@ def plot_series(
         Attribution text passed to :func:`contextily.add_basemap` as
         ``attribution``. When not provided, the default attribution of the selected
         tile source is used.
-    add_labels : bool (default True)
-        Use CRS metadata to label the axes.
+    add_labels : bool | None (default None)
+        Use CRS metadata to label the axes. If None, labels are added only to
+        axes without an existing label and, for axes shared with others
+        (e.g. ``plt.subplots(sharey=True)``), only on the exterior of the grid
+        (bottom for the x-axis, left for the y-axis). If True, labels are added
+        to all axes. If False, no labels are added.
     **style_kwds : dict
         Style options to be passed on to the actual plot function, such as
         ``edgecolor``, ``facecolor``, ``linewidth``, ``markersize``, ``alpha``. These
@@ -582,8 +586,8 @@ def plot_series(
     if ax is None:
         _, ax = plt.subplots(figsize=figsize)
 
-    if add_labels:
-        _set_axis_labels(ax, s.crs)
+    if add_labels is not False:
+        _set_axis_labels(ax, s.crs, add_labels=add_labels)
 
     if s.empty:
         warnings.warn(
@@ -727,7 +731,7 @@ def plot_dataframe(
     autolim: bool = True,
     tiles: bool | str | TileProvider | os.PathLike | MemoryFile = False,
     attr: str | None = None,
-    add_labels: bool = True,
+    add_labels: bool | None = None,
     **style_kwds,
 ) -> Axes:
     """
@@ -868,8 +872,12 @@ def plot_dataframe(
         Attribution text passed to :func:`contextily.add_basemap` as
         ``attribution``. When not provided, the default attribution of the selected
         tile source is used.
-    add_labels : bool (default True)
-        Use CRS metadata to label the axes.
+    add_labels : bool | None (default None)
+        Use CRS metadata to label the axes. If None, labels are added only to
+        axes without an existing label and, for axes shared with others
+        (e.g. ``plt.subplots(sharey=True)``), only on the exterior of the grid
+        (bottom for the x-axis, left for the y-axis). If True, labels are added
+        to all axes. If False, no labels are added.
     **style_kwds : dict
         Style options to be passed on to the actual plot function, such as
         ``edgecolor``, ``facecolor``, ``linewidth``, ``markersize``, ``alpha``. These
@@ -967,8 +975,8 @@ def plot_dataframe(
             raise ValueError("'ax' can not be None if 'cax' is not.")
         _fig, ax = plt.subplots(figsize=figsize)
 
-    if add_labels:
-        _set_axis_labels(ax, df.crs)
+    if add_labels is not False:
+        _set_axis_labels(ax, df.crs, add_labels=add_labels)
 
     if df.empty:
         warnings.warn(
@@ -1380,7 +1388,20 @@ def _add_basemap(ax, tiles, crs, attr=None):
         contextily.add_basemap(source=tiles, ax=ax, crs=crs, attribution=attr)
 
 
-def _set_axis_labels(ax, crs):
+def _is_exterior(ax, axis):
+    """Check whether ``ax`` is the bottom/left-most Axes sharing ``axis``."""
+    shared = ax.get_shared_x_axes() if axis == "x" else ax.get_shared_y_axes()
+    siblings = shared.get_siblings(ax)
+    if len(siblings) < 2:
+        return True
+    pos = [a.get_position() for a in siblings]
+    me = ax.get_position()
+    if axis == "x":
+        return me.y0 <= min(p.y0 for p in pos)
+    return me.x0 <= min(p.x0 for p in pos)
+
+
+def _set_axis_labels(ax, crs, add_labels=False):
     """Set labels for Axes based on CRS."""
     # taken from xarray-contrib/xvec
     if crs:
@@ -1391,10 +1412,15 @@ def _set_axis_labels(ax, crs):
     else:
         x_label, y_label = "x", "y"
 
-    if ax.get_xlabel() == "":
+    if add_labels:
         ax.set_xlabel(x_label, fontsize="small")
-    if ax.get_ylabel() == "":
         ax.set_ylabel(y_label, fontsize="small")
+
+    else:  # add_labels=None
+        if ax.get_xlabel() == "" and _is_exterior(ax, "x"):
+            ax.set_xlabel(x_label, fontsize="small")
+        if ax.get_ylabel() == "" and _is_exterior(ax, "y"):
+            ax.set_ylabel(y_label, fontsize="small")
 
 
 @doc(plot_dataframe)

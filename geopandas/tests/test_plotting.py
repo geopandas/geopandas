@@ -2835,8 +2835,6 @@ class TestAxisLabels:
         assert ax.get_ylabel() == "y"
 
     def test_passed_ax(self):
-        import matplotlib.pyplot as plt
-
         _, ax = plt.subplots()
         ax = self.nybb.plot(ax=ax)
         assert ax.get_xlabel() == "Easting [US survey foot]"
@@ -2848,12 +2846,17 @@ class TestAxisLabels:
         assert ax.get_ylabel() == "Northing [US survey foot]"
 
     def test_preservation(self):
-        import matplotlib.pyplot as plt
-
         _, ax = plt.subplots()
         ax.set_xlabel("xlabel")
         ax = self.nybb.plot(ax=ax)
         assert ax.get_xlabel() == "xlabel"
+        assert ax.get_ylabel() == "Northing [US survey foot]"
+
+    def test_overriding(self):
+        _, ax = plt.subplots()
+        ax.set_xlabel("xlabel")
+        ax = self.nybb.plot(ax=ax, add_labels=True)
+        assert ax.get_xlabel() == "Easting [US survey foot]"
         assert ax.get_ylabel() == "Northing [US survey foot]"
 
     def test_no_labels(self):
@@ -2871,6 +2874,34 @@ class TestAxisLabels:
         ax2 = self.nybb.geometry.plot(add_labels=False)
         assert ax2.get_xlabel() == ""
         assert ax2.get_ylabel() == ""
+
+    def test_subplot_sharey(self):
+        _, axs = plt.subplots(1, 2, sharey=True)
+        self.nybb.plot(ax=axs[0])
+        self.nybb.plot(ax=axs[1])
+
+        assert axs[0].get_xlabel() == "Easting [US survey foot]"
+        assert axs[0].get_ylabel() == "Northing [US survey foot]"
+
+        assert axs[1].get_xlabel() == "Easting [US survey foot]"
+        assert axs[1].get_ylabel() == ""
+
+    def test_subplot_share_both(self):
+        _, axs = plt.subplots(2, 2, sharey=True, sharex=True)
+        for ax in axs.flat:
+            self.nybb.plot(ax=ax)
+
+        assert axs[0][0].get_xlabel() == ""
+        assert axs[0][0].get_ylabel() == "Northing [US survey foot]"
+
+        assert axs[0][1].get_xlabel() == ""
+        assert axs[0][1].get_ylabel() == ""
+
+        assert axs[1][0].get_xlabel() == "Easting [US survey foot]"
+        assert axs[1][0].get_ylabel() == "Northing [US survey foot]"
+
+        assert axs[1][1].get_xlabel() == "Easting [US survey foot]"
+        assert axs[1][1].get_ylabel() == ""
 
 
 class TestTilesPlotting:
