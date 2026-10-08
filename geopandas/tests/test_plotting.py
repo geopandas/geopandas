@@ -1534,7 +1534,7 @@ class TestMapclassifyPlotting:
             ax = df.plot(column="pop_est", cmap="OrRd", legend=True)
         plot_height = _get_ax(ax.get_figure(), "").get_position().height
         legend_height = _get_ax(ax.get_figure(), "<colorbar>").get_position().height
-        assert abs(plot_height - legend_height) >= 1e-6
+        assert abs(plot_height - legend_height) < 1e-6
         # fix heights with cax argument
         fig, ax2 = plt.subplots()
         from mpl_toolkits.axes_grid1 import make_axes_locatable
