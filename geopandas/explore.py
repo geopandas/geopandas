@@ -420,7 +420,7 @@ def _explore(
                 column_name = "__plottable_column"
                 gdf[column_name] = column
                 column = column_name
-        elif isinstance(gdf[column].dtype, pd.CategoricalDtype):
+        if isinstance(gdf[column].dtype, pd.CategoricalDtype):
             if categories is not None:
                 raise ValueError(
                     "Cannot specify 'categories' when column has categorical dtype"
