@@ -812,6 +812,17 @@ def test_schema_incompatible_type(tmp_path):
         gdf.to_parquet(tmp_path / "test.parquet", schema=schema)
 
 
+def test_schema_column_not_in_dataframe(tmp_path):
+    # a column of the schema that is not in the dataframe (or its index) is an
+    # error, which is raised as is by pyarrow
+    schema = pa.schema([pa.field("i", pa.int8()), pa.field("missing", pa.int8())])
+    gdf = geopandas.GeoDataFrame({"i": [1], "geometry": [box(0, 0, 1, 1)]})
+    path = tmp_path / "test.parquet"
+    with pytest.raises(KeyError, match="missing"):
+        gdf.to_parquet(path, schema=schema)
+    assert not path.exists()
+
+
 def test_schema_without_geometry_field(tmp_path):
     # the geometry field is optional in the schema, it is added after the others
     schema = pa.schema([pa.field("i", pa.int8())])
