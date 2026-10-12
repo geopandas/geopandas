@@ -823,6 +823,133 @@ def test_schema_column_not_in_dataframe(tmp_path):
     assert not path.exists()
 
 
+@pytest.mark.parametrize(
+    "index, index_name", [(pd.Index([5, 6], name="key"), "key"), (None, None)]
+)
+def test_schema_index_true_requires_index_in_schema(tmp_path, index, index_name):
+    # index=True explicitly asks for the index to be written, which contradicts a
+    # schema that doesn't list its levels
+    schema = pa.schema([pa.field("i", pa.int8())])
+    gdf = geopandas.GeoDataFrame(
+        {"i": [1, 2], "geometry": [box(0, 0, 1, 1), box(1, 1, 2, 2)]}, index=index
+    )
+    path = tmp_path / "test.parquet"
+    with pytest.raises(ValueError, match="index=True"):
+        gdf.to_parquet(path, index=True, schema=schema)
+    assert not path.exists()
+
+
+def test_schema_index_in_schema(tmp_path):
+    schema = pa.schema([pa.field("key", pa.int8()), pa.field("i", pa.int8())])
+    gdf = geopandas.GeoDataFrame(
+        {"i": [1, 2], "geometry": [box(0, 0, 1, 1), box(1, 1, 2, 2)]},
+        index=pd.Index([5, 6], name="key"),
+    )
+    path = tmp_path / "test.parquet"
+    gdf.to_parquet(path, index=True, schema=schema)
+
+    assert pq.read_schema(path).names == ["key", "i", "geometry"]
+    assert pq.read_schema(path).field("key").type == pa.int8()
+    result = read_parquet(path)
+    assert result.index.name == "key"
+    assert result.index.tolist() == [5, 6]
+
+
+def test_schema_index_default_not_in_schema(tmp_path):
+    # without an explicit index=True, the schema decides if the index is written
+    schema = pa.schema([pa.field("i", pa.int8())])
+    gdf = geopandas.GeoDataFrame(
+        {"i": [1, 2], "geometry": [box(0, 0, 1, 1), box(1, 1, 2, 2)]},
+        index=pd.Index([5, 6], name="key"),
+    )
+    path = tmp_path / "test.parquet"
+    gdf.to_parquet(path, schema=schema)
+    assert pq.read_schema(path).names == ["i", "geometry"]
+
+
+def test_schema_index_false_but_index_in_schema(tmp_path):
+    # the error of the contradicting index=False is raised as is by pyarrow
+    schema = pa.schema([pa.field("key", pa.int8()), pa.field("i", pa.int8())])
+    gdf = geopandas.GeoDataFrame(
+        {"i": [1], "geometry": [box(0, 0, 1, 1)]}, index=pd.Index([5], name="key")
+    )
+    with pytest.raises(ValueError, match="key"):
+        gdf.to_parquet(tmp_path / "test.parquet", index=False, schema=schema)
+
+
+@pytest.fixture
+def three_boxes():
+    return geopandas.GeoDataFrame(
+        {"i": [1, 2, 3]},
+        geometry=[box(0, 0, 1, 1), box(10, 10, 11, 11), box(20, 20, 21, 21)],
+        crs="EPSG:4326",
+    )
+
+
+def test_schema_write_covering_bbox(tmp_path, three_boxes):
+    # the bbox column is added after the columns of the schema, with generated
+    # geo metadata describing it
+    schema = pa.schema([pa.field("i", pa.int8())])
+    path = tmp_path / "test.parquet"
+    three_boxes.to_parquet(path, schema=schema, write_covering_bbox=True)
+
+    assert pq.read_schema(path).names == ["i", "geometry", "bbox"]
+    geo = json.loads(pq.read_schema(path).metadata[b"geo"])
+    assert "covering" in geo["columns"]["geometry"]
+    result = read_parquet(path, bbox=(9, 9, 12, 12))
+    assert result["i"].tolist() == [2]
+
+
+def test_schema_write_covering_bbox_with_geo_metadata(tmp_path, three_boxes):
+    # the geo metadata of the schema is written as is, so it can't describe the
+    # bbox column that write_covering_bbox adds
+    geo = json.dumps(
+        {
+            "version": "1.1.0",
+            "primary_column": "geometry",
+            "columns": {"geometry": {"encoding": "WKB", "geometry_types": []}},
+        }
+    )
+    schema = pa.schema([pa.field("i", pa.int64())], metadata={"geo": geo})
+    path = tmp_path / "test.parquet"
+    with pytest.raises(ValueError, match="write_covering_bbox"):
+        three_boxes.to_parquet(path, schema=schema, write_covering_bbox=True)
+    assert not path.exists()
+
+
+def test_schema_user_managed_bbox(tmp_path, three_boxes):
+    # with geo metadata in the schema, the user can write their own bbox column
+    coords = ["xmin", "ymin", "xmax", "ymax"]
+    bbox_type = pa.struct([(name, pa.float64()) for name in coords])
+    bounds = three_boxes.bounds
+    gdf = three_boxes.copy()
+    gdf["bbox"] = [
+        dict(zip(coords, row)) for row in bounds.itertuples(index=False, name=None)
+    ]
+    geo = json.dumps(
+        {
+            "version": "1.1.0",
+            "primary_column": "geometry",
+            "columns": {
+                "geometry": {
+                    "encoding": "WKB",
+                    "geometry_types": ["Polygon"],
+                    "covering": {"bbox": {name: ["bbox", name] for name in coords}},
+                }
+            },
+        }
+    )
+    schema = pa.schema(
+        [pa.field("i", pa.int64()), pa.field("bbox", bbox_type)], metadata={"geo": geo}
+    )
+    path = tmp_path / "test.parquet"
+    gdf.to_parquet(path, schema=schema)
+
+    assert pq.read_schema(path).names == ["i", "bbox", "geometry"]
+    result = read_parquet(path, bbox=(9, 9, 12, 12))
+    assert result["i"].tolist() == [2]
+
+
 def test_schema_without_geometry_field(tmp_path):
     # the geometry field is optional in the schema, it is added after the others
     schema = pa.schema([pa.field("i", pa.int8())])

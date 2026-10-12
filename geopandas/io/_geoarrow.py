@@ -123,7 +123,8 @@ def geopandas_to_arrow(
         the columns of this schema, in this order. Columns specified in the
         schema that are not found in the DataFrame columns or its index will
         raise an error. Additional columns or index levels in the DataFrame
-        which are not specified in the schema will be ignored.
+        which are not specified in the schema will be ignored, except that
+        ``index=True`` raises an error if the index levels are not in the schema.
 
         The fields for geometry columns are optional. The type of a geometry
         field is always determined by ``geometry_encoding``, so any type given
@@ -150,6 +151,24 @@ def geopandas_to_arrow(
         for col in geometry_columns:
             if col not in schema.names:
                 schema = schema.append(pa.field(col, pa.null()))
+
+        if index:
+            # index=True explicitly asks for the index to be written, which
+            # contradicts a schema that leaves out its levels
+            index_names = pa.Schema.from_pandas(
+                df_attr.iloc[:0], preserve_index=True
+            ).names
+            missing = [
+                name
+                for name in index_names
+                if name not in df_attr.columns and name not in schema.names
+            ]
+            if missing:
+                raise ValueError(
+                    f"The index level(s) {missing} are not in the schema, but "
+                    "index=True requires the index to be written. Add them to the "
+                    "schema, or do not pass index=True."
+                )
 
     table = pa.Table.from_pandas(df_attr, preserve_index=index, schema=schema)
 
