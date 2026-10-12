@@ -1519,6 +1519,61 @@ default 'snappy'
         --------
         >>> gdf.to_parquet('data.parquet')  # doctest: +SKIP
 
+        The following examples write to an in-memory buffer to show what ends up
+        in the file. Pass a :class:`pyarrow.Schema` to set the types of the columns
+        and to add field and schema metadata, and ``additional_metadata`` to add
+        key-value pairs to the file metadata (the values are JSON-encoded):
+
+        >>> import io
+        >>> import pyarrow as pa
+        >>> import pyarrow.parquet as pq
+        >>> from shapely.geometry import Point
+        >>> gdf = geopandas.GeoDataFrame(
+        ...     {"name": ["a", "b"], "count": [1, 2]},
+        ...     geometry=[Point(1, 2), Point(2, 1)],
+        ...     crs="EPSG:4326",
+        ... )
+        >>> schema = pa.schema(
+        ...     [pa.field("count", pa.int8(), metadata={"unit": "items"})],
+        ...     metadata={"license": "CC0"},
+        ... )
+        >>> buffer = io.BytesIO()
+        >>> gdf.to_parquet(
+        ...     buffer, schema=schema, additional_metadata={"source": "survey"}
+        ... )
+        >>> written = pq.read_schema(buffer)
+        >>> print(written.field("count").type)
+        int8
+        >>> written.field("count").metadata
+        {b'unit': b'items'}
+        >>> sorted(written.metadata)
+        [b'geo', b'license', b'pandas', b'source']
+
+        The file has the columns of the schema, in the order of the schema. Columns
+        of the GeoDataFrame that are not in the schema (``name`` above) are left
+        out, while the fields of geometry columns are optional and are added after
+        the other fields:
+
+        >>> written.names
+        ['count', 'geometry']
+
+        A bbox column for the GeoParquet covering is added after the columns of the
+        schema, and described in the "geo" metadata:
+
+        >>> buffer = io.BytesIO()
+        >>> gdf.to_parquet(buffer, schema=schema, write_covering_bbox=True)
+        >>> pq.read_schema(buffer).names
+        ['count', 'geometry', 'bbox']
+
+        The index is only written if it is part of the schema, so asking for it
+        with ``index=True`` while leaving it out of the schema raises an error:
+
+        >>> gdf.to_parquet(io.BytesIO(), schema=schema, index=True)
+        ... # doctest: +ELLIPSIS
+        Traceback (most recent call last):
+        ...
+        ValueError: The index level(s) ['__index_level_0__'] are not in the schema...
+
         See Also
         --------
         GeoDataFrame.to_feather : write GeoDataFrame to feather
