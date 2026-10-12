@@ -4,7 +4,7 @@
 
 Bug fixes:
 
-- Fix ``explore()`` failing when ``column`` is passed a non-numeric list-like (#2587).
+- Fix ``explore()`` failing when ``column`` is passed a non-numeric list-like (#3889).
 
 ## Version 1.2.0 (September 28, 2026)
 
