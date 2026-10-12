@@ -13,7 +13,7 @@ def vsi_path(path: str) -> str:
 
     # Windows drive letters (e.g. "C:\") confuse `urlparse` as they look like
     # URL schemes
-    if sys.platform == "win32" and re.match("^[a-zA-Z]\\:", path):
+    if sys.platform == "win32" and re.match(r"^[a-zA-Z]\:", path):
         if not path.split("!", maxsplit=1)[0].endswith(".zip"):
             return path
 

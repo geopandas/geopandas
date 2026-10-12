@@ -139,7 +139,7 @@ def _crs_mismatch_warn(
     )
 
 
-def isna(value: None | float | pd.NA) -> bool:
+def isna(value: float | pd.NA | None) -> bool:
     """
     Check if scalar value is NA-like (None, np.nan or pd.NA).
 

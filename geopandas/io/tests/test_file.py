@@ -614,11 +614,15 @@ def test_read_file(engine, nybb_filename):
     "url",
     [
         # geojson url
-        "https://raw.githubusercontent.com/geopandas/geopandas/"
-        "main/geopandas/tests/data/null_geom.geojson",
+        (
+            "https://raw.githubusercontent.com/geopandas/geopandas/"
+            "main/geopandas/tests/data/null_geom.geojson"
+        ),
         # url to zip file
-        "https://raw.githubusercontent.com/geopandas/geopandas/"
-        "main/geopandas/tests/data/nybb_16a.zip",
+        (
+            "https://raw.githubusercontent.com/geopandas/geopandas/"
+            "main/geopandas/tests/data/nybb_16a.zip"
+        ),
         # url to web service
         "https://demo.pygeoapi.io/stable/collections/obs/items",
     ],
@@ -670,7 +674,7 @@ def test_read_file_geojson_string_path(engine):
 
 
 def test_read_file_textio(file_path, engine):
-    with open(file_path) as file_text_stream:
+    with open(file_path, encoding="utf-8") as file_text_stream:
         file_stringio = io.StringIO(file_text_stream.read())
         file_text_stream.seek(0)
         gdf_text_stream = read_file(file_text_stream, engine=engine)
