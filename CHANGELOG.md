@@ -1,5 +1,17 @@
 # Changelog
 
+## Development version
+
+New features and improvements:
+
+- `GeoDataFrame.to_parquet` and `GeoDataFrame.to_feather` now accept a pyarrow schema
+  and additional file metadata (#3631, #3888):
+  - The new `schema` keyword sets the data types, the order of the columns, and the
+    field and schema metadata of the file. The fields of geometry columns are optional
+    in the schema, and a `"geo"` key in its metadata is written as is.
+  - The new `additional_metadata` keyword adds JSON-encoded key-value pairs to the
+    file metadata. It can override the metadata of the schema, but never `"geo"`.
+
 ## Version 1.2.0 (September 28, 2026)
 
 New features and improvements:
