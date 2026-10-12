@@ -4,10 +4,11 @@
 
 New features and improvements:
 
-- Add `schema` and `additional_metadata` parameters to `to_parquet` and `to_feather`
-  to set the data types and the field and schema metadata of the file. The fields of
-  geometry columns are optional in the schema, and a `geo` key in its metadata is
-  written as is (#3631).
+- `GeoDataFrame.to_parquet` and `GeoDataFrame.to_feather` accept a `schema` to set the
+  data types and the field and schema metadata of the file. The fields of geometry
+  columns are optional in the schema (#3631).
+- `GeoDataFrame.to_parquet` and `GeoDataFrame.to_feather` accept `additional_metadata`
+  to add key-value pairs to the file metadata (#3631).
 
 ## Version 1.2.0 (September 28, 2026)
 
