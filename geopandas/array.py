@@ -70,9 +70,25 @@ geometry_type_values = np.array(list(type_mapping.values()), dtype=object)
 
 
 class GeometryDtype(ExtensionDtype):
-    type = BaseGeometry
-    name = "geometry"
+    # name = "geometry"
     na_value = None
+    engine = "planar"
+
+    _metadata = ("engine",)
+
+    def __init__(self, engine="planar"):
+        self.engine = engine
+        # TODO I think consensus engine -> compute, and this is something else?
+        #  in parquet, this is logical type, in geoparquet this is edges
+
+    @property
+    def type(self):
+        if self.engine == "planar":
+            return BaseGeometry
+        elif self.engine == "spherical":
+            import spherely
+
+            return spherely.Geography
 
     @classmethod
     def construct_from_string(cls, string):
@@ -82,12 +98,72 @@ class GeometryDtype(ExtensionDtype):
             )
         elif string == cls.name:
             return cls()
+        elif string == "geometry[spherical]":
+            return cls(engine="spherical")
         else:
             raise TypeError(f"Cannot construct a '{cls.__name__}' from '{string}'")
 
-    @classmethod
-    def construct_array_type(cls):
-        return GeometryArray
+    def construct_array_type(self):
+        if self.engine == "planar":
+            return GeometryArray
+        elif self.engine == "spherical":
+            from geopandas._array_spherical import GeographyArray
+
+            return GeographyArray
+
+    def __repr__(self):
+        if self.engine == "spherical":
+            return "geometry[spherical]"
+        else:
+            return "geometry"
+
+    def __str__(self):
+        # this is here for BaseConstructorsTest.test_from_dtype
+        return self.__repr__()
+
+    @property
+    def name(self):
+        # must be consistent with __str__
+        if self.engine == "planar":
+            return "geometry"
+        else:
+            return "geometry[spherical]"
+
+    def __eq__(self, other: object) -> bool:
+        """
+        Check whether 'other' is equal to self.
+
+        By default, 'other' is considered equal if either
+
+        * it's a string matching 'self.name'.
+        * it's an instance of this type and all of the attributes
+          in ``self._metadata`` are equal between `self` and `other`.
+
+        Parameters
+        ----------
+        other : Any
+
+        Returns
+        -------
+        bool
+        """
+        if isinstance(other, str):
+            if other == "geometry":
+                return True
+            try:
+                other = self.construct_from_string(other)
+            except (TypeError, ImportError):
+                # TypeError if `other` is not a valid string
+                # ImportError if spherely is not installed for "geometry[spherical]"
+                return False
+        if isinstance(other, type(self)):
+            return self.engine == other.engine
+        return False
+
+    def __hash__(self):
+        # This is here because python requires __hash__ to be defined
+        # if __eq__ is overwritten for something to be hashable
+        return hash(self.engine)
 
 
 register_extension_dtype(GeometryDtype)
@@ -343,7 +419,11 @@ def points_from_xy(
     return GeometryArray(shapely.points(x, y, z), crs=crs)
 
 
-class GeometryArray(ExtensionArray):
+class BaseGeometryArray(ExtensionArray):
+    pass
+
+
+class GeometryArray(BaseGeometryArray):
     """Class wrapping a numpy array of Shapely objects.
 
     It also holds the array-based implementations.
@@ -518,7 +598,7 @@ class GeometryArray(ExtensionArray):
         #         )
 
     def __getstate__(self):
-        return (shapely.to_wkb(self._data), self._crs)
+        return (self.to_wkb(), self._crs)
 
     def __setstate__(self, state):
         if not isinstance(state, dict):
@@ -534,6 +614,10 @@ class GeometryArray(ExtensionArray):
             if "_crs" not in state:
                 state["_crs"] = None
             self.__dict__.update(state)
+
+    def to_wkb(self, hex=False, **kwargs):
+        """Convert GeometryArray to a numpy object array of WKB objects."""
+        return shapely.to_wkb(self._data, hex=hex, **kwargs)
 
     # -------------------------------------------------------------------------
     # Geometry related methods
@@ -1491,6 +1575,10 @@ class GeometryArray(ExtensionArray):
             NumPy ndarray with 'dtype' for its dtype.
         """
         if isinstance(dtype, GeometryDtype):
+            if dtype.engine == "spherical":
+                from geopandas._array_spherical import GeographyArray
+
+                return GeographyArray.from_shapely(self)
             if copy:
                 return self.copy()
             else:
@@ -1535,7 +1623,7 @@ class GeometryArray(ExtensionArray):
         """
         # note ExtensionArray usage of value_counts only specifies dropna,
         # so sort, normalize and bins are not arguments
-        values = to_wkb(self)
+        values = self.to_wkb()
         from pandas import Index, Series
 
         result = Series(values).value_counts(dropna=dropna)
@@ -1700,7 +1788,7 @@ class GeometryArray(ExtensionArray):
             `na_sentinal` and not included in `uniques`. By default,
             ``np.nan`` is used.
         """
-        vals = to_wkb(self)
+        vals = self.to_wkb()
         return vals, None
 
     @classmethod
