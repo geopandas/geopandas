@@ -19,6 +19,11 @@ import pyarrow as pa
 import pyarrow.compute as pc
 from pyarrow import feather
 
+pytestmark = pytest.mark.filterwarnings(
+    "ignore:pyarrow.feather.read_feather is deprecated"
+)
+
+
 DATA_PATH = pathlib.Path(os.path.dirname(__file__)) / "data"
 
 
