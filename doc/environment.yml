@@ -26,6 +26,7 @@ dependencies:
   - ipykernel
   - myst-parser
   - folium
+  - ipyleaflet
   - xyzservices
   - packaging
   - pip
