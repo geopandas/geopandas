@@ -388,6 +388,16 @@ class TestExplore:
         with pytest.raises(ValueError, match="different number of rows"):
             self.world.explore(column=np.array([1, 2, 3]))
 
+    def test_column_values_categorical(self):
+        """
+        Check that a non-numeric pd.Series passed as column is plotted as
+        categorical, same as the column name (GH2587)
+        """
+        m = self.world.explore(column=self.world["continent"])
+        out_str = self._fetch_map_string(m)
+        assert 'color":"#9467bd","__plottable_column":"Europe"' in out_str
+        assert 'color":"#1f77b4","__plottable_column":"Africa"' in out_str
+
     def test_no_crs(self):
         """Naive geometry get no tiles"""
         df = self.world.copy()
