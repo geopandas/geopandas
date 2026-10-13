@@ -291,7 +291,8 @@ def overlay(
             "overlay currently only implemented for GeoDataFrames"
         )
 
-    if not _check_crs(df1, df2):
+    different_crs = not _check_crs(df1, df2)
+    if different_crs:
         _crs_mismatch_warn(df1, df2, stacklevel=3)
 
     if keep_geom_type is None:
@@ -370,8 +371,16 @@ def overlay(
         elif how == "intersection":
             result = _overlay_intersection(df1, df2)
         elif how == "symmetric_difference":
+            if different_crs:
+                # allow GeometryArray to update crs
+                # (setitem is not allowed to when old crs doesn't match new)
+                df2 = df2.set_crs(None, allow_override=True)
             result = _overlay_symmetric_diff(df1, df2)
         elif how == "union":
+            if different_crs:
+                # allow GeometryArray to update crs
+                # (setitem is not allowed to when old crs doesn't match new)
+                df2 = df2.set_crs(None, allow_override=True)
             result = _overlay_union(df1, df2)
         elif how == "identity":
             result = _overlay_identity(df1, df2)
