@@ -773,3 +773,124 @@ class TestConstructor:
         # index_parts is ignored if ignore_index=True
         s = s.explode(index_parts=True, ignore_index=True)
         assert_index_equal(s.index, expected_index)
+
+
+# -----------------------------------------------------------------------------
+# from_geojson tests (GH-3309)
+# -----------------------------------------------------------------------------
+
+
+def test_from_geojson():
+    p1 = Point(1, 1)
+    p2 = Point(2, 2)
+    p3 = Point(3, 3)
+    g1 = json.dumps({"type": "Point", "coordinates": [1, 1]})
+    g2 = json.dumps({"type": "Point", "coordinates": [2, 2]})
+    g3 = json.dumps({"type": "Point", "coordinates": [3, 3]})
+    line_geojson = json.dumps(
+        {"type": "LineString", "coordinates": [[0, 0], [1, 1], [2, 2]]}
+    )
+    poly_geojson = json.dumps(
+        {
+            "type": "Polygon",
+            "coordinates": [[[0, 0], [1, 0], [1, 1], [0, 1], [0, 0]]],
+        }
+    )
+    feature_geojson = json.dumps(
+        {
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [5, 5]},
+            "properties": {"name": "test"},
+        }
+    )
+
+    # Basic list of GeoJSON strings -> GeoSeries of geometries
+    result = GeoSeries.from_geojson([g1, g2, g3])
+    expected = GeoSeries([p1, p2, p3])
+    assert_geoseries_equal(result, expected)
+
+    # LineString, Polygon, and Feature geometry extraction
+    assert GeoSeries.from_geojson([line_geojson])[0].geom_type == "LineString"
+    assert GeoSeries.from_geojson([poly_geojson])[0].geom_type == "Polygon"
+    assert GeoSeries.from_geojson([feature_geojson])[0] == Point(5, 5)
+
+    # ExtensionArray input
+    from geopandas.array import from_geojson
+
+    ea = pd.array([g1, g2], dtype="string")
+    result_ea = from_geojson(ea)
+    assert len(result_ea) == 2
+    assert result_ea[0] == p1
+
+    # Roundtrip serialization
+    import shapely
+
+    geoms = GeoSeries([p1, p2, p3])
+    geojson_strings = [shapely.to_geojson(g) for g in geoms]
+    assert_geoseries_equal(GeoSeries.from_geojson(geojson_strings), geoms)
+
+
+@pytest.mark.skipif(not compat.HAS_PYPROJ, reason="pyproj not available")
+def test_from_geojson_crs():
+    g1 = json.dumps({"type": "Point", "coordinates": [1, 1]})
+    g2 = json.dumps({"type": "Point", "coordinates": [2, 2]})
+    result = GeoSeries.from_geojson([g1, g2], crs="EPSG:4326")
+    assert result.crs.to_epsg() == 4326
+    assert GeoSeries.from_geojson([g1]).crs is None
+
+
+def test_from_geojson_series():
+    g1 = json.dumps({"type": "Point", "coordinates": [1, 1]})
+    g2 = json.dumps({"type": "Point", "coordinates": [2, 2]})
+    p1 = Point(1, 1)
+    p2 = Point(2, 2)
+
+    # pandas Series input: index preservation
+    s = pd.Series([g1, g2], index=[10, 20])
+    result = GeoSeries.from_geojson(s)
+    expected = GeoSeries([p1, p2], index=pd.Index([10, 20]))
+    assert_geoseries_equal(result, expected)
+
+    # Explicit index reindexes the underlying Series
+    result_reindex = GeoSeries.from_geojson(s, index=[10])
+    expected_reindex = GeoSeries([p1], index=pd.Index([10]))
+    assert_geoseries_equal(result_reindex, expected_reindex)
+
+
+@pytest.mark.parametrize("missing_value", [None, np.nan, pd.NA])
+def test_from_geojson_missing(missing_value):
+    g1 = json.dumps({"type": "Point", "coordinates": [1, 1]})
+    g3 = json.dumps({"type": "Point", "coordinates": [3, 3]})
+    p1 = Point(1, 1)
+    p3 = Point(3, 3)
+
+    # list with None
+    assert_geoseries_equal(
+        GeoSeries.from_geojson([g1, None, g3]),
+        GeoSeries([p1, None, p3]),
+    )
+
+    # Series with missing sentinels
+    s = pd.Series([g1, missing_value, g3], dtype="object")
+    result = GeoSeries.from_geojson(s)
+    expected = GeoSeries([p1, None, p3])
+    assert_geoseries_equal(result, expected)
+
+
+def test_from_geojson_on_invalid():
+    import shapely.errors
+
+    invalid = "not valid geojson"
+
+    with pytest.raises((shapely.errors.GEOSException, ValueError)):
+        GeoSeries.from_geojson([invalid], on_invalid="raise")
+
+    with pytest.warns(Warning):
+        res_warn = GeoSeries.from_geojson([invalid], on_invalid="warn")
+    assert res_warn[0] is None
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        res_ignore = GeoSeries.from_geojson([invalid], on_invalid="ignore")
+    assert res_ignore[0] is None
+
