@@ -1275,10 +1275,12 @@ def plot_dataframe(
                     legend_kwds["extend"] = "max"
 
             # shrink the colorbar based on the new apect ratio - that way we ensure
-            # that it is never much larger than the axis without complicated hacks
+            # that it is never much larger than the axis without complicated hacks.
+            # A layout engine already places the colorbar, so shrinking on top of it
+            # undoes that layout (GH3885).
             bbox = ax.get_position()
             bbox_orig = ax.get_position(original=True)
-            if "shrink" not in legend_kwds:
+            if "shrink" not in legend_kwds and ax.figure.get_layout_engine() is None:
                 if (
                     legend_kwds.get("location", "right")
                     in [
