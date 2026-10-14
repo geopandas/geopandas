@@ -1446,7 +1446,10 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         """Write a GeoDataFrame to the Parquet format.
 
         By default, all geometry columns present are serialized to WKB format
-        in the file.
+        in the file. This includes object-dtype columns that only contain
+        shapely geometry objects (e.g. a column assigned from a list of shapely
+        geometries); these are converted to geometry dtype (without a CRS)
+        before writing.
 
         Requires 'pyarrow'.
 
@@ -1525,6 +1528,9 @@ default 'snappy'
         """Write a GeoDataFrame to the Feather format.
 
         Any geometry columns present are serialized to WKB format in the file.
+        This includes object-dtype columns that only contain shapely geometry
+        objects (e.g. a column assigned from a list of shapely geometries); these
+        are converted to geometry dtype (without a CRS) before writing.
 
         Requires 'pyarrow' >= 0.17.
 

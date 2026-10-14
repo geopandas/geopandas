@@ -5,7 +5,7 @@ from packaging.version import Version
 from typing import Literal, get_args
 
 import numpy as np
-from pandas import DataFrame, Series
+from pandas import DataFrame, Series, isna
 
 import shapely
 
@@ -269,6 +269,51 @@ def _validate_dataframe(df):
         raise ValueError("Index level names must be strings")
 
 
+def _ensure_geometry_columns(df):
+    """Convert object-dtype columns holding shapely geometries to geometry dtype.
+
+    Assigning a list or array of shapely objects to a column of a GeoDataFrame
+    (other than the active geometry column) results in a plain object-dtype
+    column. pyarrow cannot convert such a column, so before writing we cast any
+    object-dtype column whose non-missing values are all shapely geometries to
+    ``GeometryDtype``. Those columns are then serialized like any other
+    geometry column (and described in the "geo" metadata), but without a CRS
+    because that information is not available for object-dtype columns.
+
+    Parameters
+    ----------
+    df : GeoDataFrame
+
+    Returns
+    -------
+    GeoDataFrame
+        A shallow copy of ``df`` with the converted columns, or ``df`` itself
+        if no column needed to be converted.
+    """
+    object_columns = df.columns[df.dtypes == "object"]
+    if len(object_columns) == 0:
+        return df
+
+    converted = {}
+    for col in object_columns:
+        values = np.asarray(df[col], dtype=object)
+        missing = isna(values)
+        if missing.all():
+            continue
+        # shapely.is_valid_input is True for geometries and None, so after
+        # excluding missing values it is only True for geometry objects
+        if shapely.is_valid_input(values[~missing]).all():
+            converted[col] = from_shapely(values)
+
+    if not converted:
+        return df
+
+    df = df.copy(deep=False)
+    for col, geoms in converted.items():
+        df[col] = geoms
+    return df
+
+
 def _validate_geo_metadata(metadata):
     """Validate geo metadata.
     Must not be empty, and must contain the structure specified above.
@@ -398,6 +443,7 @@ def _geopandas_to_arrow(
     from geopandas.io._geoarrow import geopandas_to_arrow
 
     _validate_dataframe(df)
+    df = _ensure_geometry_columns(df)
 
     if schema_version is not None:
         if geometry_encoding != "WKB" and schema_version != "1.1.0":
@@ -473,6 +519,9 @@ def _to_parquet(
     Write a GeoDataFrame to the Parquet format.
 
     Any geometry columns present are serialized to WKB format in the file.
+    This includes object-dtype columns that only contain shapely geometry
+    objects (e.g. a column assigned from a list of shapely geometries); these
+    are converted to geometry dtype (without a CRS) before writing.
 
     Requires 'pyarrow'.
 
@@ -529,6 +578,9 @@ def _to_feather(df, path, index=None, compression=None, schema_version=None, **k
     Write a GeoDataFrame to the Feather format.
 
     Any geometry columns present are serialized to WKB format in the file.
+    This includes object-dtype columns that only contain shapely geometry
+    objects (e.g. a column assigned from a list of shapely geometries); these
+    are converted to geometry dtype (without a CRS) before writing.
 
     Requires 'pyarrow' >= 0.17.
 

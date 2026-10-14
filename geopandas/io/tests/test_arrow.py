@@ -18,7 +18,7 @@ import shapely
 from shapely.geometry import LineString, MultiPolygon, Point, Polygon, box
 
 import geopandas
-from geopandas import GeoDataFrame, read_feather, read_file, read_parquet
+from geopandas import GeoDataFrame, GeoSeries, read_feather, read_file, read_parquet
 from geopandas._compat import HAS_PYPROJ
 from geopandas.array import to_wkb
 from geopandas.io.arrow import (
@@ -28,6 +28,7 @@ from geopandas.io.arrow import (
     _create_metadata,
     _decode_metadata,
     _encode_metadata,
+    _ensure_geometry_columns,
     _geopandas_to_arrow,
     _get_filesystem_path,
     _remove_id_from_member_of_ensembles,
@@ -559,6 +560,157 @@ def test_parquet_multiple_geom_cols(tmpdir, file_format, naturalearth_lowres):
     assert_geodataframe_equal(df, pq_df)
 
     assert_geoseries_equal(df.geom2, pq_df.geom2, check_geom_type=True)
+
+
+def test_ensure_geometry_columns():
+    df = GeoDataFrame(
+        {
+            "a": [1, 2, 3],
+            "s": pd.Series(["x", None, "z"], dtype=object),
+            "geoms": [Point(0, 0), None, Point(1, 1)],
+            "geoms_nan": [Point(0, 0), np.nan, Point(1, 1)],
+            "mixed": [Point(0, 0), "not a geometry", None],
+            "all_none": [None, None, None],
+        },
+        geometry=[Point(5, 5), Point(6, 6), Point(7, 7)],
+        crs="EPSG:4326",
+    )
+    assert df["s"].dtype == object
+    assert df["geoms"].dtype == object
+    assert df["geoms_nan"].dtype == object
+
+    result = _ensure_geometry_columns(df)
+
+    assert result is not df
+    assert isinstance(result, GeoDataFrame)
+    # object columns of shapely geometries (with missing values) are converted
+    assert result["geoms"].dtype == "geometry"
+    assert result["geoms_nan"].dtype == "geometry"
+    assert result["geoms"].crs is None
+    assert_geoseries_equal(
+        result["geoms"], GeoSeries([Point(0, 0), None, Point(1, 1)], name="geoms")
+    )
+    assert_geoseries_equal(
+        result["geoms_nan"],
+        GeoSeries([Point(0, 0), None, Point(1, 1)], name="geoms_nan"),
+    )
+    # other columns are left untouched
+    assert result["s"].dtype == object
+    assert result["mixed"].dtype == object
+    assert result["all_none"].dtype == object
+    assert result.geometry.crs == "EPSG:4326"
+    assert result._geometry_column_name == "geometry"
+    # the input is not modified
+    assert df["geoms"].dtype == object
+    assert df["geoms_nan"].dtype == object
+
+
+def test_ensure_geometry_columns_noop(naturalearth_lowres):
+    df = read_file(naturalearth_lowres)
+    assert _ensure_geometry_columns(df) is df
+
+    # object columns without geometries are not converted
+    df["obj"] = pd.Series([str(i) for i in range(len(df))], dtype=object)
+    assert df["obj"].dtype == object
+    assert _ensure_geometry_columns(df) is df
+
+    # empty dataframe
+    empty = df.iloc[:0]
+    assert _ensure_geometry_columns(empty) is empty
+
+
+def test_object_dtype_geometry_column(tmpdir, file_format, naturalearth_lowres):
+    """Columns containing shapely objects but stored with object dtype (e.g. when
+    assigned from a list of shapely geometries) should be written as WKB and
+    read back as geometry columns.
+    """
+    reader, writer = file_format
+
+    df = read_file(naturalearth_lowres)
+    df["rep_point"] = list(df.geometry.representative_point())
+    assert df["rep_point"].dtype == object
+
+    filename = os.path.join(str(tmpdir), "test.pq")
+    writer(df, filename)
+
+    # the original dataframe is not modified
+    assert df["rep_point"].dtype == object
+
+    result = reader(filename)
+
+    assert isinstance(result, GeoDataFrame)
+    assert result["rep_point"].dtype == "geometry"
+    assert result["rep_point"].crs is None
+    assert_geoseries_equal(
+        result["rep_point"],
+        GeoSeries(df["rep_point"].values, name="rep_point"),
+        check_geom_type=True,
+    )
+    expected = df.copy()
+    expected["rep_point"] = GeoSeries(df["rep_point"].values, index=df.index)
+    assert_geodataframe_equal(result, expected)
+
+
+def test_object_dtype_geometry_column_missing_values(tmpdir, file_format):
+    reader, writer = file_format
+
+    df = GeoDataFrame(
+        {"a": [1, 2, 3]},
+        geometry=[Point(0, 0), Point(1, 1), Point(2, 2)],
+        crs="EPSG:4326",
+    )
+    df["other"] = [Point(5, 5), None, np.nan]
+    assert df["other"].dtype == object
+
+    filename = os.path.join(str(tmpdir), "test.pq")
+    writer(df, filename)
+    result = reader(filename)
+
+    assert result["other"].dtype == "geometry"
+    assert_geoseries_equal(
+        result["other"], GeoSeries([Point(5, 5), None, None], name="other")
+    )
+
+
+def test_object_dtype_geometry_column_metadata(tmpdir, naturalearth_lowres):
+    df = read_file(naturalearth_lowres)
+    df["rep_point"] = list(df.geometry.representative_point())
+
+    filename = os.path.join(str(tmpdir), "test.pq")
+    df.to_parquet(filename)
+
+    schema = pq.read_schema(filename)
+    assert schema.field("rep_point").type == pyarrow.binary()
+
+    metadata = _decode_metadata(schema.metadata[b"geo"])
+    assert metadata["primary_column"] == "geometry"
+    assert set(metadata["columns"]) == {"geometry", "rep_point"}
+    rep_point_meta = metadata["columns"]["rep_point"]
+    assert rep_point_meta["encoding"] == "WKB"
+    assert rep_point_meta["crs"] is None
+    assert rep_point_meta["geometry_types"] == ["Point"]
+    assert np.array_equal(
+        rep_point_meta["bbox"], GeoSeries(df["rep_point"].values).total_bounds
+    )
+
+
+def test_object_dtype_geometry_column_geoarrow(tmpdir, naturalearth_lowres):
+    df = read_file(naturalearth_lowres)
+    df["rep_point"] = list(df.geometry.representative_point())
+
+    filename = os.path.join(str(tmpdir), "test.pq")
+    df.to_parquet(filename, geometry_encoding="geoarrow", schema_version="1.1.0")
+
+    metadata = _decode_metadata(pq.read_schema(filename).metadata[b"geo"])
+    assert metadata["columns"]["rep_point"]["encoding"] == "point"
+
+    result = read_parquet(filename)
+    assert result["rep_point"].dtype == "geometry"
+    assert_geoseries_equal(
+        result["rep_point"],
+        GeoSeries(df["rep_point"].values, name="rep_point"),
+        check_geom_type=True,
+    )
 
 
 def test_parquet_missing_metadata(tmpdir, naturalearth_lowres):

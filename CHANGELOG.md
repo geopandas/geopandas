@@ -1,5 +1,14 @@
 # Changelog
 
+## Development version
+
+Bug fixes:
+
+- `to_parquet` and `to_feather` now also serialize object-dtype columns that only
+  contain shapely geometry objects (e.g. a column assigned from a list of shapely
+  geometries) as WKB geometry columns, instead of raising an error from pyarrow. Such
+  columns are read back as geometry columns without a CRS (#3891).
+
 ## Version 1.2.0 (September 28, 2026)
 
 New features and improvements:
