@@ -598,7 +598,8 @@ def test_ensure_geometry_columns():
     assert result["s"].dtype == object
     assert result["mixed"].dtype == object
     assert result["all_none"].dtype == object
-    assert result.geometry.crs == "EPSG:4326"
+    if HAS_PYPROJ:
+        assert result.geometry.crs == "EPSG:4326"
     assert result._geometry_column_name == "geometry"
     # the input is not modified
     assert df["geoms"].dtype == object
