@@ -912,6 +912,41 @@ class TestPolygonPlotting:
         cax = _get_colorbar_ax(ax.get_figure())
         assert cax.get_xlabel() == label_txt
 
+    @pytest.mark.parametrize("layout", ["constrained", "compressed", "tight"])
+    def test_colorbar_shrink_skipped_when_layout_engine_set(self, layout):
+        fig, ax = plt.subplots(layout=layout)
+        ax = self.df.plot(column="values", ax=ax, legend=True)
+        fig.canvas.draw()
+        with_engine = _get_colorbar_ax(fig).get_position().height
+
+        fig_explicit, ax_explicit = plt.subplots(layout=layout)
+        ax_explicit = self.df.plot(
+            column="values",
+            ax=ax_explicit,
+            legend=True,
+            legend_kwds={"shrink": 1},
+        )
+        fig_explicit.canvas.draw()
+        explicit = _get_colorbar_ax(fig_explicit).get_position().height
+        assert with_engine == pytest.approx(explicit)
+
+    def test_colorbar_still_shrunk_without_layout_engine(self):
+        fig, ax = plt.subplots()
+        ax = self.df.plot(column="values", ax=ax, legend=True)
+        fig.canvas.draw()
+        shrunk = _get_colorbar_ax(fig).get_position().height
+
+        fig_plain, ax_plain = plt.subplots()
+        ax_plain = self.df.plot(
+            column="values",
+            ax=ax_plain,
+            legend=True,
+            legend_kwds={"shrink": 1},
+        )
+        fig_plain.canvas.draw()
+        plain = _get_colorbar_ax(fig_plain).get_position().height
+        assert abs(shrunk - plain) >= 1e-6
+
     if MPL_DECORATORS:
         """Test that geometries are properly normalized so holes appear."""
 
