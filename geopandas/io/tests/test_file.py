@@ -525,6 +525,14 @@ def test_to_file_with_duplicate_columns(tmpdir, engine):
         df.to_file(tempfilename, engine=engine)
 
 
+@pytest.mark.parametrize("driver,ext", [("ESRI Shapefile", ".shp"), ("GPKG", ".gpkg")])
+def test_to_file_non_string_column_names(tmpdir, engine, driver, ext):
+    df = GeoDataFrame(data=[[1, 2]], columns=[0, 1.5], geometry=[Point(1, 1)])
+    tempfilename = os.path.join(str(tmpdir), "non_string" + ext)
+    with pytest.raises(ValueError, match="requires all column names to be strings"):
+        df.to_file(tempfilename, driver=driver, engine=engine)
+
+
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
 def test_append_file(tmpdir, df_nybb, df_null, driver, ext, engine):
     """Test to_file with append mode and from_file"""
