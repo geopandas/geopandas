@@ -1394,11 +1394,10 @@ def _is_exterior(ax, axis):
     siblings = shared.get_siblings(ax)
     if len(siblings) < 2:
         return True
-    pos = [a.get_position() for a in siblings]
-    me = ax.get_position()
+    spec = ax.get_subplotspec()
     if axis == "x":
-        return me.y0 <= min(p.y0 for p in pos)
-    return me.x0 <= min(p.x0 for p in pos)
+        return spec.is_last_row()
+    return spec.is_first_col()
 
 
 def _set_axis_labels(ax, crs, add_labels=False):
