@@ -1607,6 +1607,22 @@ class TestGeomMethods:
         result = s.buffer(np.array([0, 0, 0]))
         assert_geoseries_equal(result, s)
 
+    def test_buffer_empty_distance_array(self):
+        # GH3895: an empty GeoSeries/array-like distance on an empty GeoSeries
+        # or GeoDataFrame should return an empty GeoSeries instead of raising
+        gdf = GeoDataFrame(columns=["id", "distance", "feature"], geometry="feature")
+        expected = GeoSeries([], dtype="geometry")
+
+        result = gdf.buffer(gdf["distance"])
+        assert_geoseries_equal(result, expected)
+
+        result = gdf.buffer(gdf["distance"].values)
+        assert_geoseries_equal(result, expected)
+
+        gs = GeoSeries([], dtype="geometry")
+        result = gs.buffer(Series([], dtype=float))
+        assert_geoseries_equal(result, expected)
+
     @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
     def test_buffer_crs_warn(self):
         with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):

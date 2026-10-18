@@ -129,6 +129,13 @@ def _delegate_geo_method(op, this, **kwargs):
                 )
             kwargs[key] = np.asarray(val)
 
+    if len(this) == 0 and any(np.ndim(val) > 0 for val in kwargs.values()):
+        # shapely cannot broadcast an empty array-like argument of arbitrary
+        # dtype (e.g. an empty object-dtype Series), but the result would be
+        # an empty GeoSeries in any case, mirroring the behaviour for scalar
+        # arguments.
+        return GeoSeries([], index=this.index, crs=this.crs)
+
     a_this = GeometryArray(this.geometry.values)
     data = getattr(a_this, op)(**kwargs)
     return GeoSeries(data, index=this.index, crs=this.crs)

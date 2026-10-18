@@ -1,5 +1,14 @@
 # Changelog
 
+## Development version
+
+Bug fixes:
+
+- Fix `GeoDataFrame.buffer()` (and similar geometry methods) raising a `TypeError`
+  when called with an empty array-like `distance` (e.g. an empty Series) on an
+  empty GeoSeries or GeoDataFrame; it now returns an empty GeoSeries, consistent
+  with scalar distances (GH3895).
+
 ## Version 1.2.0 (September 28, 2026)
 
 New features and improvements:
