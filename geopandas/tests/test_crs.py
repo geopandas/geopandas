@@ -693,6 +693,19 @@ class TestGeometryArrayCRS:
         result = s.apply(lambda x: x.centroid)
         assert result.crs == 27700
 
+    def test_map(self):
+        s = GeoSeries(self.arr)
+        assert s.crs == 27700
+
+        # map preserves the CRS if the result is a GeoSeries
+        result = s.map(lambda x: x.centroid)
+        assert result.crs == 27700
+
+        # also for the mapping forms of the argument
+        mapping = dict(zip(s, s.centroid))
+        assert s.map(mapping).crs == 27700
+        assert s.map(pd.Series(mapping)).crs == 27700
+
     def test_apply_geodataframe(self):
         df = GeoDataFrame({"col1": [0, 1]}, geometry=self.geoms, crs=27700)
         assert df.crs == 27700
