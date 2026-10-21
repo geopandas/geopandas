@@ -1,5 +1,13 @@
 # Changelog
 
+## Version 1.3.0
+
+Bug fixes:
+
+- Fix `explore` failing when `cmap` is a function and the column has missing values,
+  or is passed as an array; the legend is now turned off with a warning because it
+  cannot be drawn for a function (#2408, #2583).
+
 ## Version 1.2.0 (September 28, 2026)
 
 New features and improvements:
