@@ -258,6 +258,28 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             object.__setattr__(self, attr, val)
         else:
             super().__setattr__(attr, val)
+            if attr == "columns":
+                self._check_geometry_column_name()
+
+    def _check_geometry_column_name(self):
+        # Assigning new column labels can leave the active geometry column
+        # name pointing at a label that no longer exists. For example, a
+        # groupby named aggregation first builds the result under a
+        # transient positional label and only relabels the columns at the
+        # very end, without calling __finalize__ again. If exactly one
+        # geometry column remains, point the active geometry at it,
+        # otherwise clear the stale name.
+        geo_col = self._geometry_column_name
+        if geo_col is None or geo_col in self.columns:
+            return
+        if isinstance(self.columns, pd.MultiIndex) and (
+            geo_col in self.columns.get_level_values(0)
+        ):
+            return
+        geometry_cols = self.columns[self.dtypes == "geometry"]
+        self._geometry_column_name = (
+            geometry_cols[0] if len(geometry_cols) == 1 else None
+        )
 
     def _get_geometry(self) -> GeoSeries:
         if self._geometry_column_name not in self:

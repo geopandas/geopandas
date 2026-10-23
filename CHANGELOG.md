@@ -1,5 +1,14 @@
 # Changelog
 
+## Version 1.2.1 (???)
+
+Bug fixes:
+
+- Fix `groupby.agg` with a named aggregation that renames the geometry column
+  (e.g. `agg(geom=("geometry", "first"))`) leaving a transient positional label
+  as the active geometry column name, which made `.geometry` raise an
+  `AttributeError`; the renamed column is now set as the active geometry (#3897).
+
 ## Version 1.2.0 (September 28, 2026)
 
 New features and improvements:
