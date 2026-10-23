@@ -408,6 +408,38 @@ class TestDataFrame:
         assert multiple.set_geometry("foo").active_geometry_name == "foo"
         assert multiple.set_geometry("bar").active_geometry_name == "bar"
 
+    def test_active_geometry_name_columns_assignment(self):
+        # renaming the geometry column by assigning new column labels
+        # updates the active geometry name to the renamed column
+        df = GeoDataFrame(
+            {"value": [1], "geometry": [Point(0, 0)]}, geometry="geometry"
+        )
+        df.columns = ["value", "geom"]
+        assert df.active_geometry_name == "geom"
+
+        # with multiple geometry columns, renaming the active one away
+        # leaves no unique geometry column to point at, so it is cleared
+        multiple = GeoDataFrame(
+            {"foo": self.df.geometry, "bar": self.df.geometry}, geometry="foo"
+        )
+        multiple.columns = ["renamed", "bar"]
+        assert multiple.active_geometry_name is None
+
+        # with MultiIndex columns, the active geometry name is kept as long
+        # as it is still present in the first level
+        df_mi = GeoDataFrame(
+            [[Point(0, 0), 1]],
+            columns=pd.MultiIndex.from_tuples([("geometry", ""), ("value", "")]),
+            geometry=("geometry", ""),
+        )
+        df_mi.columns = pd.MultiIndex.from_tuples([("geometry", ""), ("val", "")])
+        assert df_mi.active_geometry_name == ("geometry", "")
+
+        # same when the active geometry is stored as the first-level name
+        df_mi._geometry_column_name = "geometry"
+        df_mi.columns = pd.MultiIndex.from_tuples([("geometry", ""), ("v", "")])
+        assert df_mi.active_geometry_name == "geometry"
+
     def test_align(self):
         df = self.df2
 

@@ -638,6 +638,21 @@ def test_groupby_agg_tuple(df):
     assert_geodataframe_equal(res_dict, res_tup)
 
 
+def test_groupby_agg_tuple_renamed_geometry(df):
+    # https://github.com/geopandas/geopandas/issues/3897
+    # a named aggregation that renames the geometry column should set
+    # the renamed column as the active geometry (and not leave behind
+    # the transient positional label used while aggregating)
+    res = df.groupby("value2").agg(geom=("geometry", "first"))
+    assert res.active_geometry_name == "geom"
+    exp = GeoDataFrame(
+        {"geom": [Point(0, 0), Point(1, 1)]},
+        index=pd.Index([1, 2], name="value2"),
+        geometry="geom",
+    )
+    assert_geodataframe_equal(res, exp)
+
+
 def test_groupby_groups(df):
     g = df.groupby("value2")
     res = g.get_group(1)
