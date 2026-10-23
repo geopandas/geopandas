@@ -272,10 +272,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         geo_col = self._geometry_column_name
         if geo_col is None or geo_col in self.columns:
             return
-        if isinstance(self.columns, pd.MultiIndex) and (
-            geo_col in self.columns.get_level_values(0)
-        ):
-            return
         geometry_cols = self.columns[self.dtypes == "geometry"]
         self._geometry_column_name = (
             geometry_cols[0] if len(geometry_cols) == 1 else None
