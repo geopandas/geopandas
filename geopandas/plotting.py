@@ -138,10 +138,13 @@ def _expand_kwargs(kwargs: dict, multiindex: np.ndarray) -> None:
 
     scalar_kwargs = ["marker", "path_effects"]
     for att, value in kwargs.items():
-        if "color" in att:  # color(s), edgecolor(s), facecolor(s)
+        if "color" in att or att in (
+            "ec",
+            "fc",
+        ):  # color(s), edgecolor(s), facecolor(s), ec, fc
             if is_color_like(value):
                 continue
-        elif "linestyle" in att:  # linestyle(s)
+        elif "linestyle" in att or att == "ls":  # linestyle(s), ls
             # A single linestyle can be 2-tuple of a number and an iterable.
             if (
                 isinstance(value, tuple)
@@ -652,7 +655,7 @@ def plot_series(
     if not polys.empty:
         # color overrides both face and edgecolor. As we want people to be
         # able to use edgecolor as well, pass color to facecolor
-        facecolor = style_kwds.pop("facecolor", None)
+        facecolor = style_kwds.pop("facecolor", style_kwds.pop("fc", None))
 
         if color is not None:
             facecolor = color[poly_idx] if color_given else color
