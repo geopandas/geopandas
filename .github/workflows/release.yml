@@ -5,6 +5,8 @@ on:
     tags:
       - "v*"
 
+permissions: {}
+
 jobs:
   build-n-publish:
     name: Build and publish geopandas to PyPI
