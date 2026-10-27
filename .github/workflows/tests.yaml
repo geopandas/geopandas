@@ -67,10 +67,10 @@ jobs:
             dev: true
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Install Conda environment with Micromamba
-        uses: mamba-org/setup-micromamba@v3
+        uses: mamba-org/setup-micromamba@f457c30a868e4760d3a6fcea5f25dc655b8edf39 # v3.2.1
         with:
           environment-file: ${{ matrix.env }}
 
@@ -109,4 +109,4 @@ jobs:
         run: |
           pytest -v --color=yes --doctest-only geopandas --ignore=geopandas/datasets
 
-      - uses: codecov/codecov-action@v7
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
