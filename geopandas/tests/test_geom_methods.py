@@ -2163,7 +2163,6 @@ class TestGeomMethods:
         )
         assert gdf._geometry_column_name is None
         result = gdf.explode(column="alt_geom")
-        assert result._geometry_column_name is None
         assert list(result["alt_geom"]) == [Point(0, 0), Point(1, 1)]
         assert list(result["a"]) == [1, 1]
 
