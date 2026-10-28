@@ -2143,6 +2143,20 @@ class TestGeomMethods:
         assert test_df.geometry.name == test_df._geometry_column_name
         assert "geometry" in test_df.columns
 
+    def test_explode_non_active_geometry_column(self):
+        gdf = GeoDataFrame(
+            {"alt_geom": GeoSeries([MultiPoint([(0, 0), (1, 1)])])},
+            geometry=[Point(9, 9)],
+        )
+        result = gdf.explode(column="alt_geom")
+        expected = GeoDataFrame(
+            {"alt_geom": GeoSeries([Point(0, 0), Point(1, 1)], index=[0, 0])},
+            geometry=[Point(9, 9), Point(9, 9)],
+            index=[0, 0],
+        )[["geometry", "alt_geom"]]
+        assert result.geometry.name == "geometry"
+        assert_geodataframe_equal(result, expected, check_index_type=False)
+
     def test_get_coordinates(self):
         expected = DataFrame(
             data=self.expected_2d,

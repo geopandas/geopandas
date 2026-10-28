@@ -2469,13 +2469,14 @@ default 'snappy'
         if not isinstance(dtypes, GeometryDtype):
             return super().explode(column, ignore_index=ignore_index, **kwargs)
 
-        exploded_geom = self.geometry.reset_index(drop=True).explode(index_parts=True)
+        exploded_geom = self[column].reset_index(drop=True).explode(index_parts=True)
 
-        df = self.drop(self._geometry_column_name, axis=1).take(
-            exploded_geom.index.droplevel(-1)
-        )
+        df = self.drop(column, axis=1).take(exploded_geom.index.droplevel(-1))
         df[exploded_geom.name] = exploded_geom.values
-        df = df.set_geometry(self._geometry_column_name).__finalize__(self)
+        if self._geometry_column_name is not None:
+            df = df.set_geometry(self._geometry_column_name).__finalize__(self)
+        else:
+            df = df.__finalize__(self)
 
         if ignore_index:
             if PANDAS_GE_30:
