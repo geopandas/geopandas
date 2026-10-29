@@ -76,90 +76,154 @@ def distance_point_line(point, line, geod):
 
 
 def distance_to_segment(point, lon1, lat1, lon2, lat2, geod):
-    # spherical distance!
-    # Haversine formula
-    nearest_lon, nearest_lat = nearest_point_on_segment(point, lon1, lat1, lon2, lat2)
+    point_lon = np.broadcast_to(point.x, lon1.shape)
+    point_lat = np.broadcast_to(point.y, lon1.shape)
+    # TODO this also works with passing scalar point lon/lat -> is that faster
+    # if we don't need the broadcast for the distance calculation?
+    nearest_lon, nearest_lat = nearest_point_on_segment(
+        point_lon, point_lat, lon1, lat1, lon2, lat2
+    )
+    # TODO check how much speed up it would give by using haversine distance
+    # to determine the closest point, and only use geodetic distance for that point
     # return haversine_distance(point.x, point.y, nearest_lon, nearest_lat)
-    _, _, dist = geod.inv(point.x, point.y, nearest_lon, nearest_lat)
+    _, _, dist = geod.inv(point_lon, point_lat, nearest_lon, nearest_lat)
     return dist
 
 
-def _degrees_to_radians(degrees):
-    # % 360 degrees in case someone passes value > 360
-    normalised_degrees = degrees % 360
-    return (normalised_degrees * np.pi) / 180
+def _lonlat_to_vector(lon: np.ndarray, lat: np.ndarray) -> np.ndarray:
+    """
+    Convert longitude and latitude values to 3D unit vectors.
 
+    Gets 1D lon/lat arrays with length N, and returns unit vectors with shape (N, 3).
 
-def _lon_lat_to_vector(lon, lat):
-    # returns unit vectors with shape (..., 3)
-    lon_rad = _degrees_to_radians(lon)
-    lat_rad = _degrees_to_radians(lat)
+    https://www.movable-type.co.uk/scripts/latlong-vectors.html
+    https://en.wikipedia.org/wiki/N-vector#Converting_latitude/longitude_to_n-vector
+    """
+    # (lonlat in degrees) * np.pi / 180
+    lon_rad = np.deg2rad(lon)
+    lat_rad = np.deg2rad(lat)
     x = np.cos(lat_rad) * np.cos(lon_rad)
     y = np.cos(lat_rad) * np.sin(lon_rad)
     z = np.sin(lat_rad)
     return np.stack([x, y, z], axis=-1)
 
 
-def _vector_to_lon_lat(vector):
-    x, y, z = vector[..., 0], vector[..., 1], vector[..., 2]
-    lat_rad = np.arcsin(np.clip(z, -1, 1))
+def _vector_to_lonlat(vector: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Convert 3D unit vectors to longitude and latitude values.
+
+    Input vector does not need to be normalized, since the arctan2 conversion
+    is scale-invariant.
+
+    See _lonlat_to_vector docstring.
+    """
+    x, y, z = vector[:, 0], vector[:, 1], vector[:, 2]
     lon_rad = np.arctan2(y, x)
-    lat = (lat_rad * 180) / np.pi
-    lon = (lon_rad * 180) / np.pi
+    # np.hypot(x, y) == np.sqrt(x**2 + y**2)
+    lat_rad = np.arctan2(z, np.hypot(x, y))
+    # (lonlat in radians) * 180 / np.pi
+    lon = np.rad2deg(lon_rad)
+    lat = np.rad2deg(lat_rad)
     return lon, lat
 
 
-# tolerance on the norm of cross products of unit vectors (sine of the angle
-# between them), ~6 micrometer on the Earth's surface
-_EPS = 1e-12
-
-
 def _dot(a, b):
-    return np.sum(a * b, axis=-1)
+    # row-wise dot product
+    # slightly faster version of np.sum(a * b, axis=-1)
+    return np.einsum("...i,...i -> ...", a, b)
 
 
-def nearest_point_on_segment(point, lon1, lat1, lon2, lat2):
-    # vectorized over the segments: lon1, lat1, lon2, lat2 can be arrays
-    lon1, lat1, lon2, lat2 = np.broadcast_arrays(lon1, lat1, lon2, lat2)
+def nearest_point_on_segment(
+    point_lon: np.ndarray,
+    point_lat: np.ndarray,
+    lon1: np.ndarray,
+    lat1: np.ndarray,
+    lon2: np.ndarray,
+    lat2: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Spherical approximation to get the nearest point on a segment.
 
-    v = _lon_lat_to_vector(point.x, point.y)
-    v1 = _lon_lat_to_vector(lon1, lat1)
-    v2 = _lon_lat_to_vector(lon2, lat2)
+    The segment is the shortest great-circle path defined by p1 and p2, and
+    we look for the nearest point on this segment to target point p.
 
-    segment_axis = np.cross(v1, v2)
-    segment_axis_len = np.linalg.norm(segment_axis, axis=-1)
-    target_axis = np.cross(segment_axis, v)
+    Vectorized over the points and segments. This assumes that all the input arrays
+    are already broadcasted correctly and have the same shape (all 1d arrays).
 
-    # zero-length segment (or antipodal end points, for which the great
-    # circle is undefined): the segment is reduced to its start point
-    degenerate = segment_axis_len < _EPS
-    # point is at a pole of the segment's great circle: every point of the
-    # segment is at the same distance, so take its start point
-    at_pole = np.linalg.norm(target_axis, axis=-1) < _EPS * segment_axis_len
+    Based on:
+    https://www.movable-type.co.uk/scripts/latlong-vectors.html
+    https://github.com/Turfjs/turf/blob/0c20329dfc2b63555ddd5d5388c4858669df6037/packages/turf-nearest-point-on-line/index.ts#L233-L320
+    """
+    v = _lonlat_to_vector(point_lon, point_lat)
+    v1 = _lonlat_to_vector(lon1, lat1)
+    v2 = _lonlat_to_vector(lon2, lat2)
 
-    # the computations below give nan for the degenerate cases (division by
-    # zero), but those are overwritten with the start point at the end
-    with np.errstate(invalid="ignore", divide="ignore"):
-        intersection_axis = np.cross(segment_axis, target_axis)
-        intersection_axis /= np.linalg.norm(intersection_axis, axis=-1)[..., None]
-        # choose the intersection on the same side of the globe as the point
-        intersection_axis *= np.where(_dot(v, intersection_axis) > 0, 1, -1)[..., None]
+    # The normal of the great circle through p1 and p2 (containing the
+    # line segment), i.e. the vector perpendicular to the plane formed by the
+    # great circle
+    c1 = np.cross(v1, v2)
 
-        segment_axis_norm = segment_axis / segment_axis_len[..., None]
-        cmp1 = _dot(np.cross(v1, intersection_axis), segment_axis_norm)
-        cmp2 = _dot(np.cross(intersection_axis, v2), segment_axis_norm)
+    # The normal of the great circle through the target point p and the
+    # segment's normal c1
+    c2 = np.cross(v, c1)
 
-    on_segment = (cmp1 >= 0) & (cmp2 >= 0)
-    nearest_lon, nearest_lat = _vector_to_lon_lat(intersection_axis)
+    # The intersection of both great circles is the projection of p onto the
+    # great circle of the p1 - p2 segment.
+    # This point is determined by the cross product of their normals (perpendicular
+    # to both normals, and thus lying on both great circles, thus the intersection),
+    # and the order ensures we pick the intersection on p's side (cross(c2, c1)
+    # would give the antipode)
+    n = np.cross(c1, c2)
+    projected_lon, projected_lat = _vector_to_lonlat(n)
 
-    closest_to_start = _dot(v1, v) > _dot(v2, v)
+    # The intersection point lives on the great circle defined by p1 and p2
+    # (and gives the nearest point to p on that great circle), but does not
+    # necessarily live on the segment (p1, p2) itself. Thus, we need to
+    # check if n is between p1 and p2.
+
+    # along-track direction at p1 (towards p2) and at p2 (towards p1)
+    t1 = np.cross(c1, v1)
+    t2 = np.cross(v2, c1)
+    # a positive dot product indicates that p is on the same side as p2 of the
+    # perpendicular plane through p1 (or as p1 of plane through p2) -> if both
+    # are positive, the target point p is between p1 and p2
+    on_segment = (_dot(v, t1) >= 0) & (_dot(v, t2) >= 0)
+
+    # Some degenerate cases where the on-segment closest point gives the wrong
+    # result:
+    # - zero-length segments: v1 == v2, c1 becomes the zero vector. Later on,
+    #   the code picks the start point for this case
+    # - the point p is exactly at a pole of the segment's great circle: any
+    #   point on the segment would be equally valid. n becomes the zero vector,
+    #   so this also falls back to always the start point of the segment.
+    # - antipodal end points (for which the great circle is undefined): v1 and
+    #   v2 are opposite, c1 also becomes the zero vector
+    # - TODO intersection point at the poles (where the cross product might be zero)
+
+    # n is the zero vector if the segment is degenerate (p1 == p2) or the point
+    # sits exactly at a pole of the segment's great circle: fall back to endpoints
+
+    on_segment &= np.any(n != 0, axis=-1)
+
+    # If the nearest point is not on the segment, we want the closest endpoint
+    # p1 or p2 instead -> use squared chord length (straight line through the
+    # sphere, monotonic with actual distance but cheaper)
+    d1, d2 = v - v1, v - v2
+    closest_to_start = _dot(d1, d1) <= _dot(d2, d2)
+
+    # Get the actual nearest point coordinates by choosing the intersection
+    # point or start point or end point accordingly (in a vectorized way)
     endpoint_lon = np.where(closest_to_start, lon1, lon2)
     endpoint_lat = np.where(closest_to_start, lat1, lat2)
 
-    nearest_lon = np.where(on_segment, nearest_lon, endpoint_lon)
-    nearest_lat = np.where(on_segment, nearest_lat, endpoint_lat)
+    nearest_lon = np.where(on_segment, projected_lon, endpoint_lon)
+    nearest_lat = np.where(on_segment, projected_lat, endpoint_lat)
 
-    use_start = degenerate | at_pole
-    nearest_lon = np.where(use_start, lon1, nearest_lon)
-    nearest_lat = np.where(use_start, lat1, nearest_lat)
+    # mask invalid input data in result
+    # TODO verify if this is needed (this might be caught higher up in the
+    # distance calculation)
+    invalid = ~np.isfinite(point_lon + point_lat + lon1 + lat1 + lon2 + lat2)
+    nearest_lon = np.where(invalid, np.nan, nearest_lon)
+    nearest_lat = np.where(invalid, np.nan, nearest_lat)
+
     return nearest_lon, nearest_lat
