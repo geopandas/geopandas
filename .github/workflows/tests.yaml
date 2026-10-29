@@ -8,6 +8,8 @@ on:
   schedule:
     - cron: "0 0 * * *"
 
+permissions: {}
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -16,6 +18,8 @@ jobs:
   Test:
     name: ${{ matrix.os }}, ${{ matrix.env }}
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
     defaults:
       run:
         shell: bash -l {0}
@@ -68,6 +72,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Install Conda environment with Micromamba
         uses: mamba-org/setup-micromamba@f457c30a868e4760d3a6fcea5f25dc655b8edf39 # v3.2.1
