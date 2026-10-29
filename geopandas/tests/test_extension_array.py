@@ -48,7 +48,7 @@ no_minmax = pytest.mark.skip(reason="Min/max not supported")
 @pytest.fixture
 def dtype():
     """A fixture providing the ExtensionDtype to validate."""
-    return GeometryDtype()
+    return GeometryDtype(None)
 
 
 def make_data():
