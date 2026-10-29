@@ -1,7 +1,7 @@
 import numpy as np
 
 import shapely
-from shapely import LineString, MultiPoint, Point
+from shapely import LineString, MultiLineString, MultiPoint, Point
 
 
 def geodetic_distance(geom1, geom2, crs):
@@ -16,9 +16,9 @@ def geodetic_distance(geom1, geom2, crs):
             | (Point(), MultiPoint())
         ):
             return distance_multipoint_multipoint(geom1, geom2, geod)
-        case Point(), LineString():
+        case (Point(), LineString()) | (Point(), MultiLineString()):
             return distance_point_line(geom1, geom2, geod)
-        case LineString(), Point():
+        case (LineString(), Point()) | (MultiLineString(), Point()):
             return distance_point_line(geom2, geom1, geod)
         case _:
             raise NotImplementedError(
@@ -54,9 +54,19 @@ def distance_multipoint_multipoint(multipoint1, multipoint2, geod):
 
 def distance_point_line(point, line, geod):
     # compute the distance to all line segments at once and take the minimum
-    coords = shapely.get_coordinates(line)
-    lon1, lat1 = coords[:-1, 0], coords[:-1, 1]
-    lon2, lat2 = coords[1:, 0], coords[1:, 1]
+    if isinstance(line, LineString):
+        coords = shapely.get_coordinates(line)
+        lon1, lat1 = coords[:-1, 0], coords[:-1, 1]
+        lon2, lat2 = coords[1:, 0], coords[1:, 1]
+    else:
+        # MultiLineString
+        parts = shapely.get_parts(line)
+        coords, idx = shapely.get_coordinates(parts, return_index=True)
+
+        # False where one part ends and the next begins
+        same_part = idx[:-1] == idx[1:]
+        lon1, lat1 = coords[:-1, 0][same_part], coords[:-1, 1][same_part]
+        lon2, lat2 = coords[1:, 0][same_part], coords[1:, 1][same_part]
     dist = distance_to_segment(point, lon1, lat1, lon2, lat2, geod)
     return dist.min(initial=np.inf)
 

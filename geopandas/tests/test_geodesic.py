@@ -1,7 +1,7 @@
 import numpy as np
 
 import shapely
-from shapely import LineString, MultiPoint, Point, Polygon
+from shapely import LineString, MultiLineString, MultiPoint, Point, Polygon
 
 from geopandas._geodesic import (
     # _lonlat_to_vector,
@@ -44,6 +44,21 @@ def test_point_linestring(crs):
     line = LineString([(0, 0), (0, 1), (1, 1), (1, 2)])
     result = geodetic_distance(Point(0, 0), line, crs)
     assert_allclose(result, 0.0)
+    result = geodetic_distance(line, Point(0, 0), crs)
+    assert_allclose(result, 0.0)
+
+
+def test_point_multilinestring(crs):
+    line = MultiLineString([[(0, 0), (0, 1)], [(1, 1), (1, 2), (2, 2)]])
+    result = geodetic_distance(Point(2, 0), line, crs)
+    expected = min(
+        geodetic_distance(Point(2, 0), LineString([(0, 0), (0, 1)]), crs),
+        geodetic_distance(Point(2, 0), LineString([(1, 1), (1, 2), (2, 2)]), crs),
+    )
+    assert_allclose(result, expected)
+
+    result = geodetic_distance(line, Point(2, 0), crs)
+    assert_allclose(result, expected)
 
 
 # cases taken from s2geography
