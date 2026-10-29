@@ -1,5 +1,12 @@
 # Changelog
 
+## Development version
+
+Bug fixes:
+
+- `GeoDataFrame.to_file` now raises an informative `ValueError` when column names are
+  not strings, instead of an obscure `TypeError` or `AttributeError` (#2490).
+
 ## Version 1.2.0 (September 28, 2026)
 
 New features and improvements:
