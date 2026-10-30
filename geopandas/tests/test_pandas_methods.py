@@ -707,6 +707,26 @@ def test_apply(s):
     assert_series_equal(result, pd.Series([0.0, 1.0, 2.0]))
 
 
+def test_map(s):
+    # function that returns geometry preserves GeoSeries class
+    def geom_func(geom):
+        assert isinstance(geom, Point)
+        return geom
+
+    result = s.map(geom_func)
+    assert isinstance(result, GeoSeries)
+    assert_geoseries_equal(result, s)
+
+    # function that returns non-geometry results in Series
+    def numeric_func(geom):
+        assert isinstance(geom, Point)
+        return geom.x
+
+    result = s.map(numeric_func)
+    assert not isinstance(result, GeoSeries)
+    assert_series_equal(result, pd.Series([0.0, 1.0, 2.0]))
+
+
 def test_apply_loc_len1(df):
     # subset of len 1 with loc -> bug in pandas with inconsistent Block ndim
     # resulting in bug in apply
