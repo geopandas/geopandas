@@ -834,6 +834,18 @@ class TestPolygonPlotting:
         _check_colors(2, ax.collections[0].get_facecolors(), [(0.5, 0.5, 0.5, 0.5)] * 2)
         _check_colors(2, ax.collections[0].get_edgecolors(), [(0.4, 0.5, 0.6, 0.5)] * 2)
 
+        # check ec and fc shorthands with rgba tuple
+        ax = self.df.plot(fc=(0.5, 0.5, 0.5), ec=(0.4, 0.5, 0.6))
+        _check_colors(2, ax.collections[0].get_facecolors(), [(0.5, 0.5, 0.5)] * 2)
+        _check_colors(2, ax.collections[0].get_edgecolors(), [(0.4, 0.5, 0.6)] * 2)
+
+        ax = self.df.plot(fc=(0.5, 0.5, 0.5, 0.5), ec=(0.4, 0.5, 0.6, 0.5))
+        _check_colors(2, ax.collections[0].get_facecolors(), [(0.5, 0.5, 0.5, 0.5)] * 2)
+        _check_colors(2, ax.collections[0].get_edgecolors(), [(0.4, 0.5, 0.6, 0.5)] * 2)
+
+        ax = self.polys.plot(ec=["g", "r"])
+        _check_colors(2, ax.collections[0].get_edgecolors(), ["g", "r"])
+
     def test_style_kwargs_linestyle(self):
         #   single
         ax = self.df.plot(linestyle=":", linewidth=1)
@@ -841,6 +853,10 @@ class TestPolygonPlotting:
 
         # tuple
         ax = self.df.plot(linestyle=(0, (3, 10, 1, 15)), linewidth=1)
+        assert [(0, [3, 10, 1, 15])] == ax.collections[0].get_linestyle()
+
+        # tuple with ls shorthand
+        ax = self.df.plot(ls=(0, (3, 10, 1, 15)), linewidth=1)
         assert [(0, [3, 10, 1, 15])] == ax.collections[0].get_linestyle()
 
         #   multiple
