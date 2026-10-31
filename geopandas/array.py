@@ -1406,7 +1406,6 @@ class GeometryArray(ExtensionArray):
     def fillna(
         self, value=None, method=None, limit: int | None = None, copy: bool = True
     ) -> GeometryArray:
-        # pandas 4 no longer recommends subclasses overwrite this
         """
         Fill NA values with geometry (or geometries) or using the specified method.
 
