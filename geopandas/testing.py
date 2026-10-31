@@ -277,11 +277,7 @@ def assert_geodataframe_equal(
                 and right._geometry_column_name not in right.columns
             ):
                 pass
-            # no crs can be either None or {}
-            elif not left.crs and not right.crs:
-                pass
-            else:
-                assert left.crs == right.crs
+            assert left.crs == right.crs
     else:
         if not isinstance(left, GeoDataFrame):
             left = GeoDataFrame(left)
