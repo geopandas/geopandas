@@ -2473,7 +2473,7 @@ default 'snappy'
 
         df = self.take(exploded_geom.index.droplevel(-1))
         df[column] = exploded_geom.values
-        df = df[self.columns].__finalize__(self)
+        df = df.__finalize__(self)
         if self._geometry_column_name is not None:
             df = df.set_geometry(self._geometry_column_name)
 

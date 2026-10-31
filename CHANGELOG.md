@@ -4,7 +4,7 @@
 
 Bug fixes:
 - `GeoDataFrame.explode()` now correctly handles being passed a geometry column
-  which is not active (#3909)
+  besides the active geometry column (#3909)
 
 ## Version 1.2.0 (September 28, 2026)
 
