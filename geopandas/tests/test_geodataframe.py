@@ -253,6 +253,38 @@ class TestDataFrame:
         with pytest.raises(ValueError, match=msg):
             self.df.rename_geometry("Shape_Area", inplace=True)
 
+    @pytest.mark.parametrize("axis", [None, 1, "columns"])
+    @pytest.mark.parametrize(
+        "method, expected",
+        [("add_prefix", "pre_geometry"), ("add_suffix", "geometry_suf")],
+    )
+    def test_add_prefix_suffix(self, method, expected, axis):
+        # https://github.com/geopandas/geopandas/issues/2411
+        affix = "pre_" if method == "add_prefix" else "_suf"
+        df2 = getattr(self.df, method)(affix, axis=axis)
+        assert isinstance(df2, GeoDataFrame)
+        assert df2._geometry_column_name == expected
+        assert df2.geometry.name == expected
+        assert df2.crs == self.df.crs
+        assert self.df._geometry_column_name == "geometry"
+
+    @pytest.mark.parametrize("axis", [0, "index"])
+    @pytest.mark.parametrize("method", ["add_prefix", "add_suffix"])
+    def test_add_prefix_suffix_index(self, method, axis):
+        df2 = getattr(self.df, method)("x", axis=axis)
+        assert df2._geometry_column_name == "geometry"
+        assert df2.geometry.name == "geometry"
+        assert list(df2.columns) == list(self.df.columns)
+
+    def test_add_prefix_non_default_geometry(self):
+        df = self.df.rename_geometry("geom")
+        df["other"] = df.geometry.centroid
+        df2 = df.add_prefix("pre_")
+        assert df2._geometry_column_name == "pre_geom"
+        assert df2.geometry.name == "pre_geom"
+        assert_geoseries_equal(df2.geometry, df.geometry.rename("pre_geom"))
+        assert df2["pre_other"].dtype == "geometry"
+
     def test_set_geometry(self):
         geom = GeoSeries([Point(x, y) for x, y in zip(range(5), range(5))])
         original_geom = self.df.geometry

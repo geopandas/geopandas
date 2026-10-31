@@ -1,5 +1,12 @@
 # Changelog
 
+## Version 1.3.0
+
+Bug fixes:
+
+- Fix `GeoDataFrame.add_prefix` and `GeoDataFrame.add_suffix` losing track of the
+  active geometry column when renaming the columns (#2411).
+
 ## Version 1.2.0 (September 28, 2026)
 
 New features and improvements:
