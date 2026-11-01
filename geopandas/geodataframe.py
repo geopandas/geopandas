@@ -2509,7 +2509,7 @@ default 'snappy'
         Upload GeoDataFrame into PostGIS database.
 
         This method requires SQLAlchemy and GeoAlchemy2, and a PostgreSQL
-        Python driver (psycopg or psycopg2) to be installed.
+        Python driver (psycopg, psycopg2, or pg8000) to be installed.
 
         It is also possible to use :meth:`~GeoDataFrame.to_file` to write to a database.
         Especially for file geodatabases like GeoPackage or SpatiaLite this can be

@@ -283,6 +283,10 @@ Spatial databases
 GeoPandas can also get data from a PostGIS database using the
 :func:`geopandas.read_postgis` command.
 
+Writing to PostGIS requires SQLAlchemy, GeoAlchemy2, and a PostgreSQL driver:
+psycopg, psycopg2, or pg8000. To select pg8000, use a connection URL starting
+with ``postgresql+pg8000://``.
+
 Writing to PostGIS::
 
     from sqlalchemy import create_engine

@@ -30,6 +30,7 @@ dependencies:
   # - postgis
   - sqlalchemy<2.1 # test oldest support sqlalchemy version
   - psycopg2
+  - pg8000
   - libspatialite
   - geoalchemy2
   - pyarrow
