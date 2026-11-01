@@ -713,6 +713,14 @@ def _to_file(
     if driver is None:
         driver = _detect_driver(filename)
 
+    non_str_columns = [c for c in df.columns if not isinstance(c, str)]
+    if non_str_columns:
+        raise ValueError(
+            "GeoDataFrame.to_file requires all column names to be strings, got "
+            f"non-string column names: {non_str_columns}. Convert them to strings "
+            "first, e.g. using `df.columns = df.columns.astype(str)`."
+        )
+
     if driver == "ESRI Shapefile" and any(len(c) > 10 for c in df.columns.tolist()):
         warnings.warn(
             "Column names longer than 10 characters will be truncated when saved to "
