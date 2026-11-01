@@ -509,13 +509,12 @@ class GeometryArray(ExtensionArray):
         # invalidate spatial index
         self._sindex = None
 
-        # TODO: use this once pandas-dev/pandas#33457 is fixed
-        # if hasattr(value, "crs"):
-        #     if value.crs and (value.crs != self.crs):
-        #         raise ValueError(
-        #             "CRS mismatch between CRS of the passed geometries "
-        #             "and CRS of existing geometries."
-        #         )
+        if hasattr(value, "crs"):
+            if value.crs and (value.crs != self.crs):
+                raise ValueError(
+                    "CRS mismatch between CRS of the passed geometries "
+                    "and CRS of existing geometries."
+                )
 
     def __getstate__(self):
         return (shapely.to_wkb(self._data), self._crs)
