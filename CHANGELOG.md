@@ -1,5 +1,13 @@
 # Changelog
 
+## Version 1.3.0
+
+Deprecations and compatibility notes:
+
+- The default of `observed=False` in `GeoDataFrame.dissolve` is deprecated and will
+  change to `True` in a future version, following pandas. A `FutureWarning` is raised
+  when grouping by a categorical key without passing `observed` explicitly (#3192).
+
 ## Version 1.2.0 (September 28, 2026)
 
 New features and improvements:

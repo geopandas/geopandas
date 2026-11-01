@@ -291,10 +291,63 @@ def test_dissolve_categorical():
         }
     ).set_index(["cat", "noncat"])
 
-    assert_frame_equal(expected_gdf_observed_false, gdf.dissolve(["cat", "noncat"]))
+    assert_frame_equal(
+        expected_gdf_observed_false, gdf.dissolve(["cat", "noncat"], observed=False)
+    )
     assert_frame_equal(
         expected_gdf_observed_true, gdf.dissolve(["cat", "noncat"], observed=True)
     )
+
+    # the default is still observed=False, but it is deprecated
+    with pytest.warns(FutureWarning, match="default of observed=False"):
+        result = gdf.dissolve(["cat", "noncat"])
+    assert_frame_equal(expected_gdf_observed_false, result)
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"by": "cat"},
+        {"by": ["noncat", "cat"]},
+        {"by": pd.Categorical(["a", "a", "b", "b"])},
+        {"level": "cat"},
+        {"by": "cat_index"},
+    ],
+)
+def test_dissolve_observed_default_warns_for_categorical(kwargs):
+    gdf = geopandas.GeoDataFrame(
+        {
+            "cat": pd.Categorical(["a", "a", "b", "b"], categories=["a", "b", "c"]),
+            "noncat": [1, 1, 1, 2],
+            "geometry": geopandas.array.from_wkt(
+                ["POINT (0 0)", "POINT (1 1)", "POINT (2 2)", "POINT (3 3)"]
+            ),
+        }
+    )
+    if kwargs.get("level") == "cat":
+        gdf = gdf.set_index("cat")
+    elif isinstance(kwargs.get("by"), str) and kwargs["by"] == "cat_index":
+        gdf.index = pd.CategoricalIndex(["a", "a", "b", "b"], name="cat_index")
+    with pytest.warns(FutureWarning, match="default of observed=False"):
+        gdf.dissolve(**kwargs)
+
+
+@pytest.mark.parametrize("kwargs", [{"by": "noncat"}, {}, {"observed": False}])
+def test_dissolve_observed_default_no_warning(kwargs):
+    gdf = geopandas.GeoDataFrame(
+        {
+            "cat": pd.Categorical(["a", "a", "b", "b"]),
+            "noncat": [1, 1, 1, 2],
+            "geometry": geopandas.array.from_wkt(
+                ["POINT (0 0)", "POINT (1 1)", "POINT (2 2)", "POINT (3 3)"]
+            ),
+        }
+    )
+    if "observed" in kwargs:
+        kwargs["by"] = "cat"
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", FutureWarning)
+        gdf.dissolve(**kwargs)
 
 
 def test_dissolve_dropna():

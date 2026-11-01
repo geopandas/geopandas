@@ -80,6 +80,29 @@ crs_mismatch_error = (
 )
 
 
+def _has_categorical_grouper(df: DataFrame, by, level) -> bool:
+    """Check whether any of the ``dissolve`` group keys is categorical."""
+    if level is not None:
+        levels = level if pd.api.types.is_list_like(level) else [level]
+        return any(
+            isinstance(df.index.get_level_values(lev).dtype, pd.CategoricalDtype)
+            for lev in levels
+        )
+    for key in by if isinstance(by, list) else [by]:
+        if isinstance(getattr(key, "dtype", None), pd.CategoricalDtype):
+            return True
+        if pd.api.types.is_hashable(key):
+            if key in df.columns:
+                if isinstance(df[key].dtype, pd.CategoricalDtype):
+                    return True
+            elif key in df.index.names:
+                if isinstance(
+                    df.index.get_level_values(key).dtype, pd.CategoricalDtype
+                ):
+                    return True
+    return False
+
+
 class GeoDataFrame(GeoPandasBase, DataFrame):
     """A GeoDataFrame object is a pandas.DataFrame that has one or more columns
     containing geometry.
@@ -2190,7 +2213,7 @@ default 'snappy'
         as_index: bool = True,
         level=None,
         sort: bool = True,
-        observed: bool = False,
+        observed: bool | None = None,
         dropna: bool = True,
         method: Literal["unary", "coverage", "disjoint_subset"] = "unary",
         grid_size: float | None = None,
@@ -2234,6 +2257,11 @@ default 'snappy'
             This only applies if any of the groupers are Categoricals.
             If True: only show observed values for categorical groupers.
             If False: show all values for categorical groupers.
+
+            .. deprecated:: 1.3.0
+                The default value of ``observed`` will change from ``False``
+                to ``True`` in a future version, following pandas. Pass the
+                value explicitly to silence the warning.
         dropna : bool, default True
             If True, and if group keys contain NA values, NA values
             together with row/column will be dropped. If False, NA
@@ -2303,6 +2331,18 @@ default 'snappy'
         GeoDataFrame.explode : explode multi-part geometries into single geometries
 
         """
+        if observed is None:
+            if _has_categorical_grouper(self, by, level):
+                warnings.warn(
+                    "The default of observed=False is deprecated and will be "
+                    "changed to True in a future version of geopandas. Pass "
+                    "observed=False to retain current behavior or observed=True "
+                    "to adopt the future default and silence this warning.",
+                    category=FutureWarning,
+                    stacklevel=2,
+                )
+            observed = False
+
         if by is None and level is None:
             by = np.zeros(len(self), dtype="int64")  # type: ignore [assignment]
 
