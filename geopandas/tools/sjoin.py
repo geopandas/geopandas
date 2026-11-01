@@ -4,6 +4,8 @@ from functools import partial
 import numpy as np
 import pandas as pd
 
+import shapely
+
 from geopandas import GeoDataFrame
 from geopandas._compat import PANDAS_GE_30
 from geopandas.array import _check_crs, _crs_mismatch_warn
@@ -18,6 +20,7 @@ def sjoin(
     rsuffix="right",
     distance=None,
     on_attribute=None,
+    distance_col=None,
     **kwargs,
 ):
     """Spatial join of two GeoDataFrames.
@@ -71,6 +74,19 @@ def sjoin(
         of the spatial predicate. These must be found in both DataFrames.
         If set, observations are joined only if the predicate applies
         and values in specified columns match.
+    distance_col : string, default None
+        If set, save the distances computed between matching geometries under
+        a column of this name in the joined GeoDataFrame. Distances are
+        calculated in the CRS units of the input GeoDataFrames and represent
+        the Euclidean (planar) distance between each matched pair of
+        geometries.  For unmatched rows (in ``'left'`` or ``'right'`` joins),
+        the distance will be ``NaN``.
+
+        .. note::
+           This parameter computes distances regardless of the predicate used.
+           For non-proximity predicates such as ``'intersects'``, the returned
+           distance is the planar distance between the matched geometries,
+           which may be zero for overlapping geometries.
 
     Examples
     --------
@@ -110,6 +126,23 @@ def sjoin(
     4        27         CHATHAM  MULTIPOINT ((-87.62715 41.73623))
     [5 rows x 95 columns]
 
+    To retrieve the distance between each matched pair of geometries,
+    use the ``distance_col`` parameter:
+
+    >>> from shapely.geometry import Point
+    >>> pts = geopandas.GeoDataFrame(
+    ...     {"geometry": [Point(0, 0), Point(0, 2)]}, crs="EPSG:3857"
+    ... )
+    >>> polys = geopandas.GeoDataFrame(
+    ...     {"geometry": [Point(0, 0.5).buffer(1)]}, crs="EPSG:3857"
+    ... )
+    >>> joined = geopandas.sjoin(pts, polys, predicate="dwithin",
+    ...                          distance=1.5, distance_col="dist")
+    >>> joined[["geometry", "index_right", "dist"]]  # doctest: +SKIP
+          geometry  index_right  dist
+    0  POINT (0 0)            0   0.5
+    1  POINT (0 2)            0   0.5
+
     See Also
     --------
     overlay : overlay operation resulting in a new geometry
@@ -128,21 +161,44 @@ def sjoin(
 
     _basic_checks(left_df, right_df, how, lsuffix, rsuffix, on_attribute=on_attribute)
 
+    return_distance = distance_col is not None
+
+    if return_distance:
+        # Warn users if geometries are in geographic CRS - results will be
+        # inaccurate (same warning already issued by sjoin_nearest).
+        left_df.geometry.values.check_geographic_crs(stacklevel=1)
+        right_df.geometry.values.check_geographic_crs(stacklevel=1)
+
     indices = _geom_predicate_query(
         left_df, right_df, predicate, distance, on_attribute=on_attribute
     )
 
-    joined, _ = _frame_join(
+    if return_distance:
+        l_idx, r_idx = indices
+        if len(l_idx) > 0:
+            distances = shapely.distance(
+                left_df.geometry.values._data[l_idx],
+                right_df.geometry.values._data[r_idx],
+            )
+        else:
+            distances = np.empty(0, dtype=float)
+    else:
+        distances = None
+
+    joined, distances = _frame_join(
         left_df,
         right_df,
         indices,
-        None,
+        distances,
         how,
         lsuffix,
         rsuffix,
         predicate,
         on_attribute=on_attribute,
     )
+
+    if return_distance:
+        joined[distance_col] = distances
 
     return joined
 
