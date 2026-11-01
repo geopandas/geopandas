@@ -407,6 +407,36 @@ def test_clip_multipoly_keep_slivers(multi_poly_gdf, single_rectangle_gdf):
     assert "GeometryCollection" in clipped.geom_type[0]
 
 
+@pytest.mark.parametrize(
+    "touching, overlapping, orig_type, sliver_type",
+    [
+        (box(10, 0, 12, 10), box(1, 1, 2, 2), "Polygon", "LineString"),
+        (
+            LineString([(10, 5), (12, 5)]),
+            LineString([(1, 1), (2, 2)]),
+            "LineString",
+            "Point",
+        ),
+    ],
+)
+def test_clip_keep_geom_type_touching(
+    single_rectangle_gdf, touching, overlapping, orig_type, sliver_type
+):
+    """keep_geom_type should drop lower dimension results independently of
+    the other rows (GH3878)."""
+    gdf = GeoDataFrame(geometry=[touching], crs="EPSG:3857")
+    clipped = clip(gdf, single_rectangle_gdf, keep_geom_type=True)
+    assert len(clipped) == 0
+
+    clipped = clip(gdf, single_rectangle_gdf, keep_geom_type=False)
+    assert list(clipped.geom_type) == [sliver_type]
+
+    gdf = GeoDataFrame(geometry=[touching, overlapping], crs="EPSG:3857")
+    clipped = clip(gdf, single_rectangle_gdf, keep_geom_type=True)
+    assert list(clipped.geom_type) == [orig_type]
+    assert list(clipped.index) == [1]
+
+
 @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
 def test_warning_crs_mismatch(point_gdf, single_rectangle_gdf):
     with pytest.warns(UserWarning, match="CRS mismatch between the CRS"):
