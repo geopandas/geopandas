@@ -455,6 +455,89 @@ def test_roundtrip_bytesio(file_format, test_dataset, request):
     assert_geodataframe_equal(df, pq_df)
 
 
+def _multiindex_columns_gdf():
+    """GeoDataFrame with MultiIndex columns (GH#3370)."""
+    columns = pd.MultiIndex.from_tuples(
+        [("foo", "bar"), ("foo", "baz"), ("dog", "cat"), ("geometry", "")]
+    )
+    return GeoDataFrame(
+        [[0, 0, 0, Point(0, 0)], [1, 1, 1, Point(1, 2)]],
+        columns=columns,
+        geometry=("geometry", ""),
+        crs="EPSG:4326",
+    )
+
+
+def test_multiindex_columns_roundtrip(tmpdir, file_format):
+    reader, writer = file_format
+
+    df = _multiindex_columns_gdf()
+    filename = os.path.join(str(tmpdir), "test.pq")
+
+    writer(df, filename)
+    result = reader(filename)
+
+    assert_geodataframe_equal(result, df)
+
+
+def test_multiindex_columns_roundtrip_issue_example(tmpdir):
+    # GH#3370: in this construction, the geometry column gets the
+    # ("geometry", "") label while the active geometry is designated
+    # with the plain "geometry" name
+    df = GeoDataFrame(
+        {
+            ("foo", "bar"): [0, 1],
+            ("foo", "baz"): [0, 1],
+            ("dog", "cat"): [0, 1],
+        },
+        geometry=[Point(0, 0), Point(1, 2)],
+    )
+    filename = os.path.join(str(tmpdir), "test.parquet")
+
+    df.to_parquet(filename)
+    result = read_parquet(filename)
+
+    assert list(result.columns) == list(df.columns)
+    assert result.active_geometry_name == ("geometry", "")
+    for col in [("foo", "bar"), ("foo", "baz"), ("dog", "cat")]:
+        assert result[col].tolist() == df[col].tolist()
+    assert result.geometry.tolist() == df.geometry.tolist()
+
+
+def test_multiindex_columns_non_string_level_raises(tmpdir):
+    columns = pd.MultiIndex.from_tuples([("foo", 1), ("geometry", "")])
+    df = GeoDataFrame([[0, Point(0, 0)]], columns=columns, geometry=("geometry", ""))
+
+    with pytest.raises(ValueError, match="requires string column names"):
+        df.to_parquet(os.path.join(str(tmpdir), "test.parquet"))
+
+
+def test_multiindex_columns_roundtrip_with_multiindex_index(tmpdir, file_format):
+    reader, writer = file_format
+
+    df = _multiindex_columns_gdf()
+    df.index = pd.MultiIndex.from_tuples([("r", 1), ("r", 2)], names=["L1", "L2"])
+    filename = os.path.join(str(tmpdir), "test.pq")
+
+    writer(df, filename)
+    result = reader(filename)
+
+    assert_geodataframe_equal(result, df)
+
+
+def test_read_multiindex_columns_subset(tmpdir, file_format):
+    reader, writer = file_format
+
+    df = _multiindex_columns_gdf()
+    filename = os.path.join(str(tmpdir), "test.pq")
+    writer(df, filename)
+
+    result = reader(filename, columns=[("foo", "bar"), ("geometry", "")])
+
+    assert list(result.columns) == [("foo", "bar"), ("geometry", "")]
+    assert result.active_geometry_name == ("geometry", "")
+
+
 def test_index(tmpdir, file_format, naturalearth_lowres):
     """Setting index=`True` should preserve index in output, and
     setting index=`False` should drop index from output.

@@ -140,7 +140,7 @@ def geopandas_to_arrow(
             field, geom_arr = construct_geometry_array(
                 np.array(df[col].array),
                 include_z=include_z,
-                field_name=col,
+                field_name=table.schema.names[i],
                 crs=df[col].crs,
                 interleaved=interleaved,
             )
@@ -155,7 +155,9 @@ def geopandas_to_arrow(
         # Encode all geometry columns to WKB
         for i, col in zip(geometry_indices, geometry_columns):
             field, wkb_arr = construct_wkb_array(
-                np.asarray(df[col].array), field_name=col, crs=df[col].crs
+                np.asarray(df[col].array),
+                field_name=table.schema.names[i],
+                crs=df[col].crs,
             )
             table = table.set_column(i, field, wkb_arr)
             geometry_encoding_dict[col] = "WKB"
