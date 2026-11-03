@@ -224,11 +224,31 @@ def _create_metadata(
         # columns that was constructed with a plain string geometry name,
         # the label of the geometry column is a tuple while
         # ``_geometry_column_name`` is that string. The metadata needs to
-        # reference the actual column, so fall back to the single geometry
-        # column in that case.
-        geometry_columns = df.columns[df.dtypes == "geometry"]
+        # reference the actual column, so resolve the name to the label of
+        # the geometry column it designates: the single geometry column,
+        # or, if there are several geometry columns, the one whose first
+        # level value equals the name (which is also how the column is
+        # found by partial string indexing on the frame itself).
+        geometry_columns = list(df.columns[df.dtypes == "geometry"])
         if len(geometry_columns) == 1:
             primary_column = geometry_columns[0]
+        elif len(geometry_columns) > 1:
+            matches = [
+                col
+                for col in geometry_columns
+                if isinstance(col, tuple) and col[0] == primary_column
+            ]
+            if len(matches) == 1:
+                primary_column = matches[0]
+            else:
+                raise ValueError(
+                    "The active geometry column is designated with the name "
+                    f"{primary_column!r}, which does not match the label of "
+                    "any column, and it could not be unambiguously resolved "
+                    f"to one of the geometry columns {geometry_columns}. "
+                    "Set the active geometry using the full label of one of "
+                    "the geometry columns before writing."
+                )
 
     return {
         "primary_column": _column_name_in_file(primary_column),
@@ -296,6 +316,18 @@ def _validate_dataframe(df):
             raise ValueError("Writing to Parquet/Feather requires string column names")
     elif df.columns.inferred_type not in {"string", "unicode", "empty"}:
         raise ValueError("Writing to Parquet/Feather requires string column names")
+
+    # column names must be unique once stored in the file (columns that
+    # are part of a MultiIndex are stored under the string representation
+    # of their tuple label)
+    file_names = [_column_name_in_file(col) for col in df.columns]
+    if len(set(file_names)) != len(file_names):
+        duplicates = sorted({name for name in file_names if file_names.count(name) > 1})
+        raise ValueError(
+            "Writing to Parquet/Feather requires unique column names, but "
+            "the following names occur more than once when stored in the "
+            f"file: {duplicates}"
+        )
 
     # index level names must be strings
     valid_names = all(
@@ -1172,13 +1204,31 @@ def _read_feather(path, columns=None, to_pandas_kwargs=None, **kwargs):
 
     if columns is not None and any(isinstance(col, tuple) for col in columns):
         # translate MultiIndex column labels to the names of the columns
-        # in the file; only supported for path-like sources, for other
-        # sources the labels are passed through unchanged
-        if isinstance(path, (str, os.PathLike)):
-            import pyarrow as pa
+        # in the file, which requires reading the schema of the file first
+        import pyarrow as pa
 
+        if isinstance(path, (str, os.PathLike)):
             schema = pa.ipc.open_file(path).schema
-            columns = _columns_to_file_names(columns, schema.names)
+        elif (
+            hasattr(path, "seek")
+            and hasattr(path, "tell")
+            and (not hasattr(path, "seekable") or path.seekable())
+        ):
+            # file-like object: reading the schema advances the position
+            # of the buffer, so save and restore it around the schema read
+            position = path.tell()
+            try:
+                schema = pa.ipc.open_file(path).schema
+            finally:
+                path.seek(position)
+        else:
+            raise ValueError(
+                "Reading a subset of columns of a Feather file using "
+                "MultiIndex column labels is only supported for a file "
+                "path or a seekable file object, but the source is of "
+                f"type {type(path).__name__!r}."
+            )
+        columns = _columns_to_file_names(columns, schema.names)
 
     table = feather.read_table(path, columns=columns, **kwargs)
     return _arrow_to_geopandas(table, to_pandas_kwargs=to_pandas_kwargs)
