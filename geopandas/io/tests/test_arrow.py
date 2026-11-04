@@ -1714,6 +1714,243 @@ def test_read_parquet_2_0_error_old_pyarrow():
         geopandas.read_parquet(data_dir / "2.0.0" / "data-point-encoding_wkb.parquet")
 
 
+class _WkbTestExtensionType(pyarrow.ExtensionType):
+    """Minimal "geoarrow.wkb" extension type to write the Parquet logical types."""
+
+    def __init__(self, metadata=b""):
+        self._metadata = metadata
+        super().__init__(pyarrow.binary(), "geoarrow.wkb")
+
+    def __arrow_ext_serialize__(self):
+        return self._metadata
+
+    @classmethod
+    def __arrow_ext_deserialize__(cls, storage_type, serialized):
+        return cls(serialized)
+
+
+@contextlib.contextmanager
+def _wkb_test_extension_type_registered():
+    try:
+        pyarrow.register_extension_type(_WkbTestExtensionType())
+    except pyarrow.ArrowKeyError:
+        # already registered (e.g. by geoarrow.pyarrow), writing works the same
+        yield
+        return
+    try:
+        yield
+    finally:
+        pyarrow.unregister_extension_type("geoarrow.wkb")
+
+
+def _other_wkb_extension_type_registered():
+    try:
+        pyarrow.register_extension_type(_WkbTestExtensionType())
+    except pyarrow.ArrowKeyError:
+        return True
+    pyarrow.unregister_extension_type("geoarrow.wkb")
+    return False
+
+
+def _native_wkb_array(geoms, ext_metadata):
+    storage = pyarrow.array(shapely.to_wkb(geoms), pyarrow.binary())
+    ext_type = _WkbTestExtensionType(json.dumps(ext_metadata).encode())
+    return pyarrow.ExtensionArray.from_storage(ext_type, storage)
+
+
+def _write_native_parquet(table, path, file_metadata=None, row_group_size=None):
+    """Write a Parquet file using the Parquet Geometry/Geography logical types,
+    without any "geo" metadata (or Arrow schema metadata), like other non-GeoParquet
+    writers of the native Parquet types."""
+    table = table.replace_schema_metadata(None)
+    with _wkb_test_extension_type_registered():
+        with pq.ParquetWriter(path, table.schema, store_schema=False) as writer:
+            writer.write_table(table, row_group_size=row_group_size)
+            if file_metadata is not None:
+                writer.add_key_value_metadata(file_metadata)
+
+
+@pytest.mark.skipif(
+    Version(pyarrow.__version__) < Version("21.0.0"),
+    reason="Writing the Parquet geospatial logical types requires pyarrow>=21.0",
+)
+@pytest.mark.parametrize(
+    "geometry_type",
+    ["point", "linestring", "polygon", "multipoint", "multilinestring", "multipolygon"],
+)
+def test_read_parquet_native_types_without_geo_metadata(tmp_path, geometry_type):
+    data_dir = DATA_PATH / "arrow" / "geoparquet"
+    with _wkb_test_extension_type_registered():
+        table = pq.read_table(
+            data_dir / "2.0.0" / f"data-{geometry_type}-encoding_wkb.parquet"
+        )
+    path = tmp_path / "native.parquet"
+    _write_native_parquet(table, path)
+    assert b"geo" not in (pq.read_metadata(path).metadata or {})
+
+    result = geopandas.read_parquet(path)
+    expected = geopandas.read_parquet(
+        data_dir / "1.1.0" / f"data-{geometry_type}-encoding_wkb.parquet"
+    )
+    assert_geodataframe_equal(result, expected, check_crs=HAS_PYPROJ)
+
+
+@pytest.mark.skipif(not HAS_PYPROJ, reason="requires pyproj")
+@pytest.mark.skipif(
+    Version(pyarrow.__version__) < Version("21.0.0"),
+    reason="Writing the Parquet geospatial logical types requires pyarrow>=21.0",
+)
+@pytest.mark.parametrize(
+    "crs, expected",
+    [
+        ("projjson", "EPSG:25830"),
+        ("EPSG:25830", "EPSG:25830"),
+        ("srid:25830", "EPSG:25830"),
+        ("srid:0", None),
+        ("projjson:crs_key", "EPSG:25830"),
+        (None, "OGC:CRS84"),
+    ],
+)
+def test_read_parquet_native_types_without_geo_metadata_crs(tmp_path, crs, expected):
+    from pyproj import CRS
+
+    if crs in ("srid:25830", "srid:0", "projjson:crs_key") and (
+        _other_wkb_extension_type_registered()
+    ):
+        # pyarrow then deserializes the type with the registered geoarrow.pyarrow
+        # extension type, which does not support those CRS representations
+        pytest.skip("geoarrow.wkb extension type registered by another package")
+
+    file_metadata = None
+    if crs == "projjson":
+        crs = CRS("EPSG:25830").to_json_dict()
+    elif crs == "projjson:crs_key":
+        file_metadata = {"crs_key": CRS("EPSG:25830").to_json()}
+    ext_metadata = {} if crs is None else {"crs": crs}
+    geoms = [Point(440000, 4474000), Point(441500, 4475200)]
+    table = pyarrow.table(
+        {"col": [1, 2], "geometry": _native_wkb_array(geoms, ext_metadata)}
+    )
+    path = tmp_path / "native.parquet"
+    _write_native_parquet(table, path, file_metadata=file_metadata)
+
+    result = geopandas.read_parquet(path)
+    expected_df = GeoDataFrame({"col": [1, 2]}, geometry=geoms, crs=expected)
+    assert_geodataframe_equal(result, expected_df, check_crs=True)
+
+
+@pytest.mark.skipif(not HAS_PYPROJ, reason="requires pyproj")
+@pytest.mark.skipif(
+    Version(pyarrow.__version__) < Version("21.0.0"),
+    reason="Writing the Parquet geospatial logical types requires pyarrow>=21.0",
+)
+@pytest.mark.parametrize("crs", ["srid:999999", "projjson:missing_key"])
+def test_read_parquet_native_types_without_geo_metadata_invalid_crs(tmp_path, crs):
+    if _other_wkb_extension_type_registered():
+        pytest.skip("geoarrow.wkb extension type registered by another package")
+
+    geoms = [Point(1, 2), Point(3, 4)]
+    table = pyarrow.table({"geometry": _native_wkb_array(geoms, {"crs": crs})})
+    path = tmp_path / "native.parquet"
+    _write_native_parquet(table, path)
+
+    # a CRS that cannot be interpreted does not prevent reading the geometries
+    with pytest.warns(UserWarning, match="the CRS is ignored"):
+        result = geopandas.read_parquet(path)
+    assert result.crs is None
+    assert_geoseries_equal(result.geometry, geopandas.GeoSeries(geoms, name="geometry"))
+
+
+@pytest.mark.skipif(
+    Version(pyarrow.__version__) < Version("21.0.0"),
+    reason="Writing the Parquet geospatial logical types requires pyarrow>=21.0",
+)
+def test_read_parquet_native_types_without_geo_metadata_geography(tmp_path):
+    geoms = [Point(1, 2), Point(3, 4)]
+    table = pyarrow.table(
+        {"geometry": _native_wkb_array(geoms, {"edges": "spherical"})}
+    )
+    path = tmp_path / "native.parquet"
+    _write_native_parquet(table, path)
+    assert str(pq.read_metadata(path).schema.column(0).logical_type).startswith(
+        "Geography"
+    )
+
+    with pytest.warns(UserWarning, match="spherical edges"):
+        result = geopandas.read_parquet(path)
+    assert_geoseries_equal(
+        result.geometry, geopandas.GeoSeries(geoms, name="geometry"), check_crs=False
+    )
+
+
+@pytest.mark.skipif(
+    Version(pyarrow.__version__) < Version("21.0.0"),
+    reason="Writing the Parquet geospatial logical types requires pyarrow>=21.0",
+)
+def test_read_parquet_native_types_without_geo_metadata_multiple_columns(tmp_path):
+    table = pyarrow.table(
+        {
+            "col": [1, 2],
+            "geom1": _native_wkb_array([Point(0, 0), Point(1, 1)], {}),
+            "geom2": _native_wkb_array([Point(2, 2), Point(3, 3)], {}),
+        }
+    )
+    path = tmp_path / "native.parquet"
+    _write_native_parquet(table, path)
+
+    result = geopandas.read_parquet(path)
+    # the first geometry column is used as the active geometry column
+    assert result.geometry.name == "geom1"
+    assert isinstance(result["geom2"], geopandas.GeoSeries)
+
+    result = geopandas.read_parquet(path, columns=["col", "geom2"])
+    assert result.geometry.name == "geom2"
+
+
+@pytest.mark.skipif(
+    Version(pyarrow.__version__) < Version("21.0.0"),
+    reason="Writing the Parquet geospatial logical types requires pyarrow>=21.0",
+)
+def test_read_parquet_native_types_without_geo_metadata_bbox(tmp_path):
+    geoms = [Point(0, 0), Point(1, 1), Point(10, 10), Point(11, 11)]
+    table = pyarrow.table(
+        {"col": [1, 2, 3, 4], "geometry": _native_wkb_array(geoms, {})}
+    )
+    path = tmp_path / "native.parquet"
+    _write_native_parquet(table, path, row_group_size=2)
+
+    result = geopandas.read_parquet(path, bbox=(0.5, 0.5, 10.5, 10.5))
+    assert result["col"].tolist() == [2, 3]
+
+
+@pytest.mark.skipif(
+    Version(pyarrow.__version__) < Version("21.0.0"),
+    reason="Writing the Parquet geospatial logical types requires pyarrow>=21.0",
+)
+@pytest.mark.parametrize("edges", [None, "spherical"])
+def test_read_parquet_native_types_without_geo_metadata_bbox_no_statistics(
+    tmp_path, edges
+):
+    # row groups without usable geospatial statistics (only null geometries, or
+    # Geography columns for which pyarrow does not write statistics) are not skipped
+    geoms = [Point(0, 0), Point(1, 1), None, None, Point(10, 10), Point(11, 11)]
+    ext_metadata = {} if edges is None else {"edges": edges}
+    table = pyarrow.table(
+        {"col": [1, 2, 3, 4, 5, 6], "geometry": _native_wkb_array(geoms, ext_metadata)}
+    )
+    path = tmp_path / "native.parquet"
+    _write_native_parquet(table, path, row_group_size=2)
+
+    context = (
+        pytest.warns(UserWarning, match="spherical edges")
+        if edges
+        else contextlib.nullcontext()
+    )
+    with context:
+        result = geopandas.read_parquet(path, bbox=(0.5, 0.5, 10.5, 10.5))
+    assert result["col"].tolist() == [2, 5]
+
+
 @pytest.mark.skipif(
     Version(pyarrow.__version__) < Version("21.0.0"),
     reason="Writing GeoParquet 2.0 files requires pyarrow>=21.0",

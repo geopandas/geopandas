@@ -11,7 +11,7 @@ import shapely
 
 import geopandas
 from geopandas import GeoDataFrame
-from geopandas._compat import import_optional_dependency
+from geopandas._compat import HAS_PYPROJ, import_optional_dependency
 from geopandas.array import from_shapely, from_wkb
 
 from .file import _expand_user
@@ -318,10 +318,11 @@ def _validate_geo_metadata(metadata):
                 f"got: {column_metadata['encoding']}"
             )
 
-        if column_metadata.get("edges", "planar") == "spherical":
+        edges = column_metadata.get("edges", "planar")
+        if edges != "planar":
             warnings.warn(
-                f"The geo metadata indicate that column '{col}' has spherical edges, "
-                "but because GeoPandas currently does not support spherical "
+                f"The geo metadata indicate that column '{col}' has {edges} edges, "
+                f"but because GeoPandas currently does not support {edges} "
                 "geometry, it ignores this metadata and will interpret the edges of "
                 "the geometries as planar.",
                 UserWarning,
@@ -716,6 +717,123 @@ def _validate_and_decode_metadata(metadata):
     return decoded_geo_metadata
 
 
+def _crs_from_parquet_logical_type(crs, file_metadata, col):
+    """Interpret the ``crs`` of a Parquet Geometry/Geography logical type.
+
+    Returns a value accepted as ``crs`` by ``from_wkb`` (or None for an unknown
+    CRS). A CRS that cannot be interpreted is ignored with a warning, as it
+    should not prevent reading the geometries themselves.
+    """
+    if not crs:
+        # absent CRS means OGC:CRS84 (Parquet default)
+        return "OGC:CRS84"
+
+    if crs.startswith("srid:"):
+        srid = crs[len("srid:") :]
+        if srid == "0":
+            # "srid:0" means an undefined or unknown CRS (GeoParquet 2.0)
+            return None
+        # SRIDs are engine specific, but in practice they are EPSG codes
+        crs = f"EPSG:{srid}"
+    elif crs.startswith("projjson:"):
+        # PROJJSON stored in the file key-value metadata under the given key
+        value = file_metadata.get(crs[len("projjson:") :].encode())
+        if value is None:
+            warnings.warn(
+                f"The CRS of column '{col}' refers to the missing file metadata "
+                f"key {crs[len('projjson:') :]!r}; the CRS is ignored.",
+                UserWarning,
+                stacklevel=4,
+            )
+            return None
+        crs = value.decode("utf-8")
+
+    if crs.lstrip().startswith("{"):
+        crs = json.loads(crs)
+
+    if HAS_PYPROJ:
+        from pyproj import CRS
+        from pyproj.exceptions import CRSError
+
+        try:
+            CRS.from_user_input(crs)
+        except CRSError:
+            warnings.warn(
+                f"Could not interpret the CRS of column '{col}' "
+                f"({crs if isinstance(crs, str) else 'PROJJSON'}); "
+                "the CRS is ignored.",
+                UserWarning,
+                stacklevel=4,
+            )
+            return None
+    return crs
+
+
+def _geo_metadata_from_native_types(parquet_metadata, schema):
+    """Construct geo metadata from the native Parquet geospatial types.
+
+    For Parquet files without "geo" metadata, but with (top-level) columns using
+    the Parquet Geometry or Geography logical types. The CRS and edges are read
+    from the logical types in the Parquet schema.
+
+    Returns None if there are no such columns.
+    """
+    file_metadata = parquet_metadata.metadata or {}
+    parquet_schema = parquet_metadata.schema
+
+    columns = {}
+    for i in range(len(parquet_schema)):
+        parquet_column = parquet_schema.column(i)
+        # (the ``type`` attribute of the logical type is only "GEOMETRY" /
+        # "GEOGRAPHY" with pyarrow >= 26, earlier versions give "UNKNOWN")
+        logical_type_json = parquet_column.logical_type.to_json()
+        if "Geometry" not in logical_type_json and "Geography" not in logical_type_json:
+            continue
+        type_info = json.loads(logical_type_json)
+        if type_info.get("Type") not in ("Geometry", "Geography"):
+            continue
+        name = parquet_column.path
+        if name not in schema.names:
+            # nested column (not supported) or not included in the dataset schema
+            continue
+
+        column_metadata = {
+            "encoding": "WKB",
+            "crs": _crs_from_parquet_logical_type(
+                type_info.get("crs"), file_metadata, name
+            ),
+        }
+        if type_info["Type"] == "Geography":
+            column_metadata["edges"] = type_info.get("algorithm", "spherical").lower()
+        columns[name] = column_metadata
+
+    if not columns:
+        return None
+
+    # The native Parquet geospatial types are the geometry storage of
+    # GeoParquet 2.0, so treat this as the equivalent 2.0 metadata (this also
+    # enables the bbox filtering based on the native column statistics)
+    geo_metadata = {
+        "version": "2.0.0",
+        "primary_column": next(iter(columns)),
+        "columns": columns,
+    }
+    _validate_geo_metadata(geo_metadata)
+    return geo_metadata
+
+
+def _get_parquet_file_metadata(dataset):
+    """Get the Parquet FileMetaData of the file (or first file of the dataset)."""
+    from pyarrow import parquet
+
+    if isinstance(dataset, parquet.ParquetFile):
+        return dataset.metadata
+    fragments = dataset.fragments
+    if not fragments:
+        return None
+    return fragments[0].metadata
+
+
 def _open_parquet_dataset(path, filesystem, kwargs, bbox):
     """Open the Parquet file/dataset and get the schema and metadata.
 
@@ -769,7 +887,7 @@ def _open_parquet_dataset(path, filesystem, kwargs, bbox):
     # created by GDAL - https://issues.apache.org/jira/browse/ARROW-16688)
     if b"geo" not in metadata:
         try:
-            metadata = parquet.read_metadata(path, filesystem=filesystem).metadata
+            metadata = parquet.read_metadata(path, filesystem=filesystem).metadata or {}
         except Exception:
             pass
 
@@ -832,6 +950,11 @@ def _read_parquet(
 
     Supports versions 0.1.0, 0.4.0, 1.0.0, 1.1.0 and 2.0.0 of the GeoParquet
     specification at: https://github.com/opengeospatial/geoparquet
+
+    Parquet files without GeoParquet metadata are also supported if their geometry
+    columns use the native Parquet ``Geometry`` or ``Geography`` logical types
+    (requires pyarrow>=21.0). In that case, the CRS is read from the logical type,
+    and the first geometry column is used as the active geometry column.
 
     If 'crs' key is not present in the GeoParquet metadata associated with the
     Parquet object, it will default to "OGC:CRS84" according to the specification.
@@ -917,7 +1040,15 @@ def _read_parquet(
 
     dataset, schema, metadata = _open_parquet_dataset(path, filesystem, kwargs, bbox)
 
-    geo_metadata = _validate_and_decode_metadata(metadata)
+    geo_metadata = None
+    if b"geo" not in metadata:
+        # No GeoParquet metadata: check for columns using the native Parquet
+        # Geometry/Geography logical types
+        parquet_metadata = _get_parquet_file_metadata(dataset)
+        if parquet_metadata is not None:
+            geo_metadata = _geo_metadata_from_native_types(parquet_metadata, schema)
+    if geo_metadata is None:
+        geo_metadata = _validate_and_decode_metadata(metadata)
     if len(geo_metadata["columns"]) == 0:
         raise ValueError(
             """No geometry columns are included in the columns read from
@@ -1146,12 +1277,21 @@ def _get_non_bbox_columns(schema, geo_metadata):
 
 
 def _bbox_intersects(geo_stats, bbox):
+    if geo_stats is None:
+        # no statistics written (e.g. for Geography columns) -> cannot skip
+        return True
     stats_xmin, stats_ymin, stats_xmax, stats_ymax = (
         geo_stats.xmin,
         geo_stats.ymin,
         geo_stats.xmax,
         geo_stats.ymax,
     )
+    if None in (stats_xmin, stats_ymin, stats_xmax, stats_ymax):
+        # e.g. only null or empty geometries in the row group
+        return True
+    if stats_xmin > stats_xmax:
+        # bounding box wrapping around the antimeridian -> conservatively keep
+        return True
     xmin, ymin, xmax, ymax = bbox
     return (
         (stats_xmin <= xmax)
