@@ -1,5 +1,21 @@
 # Changelog
 
+## Development version
+
+New features and improvements:
+
+- `read_parquet` now also reads Parquet files that use the native Parquet `Geometry`
+  or `Geography` logical types without GeoParquet `"geo"` metadata (for example
+  written by DuckDB, Apache Iceberg or other Parquet writers). The CRS is taken from
+  the logical type, and the first geometry column is used as the active geometry
+  column (#3632).
+
+Bug fixes:
+
+- Fix `read_parquet` with `bbox` raising an error for GeoParquet 2.0 files with row
+  groups without geospatial statistics (for example `Geography` columns, or row
+  groups with only missing geometries).
+
 ## Version 1.2.0 (September 28, 2026)
 
 New features and improvements:
