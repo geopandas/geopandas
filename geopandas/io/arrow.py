@@ -786,10 +786,7 @@ def _geo_metadata_from_native_types(parquet_metadata, schema):
         parquet_column = parquet_schema.column(i)
         # (the ``type`` attribute of the logical type is only "GEOMETRY" /
         # "GEOGRAPHY" with pyarrow >= 26, earlier versions give "UNKNOWN")
-        logical_type_json = parquet_column.logical_type.to_json()
-        if "Geometry" not in logical_type_json and "Geography" not in logical_type_json:
-            continue
-        type_info = json.loads(logical_type_json)
+        type_info = json.loads(parquet_column.logical_type.to_json())
         if type_info.get("Type") not in ("Geometry", "Geography"):
             continue
         name = parquet_column.path

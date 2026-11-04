@@ -7,6 +7,7 @@ import sys
 from io import BytesIO
 from itertools import product
 from packaging.version import Version
+from types import SimpleNamespace
 from unittest.mock import patch
 
 import numpy as np
@@ -24,6 +25,7 @@ from geopandas.array import to_wkb
 from geopandas.io.arrow import (
     METADATA_VERSION,
     SUPPORTED_VERSIONS,
+    _bbox_intersects,
     _convert_bbox_to_parquet_filter,
     _create_metadata,
     _decode_metadata,
@@ -1949,6 +1951,74 @@ def test_read_parquet_native_types_without_geo_metadata_bbox_no_statistics(
     with context:
         result = geopandas.read_parquet(path, bbox=(0.5, 0.5, 10.5, 10.5))
     assert result["col"].tolist() == [2, 5]
+
+
+@pytest.mark.skipif(
+    Version(pyarrow.__version__) < Version("21.0.0"),
+    reason="Writing the Parquet geospatial logical types requires pyarrow>=21.0",
+)
+def test_read_parquet_native_types_without_geo_metadata_nested(tmp_path):
+    # geometry columns nested in a struct are not supported and are read as is
+    geoms = [Point(0, 0), Point(1, 1)]
+    nested = pyarrow.StructArray.from_arrays(
+        [_native_wkb_array(geoms, {}), pyarrow.array([1, 2])], names=["geom", "x"]
+    )
+    table = pyarrow.table({"geometry": _native_wkb_array(geoms, {}), "s": nested})
+    path = tmp_path / "native.parquet"
+    _write_native_parquet(table, path)
+
+    result = geopandas.read_parquet(path)
+    assert result.geometry.name == "geometry"
+    assert not isinstance(result["s"], geopandas.GeoSeries)
+
+    path = tmp_path / "native_nested_only.parquet"
+    _write_native_parquet(table.select(["s"]), path)
+    with pytest.raises(ValueError, match="Missing geo metadata"):
+        geopandas.read_parquet(path)
+
+
+@pytest.mark.skipif(
+    Version(pyarrow.__version__) < Version("21.0.0"),
+    reason="Writing the Parquet geospatial logical types requires pyarrow>=21.0",
+)
+def test_read_parquet_native_types_without_geo_metadata_no_dataset(
+    tmp_path, pyarrow_dataset_unavailable
+):
+    table = pyarrow.table(
+        {"col": [1, 2], "geometry": _native_wkb_array([Point(0, 0), Point(1, 1)], {})}
+    )
+    path = tmp_path / "native.parquet"
+    _write_native_parquet(table, path)
+
+    result = geopandas.read_parquet(path)
+    assert result.geometry.name == "geometry"
+    assert result.crs == ("OGC:CRS84" if HAS_PYPROJ else None)
+    assert result.geometry.tolist() == [Point(0, 0), Point(1, 1)]
+
+
+def test_read_parquet_empty_directory(tmp_path):
+    (tmp_path / "empty").mkdir()
+    with pytest.raises(ValueError, match="Missing geo metadata"):
+        geopandas.read_parquet(tmp_path / "empty")
+
+
+@pytest.mark.parametrize(
+    "stats, expected",
+    [
+        (None, True),
+        ((None, None, None, None), True),
+        # bounding box wrapping around the antimeridian
+        ((170, 0, -170, 10), True),
+        ((0, 0, 1, 1), True),
+        ((5, 5, 6, 6), False),
+    ],
+)
+def test_bbox_intersects(stats, expected):
+    geo_stats = None
+    if stats is not None:
+        xmin, ymin, xmax, ymax = stats
+        geo_stats = SimpleNamespace(xmin=xmin, ymin=ymin, xmax=xmax, ymax=ymax)
+    assert _bbox_intersects(geo_stats, (0.5, 0.5, 2, 2)) is expected
 
 
 @pytest.mark.skipif(
