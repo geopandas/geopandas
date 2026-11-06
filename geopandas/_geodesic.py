@@ -75,18 +75,16 @@ def distance_point_line(point, line, geod):
     return dist
 
 
-def haversine_distance(lon1, lat1, lon2, lat2):
-    # Haversine formula
+def _relative_haversine_metric(lon1, lat1, lon2, lat2):
+    # Haversine distance, but simplified to be sufficient for ranking
     dLat = np.deg2rad(lat2 - lat1)
     dLon = np.deg2rad(lon2 - lon1)
     lat1 = np.deg2rad(lat1)
     lat2 = np.deg2rad(lat2)
 
     a = np.sin(dLat / 2) ** 2 + np.sin(dLon / 2) ** 2 * np.cos(lat1) * np.cos(lat2)
-    c = 2 * np.arctan2(np.sqrt(a), np.sqrt(1 - a))
-    R = 6371000  # Earth radius in meters
-    dist = R * c
-    return dist
+    # remaining part, calculating c and multiplication by R, is not needed for ranking
+    return a
 
 
 def distance_to_segment(point, lon1, lat1, lon2, lat2, geod):
@@ -99,7 +97,9 @@ def distance_to_segment(point, lon1, lat1, lon2, lat2, geod):
     )
     # use haversine distance to (more cheaply) find the closest segment, then
     # only compute the geodetic distance for the closest points
-    haversine = haversine_distance(point_lon, point_lat, nearest_lon, nearest_lat)
+    haversine = _relative_haversine_metric(
+        point_lon, point_lat, nearest_lon, nearest_lat
+    )
     idx = np.argmin(haversine)
     _, _, dist = geod.inv(
         point_lon[idx], point_lat[idx], nearest_lon[idx], nearest_lat[idx]
