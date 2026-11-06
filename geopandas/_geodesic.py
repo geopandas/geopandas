@@ -72,21 +72,21 @@ def distance_point_line(point, line, geod):
         lon1, lat1 = coords[:-1, 0][same_part], coords[:-1, 1][same_part]
         lon2, lat2 = coords[1:, 0][same_part], coords[1:, 1][same_part]
     dist = distance_to_segment(point, lon1, lat1, lon2, lat2, geod)
-    return dist.min(initial=np.inf)
+    return dist
 
 
-# def haversine_distance(lon1, lat1, lon2, lat2):
-#     # Haversine formula
-#     dLat = _degrees_to_radians(lat2 - lat1)
-#     dLon = _degrees_to_radians(lon2 - lon1)
-#     lat1 = _degrees_to_radians(lat1)
-#     lat2 = _degrees_to_radians(lat2)
+def haversine_distance(lon1, lat1, lon2, lat2):
+    # Haversine formula
+    dLat = np.deg2rad(lat2 - lat1)
+    dLon = np.deg2rad(lon2 - lon1)
+    lat1 = np.deg2rad(lat1)
+    lat2 = np.deg2rad(lat2)
 
-#     a = np.sin(dLat / 2) ** 2 + np.sin(dLon / 2) ** 2 * np.cos(lat1) * np.cos(lat2)
-#     c = 2 * np.arctan2(np.sqrt(a), np.sqrt(1 - a))
-#     R = 6371000  # Earth radius in meters
-#     dist = R * c
-#     return dist
+    a = np.sin(dLat / 2) ** 2 + np.sin(dLon / 2) ** 2 * np.cos(lat1) * np.cos(lat2)
+    c = 2 * np.arctan2(np.sqrt(a), np.sqrt(1 - a))
+    R = 6371000  # Earth radius in meters
+    dist = R * c
+    return dist
 
 
 def distance_to_segment(point, lon1, lat1, lon2, lat2, geod):
@@ -97,10 +97,13 @@ def distance_to_segment(point, lon1, lat1, lon2, lat2, geod):
     nearest_lon, nearest_lat = nearest_point_on_segment(
         point_lon, point_lat, lon1, lat1, lon2, lat2
     )
-    # TODO check how much speed up it would give by using haversine distance
-    # to determine the closest point, and only use geodetic distance for that point
-    # return haversine_distance(point.x, point.y, nearest_lon, nearest_lat)
-    _, _, dist = geod.inv(point_lon, point_lat, nearest_lon, nearest_lat)
+    # use haversine distance to (more cheaply) find the closest segment, then
+    # only compute the geodetic distance for the closest points
+    haversine = haversine_distance(point_lon, point_lat, nearest_lon, nearest_lat)
+    idx = np.argmin(haversine)
+    _, _, dist = geod.inv(
+        point_lon[idx], point_lat[idx], nearest_lon[idx], nearest_lat[idx]
+    )
     return dist
 
 
