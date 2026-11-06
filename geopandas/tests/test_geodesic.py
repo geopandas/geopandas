@@ -428,6 +428,16 @@ def test_nearest_point_on_segment__point_at_pole_of_segment_circle(point):
     assert lon >= 10 and lon <= 80
 
 
+def test_nearest_point_on_segment__point_at_pole_of_segment_circle2():
+    # ensure that for corner cases we don't end up outside the segment
+    # due to rounding errors or numerical instability
+    lon, lat = _nearest_point_on_segment_scalar(
+        (-90.0, 5.6525832689386935), ((0.0, 0.0), (1.0, 10.0))
+    )
+    assert_allclose(lon, 0)
+    assert_allclose(lat, 0)
+
+
 # @pytest.mark.parametrize(
 #     "point, segment",
 #     [

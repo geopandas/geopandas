@@ -197,7 +197,7 @@ def nearest_point_on_segment(
     # a positive dot product indicates that p is on the same side as p2 of the
     # perpendicular plane through p1 (or as p1 of plane through p2) -> if both
     # are positive, the target point p is between p1 and p2
-    on_segment = (_dot(v, t1) >= 0) & (_dot(v, t2) >= 0)
+    on_segment = (_dot(n, t1) >= 0) & (_dot(n, t2) >= 0)
 
     # Some degenerate cases where the on-segment closest point gives the wrong
     # result:
