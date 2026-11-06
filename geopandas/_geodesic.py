@@ -4,6 +4,10 @@ import shapely
 from shapely import LineString, MultiLineString, MultiPoint, Point
 
 
+def geodetic_distance_vectorized(geoms1, geoms2, crs):
+    return np.array([geodetic_distance(g1, g2, crs) for g1, g2 in zip(geoms1, geoms2)])
+
+
 def geodetic_distance(geom1, geom2, crs):
     geod = crs.get_geod()
 
