@@ -191,7 +191,6 @@ def nearest_point_on_segment(
     # and the order ensures we pick the intersection on p's side (cross(c2, c1)
     # would give the antipode)
     n = np.cross(c1, c2)
-    projected_lon, projected_lat = _vector_to_lonlat(n)
 
     # The intersection point lives on the great circle defined by p1 and p2
     # (and gives the nearest point to p on that great circle), but does not
@@ -230,11 +229,12 @@ def nearest_point_on_segment(
 
     # Get the actual nearest point coordinates by choosing the intersection
     # point or start point or end point accordingly (in a vectorized way)
-    endpoint_lon = np.where(closest_to_start, lon1, lon2)
-    endpoint_lat = np.where(closest_to_start, lat1, lat2)
+    nearest_lon = np.where(closest_to_start, lon1, lon2)
+    nearest_lat = np.where(closest_to_start, lat1, lat2)
 
-    nearest_lon = np.where(on_segment, projected_lon, endpoint_lon)
-    nearest_lat = np.where(on_segment, projected_lat, endpoint_lat)
+    projected_lon, projected_lat = _vector_to_lonlat(n[on_segment])
+    nearest_lon[on_segment] = projected_lon
+    nearest_lat[on_segment] = projected_lat
 
     # mask invalid input data in result
     # TODO verify if this is needed (this might be caught higher up in the

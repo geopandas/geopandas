@@ -309,12 +309,12 @@ def _nearest_point_on_segment_scalar(point, segment):
     point_lon, point_lat = point
     (lon1, lat1), (lon2, lat2) = segment
     lon, lat = nearest_point_on_segment(
-        np.array([point_lon]),
-        np.array([point_lat]),
-        np.array([lon1]),
-        np.array([lat1]),
-        np.array([lon2]),
-        np.array([lat2]),
+        np.array([point_lon], dtype="float64"),
+        np.array([point_lat], dtype="float64"),
+        np.array([lon1], dtype="float64"),
+        np.array([lat1], dtype="float64"),
+        np.array([lon2], dtype="float64"),
+        np.array([lat2], dtype="float64"),
     )
     return lon[0], lat[0]
 
