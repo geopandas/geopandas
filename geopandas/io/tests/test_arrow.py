@@ -599,11 +599,14 @@ def test_read_feather_bytesio_multiindex_columns_subset():
 def test_duplicate_column_names_raise(tmpdir, file_format):
     # column labels that map to the same name in the file are rejected
     _reader, writer = file_format
-    columns = pd.MultiIndex.from_tuples([("a", "b"), ("a", "b"), ("geometry", "")])
+    columns = pd.MultiIndex.from_tuples([("a", "b"), ("a", "b")])
+    # pass the geometry as a GeoSeries: with a non-unique MultiIndex,
+    # looking up the geometry column by label returns a DataFrame (and
+    # therefore raises) on pandas < 3, before the writer is reached
     df = GeoDataFrame(
-        [[0, 1, Point(0, 0)], [2, 3, Point(1, 1)]],
+        [[0, 1], [2, 3]],
         columns=columns,
-        geometry=("geometry", ""),
+        geometry=geopandas.GeoSeries([Point(0, 0), Point(1, 1)], name=("geometry", "")),
     )
     filename = os.path.join(str(tmpdir), "test.pq")
 
