@@ -4,7 +4,7 @@ import shapely
 from shapely import LineString, MultiLineString, MultiPoint, Point, Polygon
 
 from geopandas._geodesic import (
-    _lonlat_to_vector,
+    # _lonlat_to_vector,
     geodetic_distance,
     geodetic_distance_vectorized,
     nearest_point_on_segment,
@@ -326,13 +326,12 @@ def test_cases(request, name, geom1, geom2, expected, crs):
 def _nearest_point_on_segment_scalar(point, segment):
     point_lon, point_lat = point
     (lon1, lat1), (lon2, lat2) = segment
-    point_vector = _lonlat_to_vector(
-        np.array([point_lon], dtype="float64"), np.array([point_lat], dtype="float64")
-    )
+    # point_vector = _lonlat_to_vector(
+    #     np.array([point_lon], dtype="float64"), np.array([point_lat], dtype="float64")
+    # )
     lon, lat = nearest_point_on_segment(
-        point_vector.x,
-        point_vector.y,
-        point_vector.z,
+        np.array([point_lon], dtype="float64"),
+        np.array([point_lat], dtype="float64"),
         np.array([lon1], dtype="float64"),
         np.array([lat1], dtype="float64"),
         np.array([lon2], dtype="float64"),

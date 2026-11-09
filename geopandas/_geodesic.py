@@ -101,7 +101,7 @@ def distance_point_line_vectorized(points, lines, geod):
 
     if isinstance(points, Point):
         points_idx = np.zeros(n_segments, dtype=int)
-        px, py, pz = _lonlat_to_vector([points.x], [points.y])
+        points_vector = _lonlat_to_vector([points.x], [points.y])
         # TODO make this more efficient
         point_lon = np.broadcast_to(points.x, lines.shape)
         point_lat = np.broadcast_to(points.y, lines.shape)
@@ -111,11 +111,13 @@ def distance_point_line_vectorized(points, lines, geod):
 
         point_lon = shapely.get_x(points)
         point_lat = shapely.get_y(points)
-        px, py, pz = _lonlat_to_vector(point_lon, point_lat)
+        points_vector = _lonlat_to_vector(point_lon, point_lat)
         # TODO empty lines would give negative repeats -> errors
 
     lon = coords[:, 0]
     lat = coords[:, 1]
+
+    lines_vector = _lonlat_to_vector(coords[:, 0], coords[:, 1])
 
     chunksize = 16_000
     nearest_lon = np.empty(n_segments, dtype=np.float64)
@@ -127,15 +129,35 @@ def distance_point_line_vectorized(points, lines, geod):
         pidx = points_idx[slc]
         lidx = segment_starts[slc]
 
-        nearest_lon_i, nearest_lat_i = nearest_point_on_segment(
-            px[pidx],
-            py[pidx],
-            pz[pidx],
-            lon[lidx],
-            lat[lidx],
-            lon[lidx + 1],
-            lat[lidx + 1],
+        n, on_segment, closest_to_start = _nearest_point_on_segment_vector(
+            points_vector[pidx],
+            lines_vector[lidx],
+            lines_vector[lidx + 1],
         )
+
+        # Get the actual nearest point coordinates by choosing the intersection
+        # point or start point or end point accordingly (in a vectorized way)
+        nearest_lon_i = np.where(closest_to_start, lon[lidx], lon[lidx + 1])
+        nearest_lat_i = np.where(closest_to_start, lat[lidx], lat[lidx + 1])
+
+        projected_lon, projected_lat = _vector_to_lonlat(n[on_segment])
+        nearest_lon_i[on_segment] = projected_lon
+        nearest_lat_i[on_segment] = projected_lat
+
+        # mask invalid input data in result
+        # TODO verify if this is needed (this might be caught higher up in the
+        # distance calculation)
+        invalid = ~np.isfinite(
+            point_lon[pidx]
+            + point_lat[pidx]
+            + lon[lidx]
+            + lat[lidx]
+            + lon[lidx + 1]
+            + lat[lidx + 1]
+        )
+        nearest_lon_i = np.where(invalid, np.nan, nearest_lon_i)
+        nearest_lat_i = np.where(invalid, np.nan, nearest_lat_i)
+
         # use haversine distance to (more cheaply) find the closest segment, then
         # only compute the geodetic distance for the closest points
         haversine_i = _relative_haversine_metric(
@@ -184,9 +206,8 @@ def distance_to_segment(point, lon1, lat1, lon2, lat2, geod):
     point_lat = np.broadcast_to(point.y, lon1.shape)
     # TODO this also works with passing scalar point lon/lat -> is that faster
     # if we don't need the broadcast for the distance calculation?
-    px, py, pz = _lonlat_to_vector(point_lon, point_lat)
     nearest_lon, nearest_lat = nearest_point_on_segment(
-        px, py, pz, lon1, lat1, lon2, lat2
+        point_lon, point_lat, lon1, lat1, lon2, lat2
     )
     # use haversine distance to (more cheaply) find the closest segment, then
     # only compute the geodetic distance for the closest points
@@ -299,15 +320,11 @@ def _dot(a: Vector3D, b: Vector3D) -> np.ndarray:
     return a0 * b0 + a1 * b1 + a2 * b2
 
 
-def nearest_point_on_segment(
-    point_x: np.ndarray,
-    point_y: np.ndarray,
-    point_z: np.ndarray,
-    lon1: np.ndarray,
-    lat1: np.ndarray,
-    lon2: np.ndarray,
-    lat2: np.ndarray,
-) -> tuple[np.ndarray, np.ndarray]:
+def _nearest_point_on_segment_vector(
+    points: Vector3D,
+    segment_starts: Vector3D,
+    segment_ends: Vector3D,
+) -> tuple[Vector3D, np.ndarray, np.ndarray]:
     """
     Spherical approximation to get the nearest point on a segment.
 
@@ -321,9 +338,9 @@ def nearest_point_on_segment(
     https://www.movable-type.co.uk/scripts/latlong-vectors.html
     https://github.com/Turfjs/turf/blob/0c20329dfc2b63555ddd5d5388c4858669df6037/packages/turf-nearest-point-on-line/index.ts#L233-L320
     """
-    v = Vector3D(point_x, point_y, point_z)
-    v1 = _lonlat_to_vector(lon1, lat1)
-    v2 = _lonlat_to_vector(lon2, lat2)
+    v = points
+    v1 = segment_starts
+    v2 = segment_ends
 
     # The normal of the great circle through p1 and p2 (containing the
     # line segment), i.e. the vector perpendicular to the plane formed by the
@@ -377,6 +394,23 @@ def nearest_point_on_segment(
     d1, d2 = v - v1, v - v2
     closest_to_start = _dot(d1, d1) <= _dot(d2, d2)
 
+    return n, on_segment, closest_to_start
+
+
+def nearest_point_on_segment(
+    point_lon: np.ndarray,
+    point_lat: np.ndarray,
+    lon1: np.ndarray,
+    lat1: np.ndarray,
+    lon2: np.ndarray,
+    lat2: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray]:
+    v = _lonlat_to_vector(point_lon, point_lat)
+    v1 = _lonlat_to_vector(lon1, lat1)
+    v2 = _lonlat_to_vector(lon2, lat2)
+
+    n, on_segment, closest_to_start = _nearest_point_on_segment_vector(v, v1, v2)
+
     # Get the actual nearest point coordinates by choosing the intersection
     # point or start point or end point accordingly (in a vectorized way)
     nearest_lon = np.where(closest_to_start, lon1, lon2)
@@ -389,7 +423,7 @@ def nearest_point_on_segment(
     # mask invalid input data in result
     # TODO verify if this is needed (this might be caught higher up in the
     # distance calculation)
-    invalid = ~np.isfinite(point_x + point_y + point_z + lon1 + lat1 + lon2 + lat2)
+    invalid = ~np.isfinite(point_lon + point_lat + lon1 + lat1 + lon2 + lat2)
     nearest_lon = np.where(invalid, np.nan, nearest_lon)
     nearest_lat = np.where(invalid, np.nan, nearest_lat)
 
