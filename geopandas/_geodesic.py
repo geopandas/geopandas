@@ -181,11 +181,39 @@ def distance_to_segment(point, lon1, lat1, lon2, lat2, geod):
     return dist
 
 
-def _lonlat_to_vector(lon: np.ndarray, lat: np.ndarray) -> np.ndarray:
+class Vector3D:
+    """
+    Small helper class to more easily work with 3D vectors represented
+    as 3 separate numpy arrays instead of a single (n, 3) ndarray.
+
+    """
+
+    def __init__(self, x: np.ndarray, y: np.ndarray, z: np.ndarray):
+        self.x = x
+        self.y = y
+        self.z = z
+
+    def __iter__(self):
+        # allow easy unpacking like a tuple (x, y, z = vector)
+        return iter((self.x, self.y, self.z))
+
+    def __sub__(self, other: "Vector3D") -> "Vector3D":
+        return Vector3D(self.x - other.x, self.y - other.y, self.z - other.z)
+
+    def is_nonzero(self) -> np.ndarray:
+        return (self.x != 0) | (self.y != 0) | (self.z != 0)
+
+    def __getitem__(self, key) -> np.ndarray:
+        assert isinstance(key, np.ndarray)
+        return Vector3D(self.x[key], self.y[key], self.z[key])
+
+
+def _lonlat_to_vector(lon: np.ndarray, lat: np.ndarray) -> Vector3D:
     """
     Convert longitude and latitude values to 3D unit vectors.
 
-    Gets 1D lon/lat arrays with length N, and returns unit vectors with shape (N, 3).
+    Gets 1D lon/lat arrays with length N, and returns unit vectors as separate
+    x, y, z arrays.
 
     https://www.movable-type.co.uk/scripts/latlong-vectors.html
     https://en.wikipedia.org/wiki/N-vector#Converting_latitude/longitude_to_n-vector
@@ -193,13 +221,14 @@ def _lonlat_to_vector(lon: np.ndarray, lat: np.ndarray) -> np.ndarray:
     # (lonlat in degrees) * np.pi / 180
     lon_rad = np.deg2rad(lon)
     lat_rad = np.deg2rad(lat)
-    x = np.cos(lat_rad) * np.cos(lon_rad)
-    y = np.cos(lat_rad) * np.sin(lon_rad)
+    cos_lat = np.cos(lat_rad)
+    x = cos_lat * np.cos(lon_rad)
+    y = cos_lat * np.sin(lon_rad)
     z = np.sin(lat_rad)
-    return np.stack([x, y, z]).T
+    return Vector3D(x, y, z)
 
 
-def _vector_to_lonlat(vector: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+def _vector_to_lonlat(vector: Vector3D) -> tuple[np.ndarray, np.ndarray]:
     """
     Convert 3D unit vectors to longitude and latitude values.
 
@@ -208,7 +237,7 @@ def _vector_to_lonlat(vector: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
 
     See _lonlat_to_vector docstring.
     """
-    x, y, z = vector[:, 0], vector[:, 1], vector[:, 2]
+    x, y, z = vector
     lon_rad = np.arctan2(y, x)
     # np.hypot(x, y) == np.sqrt(x**2 + y**2)
     lat_rad = np.arctan2(z, np.hypot(x, y))
@@ -218,36 +247,37 @@ def _vector_to_lonlat(vector: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     return lon, lat
 
 
-def _cross(a, b):
+def _cross(a: Vector3D, b: Vector3D) -> Vector3D:
     # optimized version of numpy's cross product, avoiding the generic setup (shape
     # and axis checking, broadcasting) and astype of the inputs (causing a copy)
-    cp = np.empty_like(a)
 
     # create local aliases for readability
-    a0, a1, a2 = a[:, 0], a[:, 1], a[:, 2]
-    b0, b1, b2 = b[:, 0], b[:, 1], b[:, 2]
-    cp0, cp1, cp2 = cp[:, 0], cp[:, 1], cp[:, 2]
+    a0, a1, a2 = a
+    b0, b1, b2 = b
 
     # cp0 = a1 * b2 - a2 * b1
     # cp1 = a2 * b0 - a0 * b2
     # cp2 = a0 * b1 - a1 * b0
-    np.multiply(a1, b2, out=cp0)
+    cp0 = np.multiply(a1, b2)
     tmp = a2 * b1
     cp0 -= tmp
-    np.multiply(a2, b0, out=cp1)
+    cp1 = np.multiply(a2, b0)
     np.multiply(a0, b2, out=tmp)
     cp1 -= tmp
-    np.multiply(a0, b1, out=cp2)
+    cp2 = np.multiply(a0, b1)
     np.multiply(a1, b0, out=tmp)
     cp2 -= tmp
 
-    return cp
+    return Vector3D(cp0, cp1, cp2)
 
 
-def _dot(a, b):
+def _dot(a: Vector3D, b: Vector3D) -> np.ndarray:
     # row-wise dot product
     # slightly faster version of np.sum(a * b, axis=-1)
-    return np.einsum("...i,...i -> ...", a, b)
+    # return np.einsum("...i,...i -> ...", a, b)
+    a0, a1, a2 = a
+    b0, b1, b2 = b
+    return a0 * b0 + a1 * b1 + a2 * b2
 
 
 def nearest_point_on_segment(
@@ -319,7 +349,7 @@ def nearest_point_on_segment(
     # n is the zero vector if the segment is degenerate (p1 == p2) or the point
     # sits exactly at a pole of the segment's great circle: fall back to endpoints
 
-    on_segment &= np.any(n != 0, axis=-1)
+    on_segment &= n.is_nonzero()
 
     # If the nearest point is not on the segment, we want the closest endpoint
     # p1 or p2 instead -> use squared chord length (straight line through the
