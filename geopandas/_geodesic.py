@@ -9,9 +9,9 @@ def geodetic_distance_vectorized(geoms1, geoms2, crs):
     geom_types1 = set(np.unique(shapely.get_type_id(geoms1)))
     geom_types2 = set(np.unique(shapely.get_type_id(geoms2)))
 
-    if geom_types1 == set([1, 5]) and geom_types2 == set([0]):
+    if geom_types1 == {1, 5} and geom_types2 == {0}:
         return distance_point_line_vectorized(geoms2, geoms1, crs.get_geod())
-    elif geom_types1 == set([0]) and geom_types2 == set([1, 5]):
+    elif geom_types1 == {0} and geom_types2 == {1, 5}:
         return distance_point_line_vectorized(geoms1, geoms2, crs.get_geod())
 
     return np.array([geodetic_distance(g1, g2, crs) for g1, g2 in zip(geoms1, geoms2)])
@@ -105,14 +105,30 @@ def distance_point_line_vectorized(points, lines, geod):
         point_lon = np.repeat(point_lon, line_segment_lengths)
         point_lat = np.repeat(point_lat, line_segment_lengths)
 
-    nearest_lon, nearest_lat = nearest_point_on_segment(
-        point_lon, point_lat, lon1, lat1, lon2, lat2
-    )
-    # use haversine distance to (more cheaply) find the closest segment, then
-    # only compute the geodetic distance for the closest points
-    haversine = _relative_haversine_metric(
-        point_lon, point_lat, nearest_lon, nearest_lat
-    )
+    chunksize = 16_000
+    nearest_lon = np.empty_like(point_lon)
+    nearest_lat = np.empty_like(point_lat)
+    haversine = np.empty_like(point_lon)
+    for i in range(0, point_lon.size, chunksize):
+        nearest_lon_i, nearest_lat_i = nearest_point_on_segment(
+            point_lon[i : i + chunksize],
+            point_lat[i : i + chunksize],
+            lon1[i : i + chunksize],
+            lat1[i : i + chunksize],
+            lon2[i : i + chunksize],
+            lat2[i : i + chunksize],
+        )
+        # use haversine distance to (more cheaply) find the closest segment, then
+        # only compute the geodetic distance for the closest points
+        haversine_i = _relative_haversine_metric(
+            point_lon[i : i + chunksize],
+            point_lat[i : i + chunksize],
+            nearest_lon_i,
+            nearest_lat_i,
+        )
+        nearest_lon[i : i + chunksize] = nearest_lon_i
+        nearest_lat[i : i + chunksize] = nearest_lat_i
+        haversine[i : i + chunksize] = haversine_i
 
     # argmin reduceat
     n = haversine.size
