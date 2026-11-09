@@ -5,6 +5,15 @@ from shapely import LineString, MultiLineString, MultiPoint, Point
 
 
 def geodetic_distance_vectorized(geoms1, geoms2, crs):
+
+    geom_types1 = set(np.unique(shapely.get_type_id(geoms1)))
+    geom_types2 = set(np.unique(shapely.get_type_id(geoms2)))
+
+    if geom_types1 == set([1, 5]) and geom_types2 == set([0]):
+        return distance_point_line_vectorized(geoms2, geoms1, crs.get_geod())
+    elif geom_types1 == set([0]) and geom_types2 == set([1, 5]):
+        return distance_point_line_vectorized(geoms1, geoms2, crs.get_geod())
+
     return np.array([geodetic_distance(g1, g2, crs) for g1, g2 in zip(geoms1, geoms2)])
 
 
@@ -72,6 +81,55 @@ def distance_point_line(point, line, geod):
         lon1, lat1 = coords[:-1, 0][same_part], coords[:-1, 1][same_part]
         lon2, lat2 = coords[1:, 0][same_part], coords[1:, 1][same_part]
     dist = distance_to_segment(point, lon1, lat1, lon2, lat2, geod)
+    return dist
+
+
+def distance_point_line_vectorized(points, lines, geod):
+    # compute the distance to all line segments at once and take the minimum
+    _, coords, offsets = shapely.to_ragged_array(lines)
+    idx = offsets[0]
+    line_lengths = np.diff(idx)
+    lon1 = np.delete(coords[:, 0], idx[1:] - 1, 0)
+    lat1 = np.delete(coords[:, 1], idx[1:] - 1, 0)
+    lon2 = np.delete(coords[:, 0], idx[:-1], 0)
+    lat2 = np.delete(coords[:, 1], idx[:-1], 0)
+
+    if isinstance(points, Point):
+        point_lon = np.broadcast_to(points.x, lon1.shape)
+        point_lat = np.broadcast_to(points.y, lon1.shape)
+    else:
+        point_lon = shapely.get_x(points)
+        point_lat = shapely.get_y(points)
+        # TODO empty lines would give negative repeats -> errors
+        line_segment_lengths = np.add.reduceat(line_lengths - 1, offsets[1][:-1])
+        point_lon = np.repeat(point_lon, line_segment_lengths)
+        point_lat = np.repeat(point_lat, line_segment_lengths)
+
+    nearest_lon, nearest_lat = nearest_point_on_segment(
+        point_lon, point_lat, lon1, lat1, lon2, lat2
+    )
+    # use haversine distance to (more cheaply) find the closest segment, then
+    # only compute the geodetic distance for the closest points
+    haversine = _relative_haversine_metric(
+        point_lon, point_lat, nearest_lon, nearest_lat
+    )
+
+    # argmin reduceat
+    n = haversine.size
+    idx = np.insert(np.cumsum(line_lengths - 1), 0, 0)
+    idx = idx[offsets[1]]
+    line_lengths = np.diff(idx)
+    mins = np.minimum.reduceat(haversine, idx[:-1])
+    pos = np.arange(0, n)
+    cand = np.where(haversine == np.repeat(mins, line_lengths), pos, n)
+    idx_min = np.minimum.reduceat(cand, idx[:-1])
+
+    _, _, dist = geod.inv(
+        point_lon[idx_min],
+        point_lat[idx_min],
+        nearest_lon[idx_min],
+        nearest_lat[idx_min],
+    )
     return dist
 
 
