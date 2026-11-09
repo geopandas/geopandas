@@ -4,7 +4,7 @@ import shapely
 from shapely import LineString, MultiLineString, MultiPoint, Point, Polygon
 
 from geopandas._geodesic import (
-    # _lonlat_to_vector,
+    _lonlat_to_vector,
     geodetic_distance,
     geodetic_distance_vectorized,
     nearest_point_on_segment,
@@ -69,7 +69,13 @@ def test_point_linestring_vectorized(crs):
         MultiLineString([[(1, 0), (1, 1)], [(0, 0), (0, 1), (1, 1), (1, 2)]]),
     ]
     result = geodetic_distance_vectorized(np.array(points), np.array(lines), crs)
-    expected = np.array([geodetic_distance(p, l, crs) for p, l in zip(points, lines)])
+    expected = np.array(
+        [geodetic_distance(point, line, crs) for point, line in zip(points, lines)]
+    )
+    assert_allclose(result, expected)
+
+    result = geodetic_distance_vectorized(points[0], np.array(lines), crs)
+    expected = np.array([geodetic_distance(points[0], line, crs) for line in lines])
     assert_allclose(result, expected)
 
 
@@ -320,9 +326,13 @@ def test_cases(request, name, geom1, geom2, expected, crs):
 def _nearest_point_on_segment_scalar(point, segment):
     point_lon, point_lat = point
     (lon1, lat1), (lon2, lat2) = segment
+    point_vector = _lonlat_to_vector(
+        np.array([point_lon], dtype="float64"), np.array([point_lat], dtype="float64")
+    )
     lon, lat = nearest_point_on_segment(
-        np.array([point_lon], dtype="float64"),
-        np.array([point_lat], dtype="float64"),
+        point_vector.x,
+        point_vector.y,
+        point_vector.z,
         np.array([lon1], dtype="float64"),
         np.array([lat1], dtype="float64"),
         np.array([lon2], dtype="float64"),

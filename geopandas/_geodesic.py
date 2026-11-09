@@ -87,42 +87,60 @@ def distance_point_line(point, line, geod):
 def distance_point_line_vectorized(points, lines, geod):
     # compute the distance to all line segments at once and take the minimum
     _, coords, offsets = shapely.to_ragged_array(lines)
-    idx = offsets[0]
-    line_lengths = np.diff(idx)
-    lon1 = np.delete(coords[:, 0], idx[1:] - 1, 0)
-    lat1 = np.delete(coords[:, 1], idx[1:] - 1, 0)
-    lon2 = np.delete(coords[:, 0], idx[:-1], 0)
-    lat2 = np.delete(coords[:, 1], idx[:-1], 0)
+    idx_lines, idx_geoms = offsets
+
+    # get indices into coords for all segment starts (and then segment ends
+    # is `segment_starts + 1`)
+    is_segment_start = np.ones(len(coords), dtype=bool)
+    is_segment_start[idx_lines[1:] - 1] = False
+    segment_starts = np.flatnonzero(is_segment_start)
+
+    n_segments = segment_starts.size
+    n_segments_per_geom = np.diff(idx_lines[idx_geoms]) - np.diff(idx_geoms)
+    assert n_segments == n_segments_per_geom.sum()
 
     if isinstance(points, Point):
-        point_lon = np.broadcast_to(points.x, lon1.shape)
-        point_lat = np.broadcast_to(points.y, lon1.shape)
+        points_idx = np.zeros(n_segments, dtype=int)
+        px, py, pz = _lonlat_to_vector([points.x], [points.y])
+        # TODO make this more efficient
+        point_lon = np.broadcast_to(points.x, lines.shape)
+        point_lat = np.broadcast_to(points.y, lines.shape)
     else:
+        # indices into `points` to match each segment pair for vectorized computation
+        points_idx = np.repeat(np.arange(len(points)), n_segments_per_geom)
+
         point_lon = shapely.get_x(points)
         point_lat = shapely.get_y(points)
+        px, py, pz = _lonlat_to_vector(point_lon, point_lat)
         # TODO empty lines would give negative repeats -> errors
-        line_segment_lengths = np.add.reduceat(line_lengths - 1, offsets[1][:-1])
-        point_lon = np.repeat(point_lon, line_segment_lengths)
-        point_lat = np.repeat(point_lat, line_segment_lengths)
+
+    lon = coords[:, 0]
+    lat = coords[:, 1]
 
     chunksize = 16_000
-    nearest_lon = np.empty_like(point_lon)
-    nearest_lat = np.empty_like(point_lat)
-    haversine = np.empty_like(point_lon)
-    for i in range(0, point_lon.size, chunksize):
+    nearest_lon = np.empty(n_segments, dtype=np.float64)
+    nearest_lat = np.empty(n_segments, dtype=np.float64)
+    haversine = np.empty(n_segments, dtype=np.float64)
+    for i in range(0, n_segments, chunksize):
+        slc = slice(i, i + chunksize)
+
+        pidx = points_idx[slc]
+        lidx = segment_starts[slc]
+
         nearest_lon_i, nearest_lat_i = nearest_point_on_segment(
-            point_lon[i : i + chunksize],
-            point_lat[i : i + chunksize],
-            lon1[i : i + chunksize],
-            lat1[i : i + chunksize],
-            lon2[i : i + chunksize],
-            lat2[i : i + chunksize],
+            px[pidx],
+            py[pidx],
+            pz[pidx],
+            lon[lidx],
+            lat[lidx],
+            lon[lidx + 1],
+            lat[lidx + 1],
         )
         # use haversine distance to (more cheaply) find the closest segment, then
         # only compute the geodetic distance for the closest points
         haversine_i = _relative_haversine_metric(
-            point_lon[i : i + chunksize],
-            point_lat[i : i + chunksize],
+            point_lon[pidx],
+            point_lat[pidx],
             nearest_lon_i,
             nearest_lat_i,
         )
@@ -131,18 +149,18 @@ def distance_point_line_vectorized(points, lines, geod):
         haversine[i : i + chunksize] = haversine_i
 
     # argmin reduceat
-    n = haversine.size
-    idx = np.insert(np.cumsum(line_lengths - 1), 0, 0)
-    idx = idx[offsets[1]]
-    line_lengths = np.diff(idx)
-    mins = np.minimum.reduceat(haversine, idx[:-1])
-    pos = np.arange(0, n)
-    cand = np.where(haversine == np.repeat(mins, line_lengths), pos, n)
-    idx_min = np.minimum.reduceat(cand, idx[:-1])
+    line_lengths = np.diff(idx_lines)
+    idx_segments = np.insert(np.cumsum(line_lengths - 1), 0, 0)
+    idx_segments = idx_segments[idx_geoms]
+    # np.testing.assert_allclose(np.diff(idx_segments), n_segments_per_geom)
+    mins = np.minimum.reduceat(haversine, idx_segments[:-1])
+    pos = np.arange(0, n_segments)
+    cand = np.where(haversine == np.repeat(mins, n_segments_per_geom), pos, n_segments)
+    idx_min = np.minimum.reduceat(cand, idx_segments[:-1])
 
     _, _, dist = geod.inv(
-        point_lon[idx_min],
-        point_lat[idx_min],
+        point_lon[points_idx[idx_min]],
+        point_lat[points_idx[idx_min]],
         nearest_lon[idx_min],
         nearest_lat[idx_min],
     )
@@ -166,8 +184,9 @@ def distance_to_segment(point, lon1, lat1, lon2, lat2, geod):
     point_lat = np.broadcast_to(point.y, lon1.shape)
     # TODO this also works with passing scalar point lon/lat -> is that faster
     # if we don't need the broadcast for the distance calculation?
+    px, py, pz = _lonlat_to_vector(point_lon, point_lat)
     nearest_lon, nearest_lat = nearest_point_on_segment(
-        point_lon, point_lat, lon1, lat1, lon2, lat2
+        px, py, pz, lon1, lat1, lon2, lat2
     )
     # use haversine distance to (more cheaply) find the closest segment, then
     # only compute the geodetic distance for the closest points
@@ -281,8 +300,9 @@ def _dot(a: Vector3D, b: Vector3D) -> np.ndarray:
 
 
 def nearest_point_on_segment(
-    point_lon: np.ndarray,
-    point_lat: np.ndarray,
+    point_x: np.ndarray,
+    point_y: np.ndarray,
+    point_z: np.ndarray,
     lon1: np.ndarray,
     lat1: np.ndarray,
     lon2: np.ndarray,
@@ -301,7 +321,7 @@ def nearest_point_on_segment(
     https://www.movable-type.co.uk/scripts/latlong-vectors.html
     https://github.com/Turfjs/turf/blob/0c20329dfc2b63555ddd5d5388c4858669df6037/packages/turf-nearest-point-on-line/index.ts#L233-L320
     """
-    v = _lonlat_to_vector(point_lon, point_lat)
+    v = Vector3D(point_x, point_y, point_z)
     v1 = _lonlat_to_vector(lon1, lat1)
     v2 = _lonlat_to_vector(lon2, lat2)
 
@@ -369,7 +389,7 @@ def nearest_point_on_segment(
     # mask invalid input data in result
     # TODO verify if this is needed (this might be caught higher up in the
     # distance calculation)
-    invalid = ~np.isfinite(point_lon + point_lat + lon1 + lat1 + lon2 + lat2)
+    invalid = ~np.isfinite(point_x + point_y + point_z + lon1 + lat1 + lon2 + lat2)
     nearest_lon = np.where(invalid, np.nan, nearest_lon)
     nearest_lat = np.where(invalid, np.nan, nearest_lat)
 
