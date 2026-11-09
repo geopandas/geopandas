@@ -122,7 +122,7 @@ def _lonlat_to_vector(lon: np.ndarray, lat: np.ndarray) -> np.ndarray:
     x = np.cos(lat_rad) * np.cos(lon_rad)
     y = np.cos(lat_rad) * np.sin(lon_rad)
     z = np.sin(lat_rad)
-    return np.stack([x, y, z], axis=-1)
+    return np.stack([x, y, z]).T
 
 
 def _vector_to_lonlat(vector: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -142,6 +142,32 @@ def _vector_to_lonlat(vector: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     lon = np.rad2deg(lon_rad)
     lat = np.rad2deg(lat_rad)
     return lon, lat
+
+
+def _cross(a, b):
+    # optimized version of numpy's cross product, avoiding the generic setup (shape
+    # and axis checking, broadcasting) and astype of the inputs (causing a copy)
+    cp = np.empty_like(a)
+
+    # create local aliases for readability
+    a0, a1, a2 = a[:, 0], a[:, 1], a[:, 2]
+    b0, b1, b2 = b[:, 0], b[:, 1], b[:, 2]
+    cp0, cp1, cp2 = cp[:, 0], cp[:, 1], cp[:, 2]
+
+    # cp0 = a1 * b2 - a2 * b1
+    # cp1 = a2 * b0 - a0 * b2
+    # cp2 = a0 * b1 - a1 * b0
+    np.multiply(a1, b2, out=cp0)
+    tmp = a2 * b1
+    cp0 -= tmp
+    np.multiply(a2, b0, out=cp1)
+    np.multiply(a0, b2, out=tmp)
+    cp1 -= tmp
+    np.multiply(a0, b1, out=cp2)
+    np.multiply(a1, b0, out=tmp)
+    cp2 -= tmp
+
+    return cp
 
 
 def _dot(a, b):
@@ -178,11 +204,11 @@ def nearest_point_on_segment(
     # The normal of the great circle through p1 and p2 (containing the
     # line segment), i.e. the vector perpendicular to the plane formed by the
     # great circle
-    c1 = np.cross(v1, v2)
+    c1 = _cross(v1, v2)
 
     # The normal of the great circle through the target point p and the
     # segment's normal c1
-    c2 = np.cross(v, c1)
+    c2 = _cross(v, c1)
 
     # The intersection of both great circles is the projection of p onto the
     # great circle of the p1 - p2 segment.
@@ -190,7 +216,7 @@ def nearest_point_on_segment(
     # to both normals, and thus lying on both great circles, thus the intersection),
     # and the order ensures we pick the intersection on p's side (cross(c2, c1)
     # would give the antipode)
-    n = np.cross(c1, c2)
+    n = _cross(c1, c2)
 
     # The intersection point lives on the great circle defined by p1 and p2
     # (and gives the nearest point to p on that great circle), but does not
@@ -198,8 +224,8 @@ def nearest_point_on_segment(
     # check if n is between p1 and p2.
 
     # along-track direction at p1 (towards p2) and at p2 (towards p1)
-    t1 = np.cross(c1, v1)
-    t2 = np.cross(v2, c1)
+    t1 = _cross(c1, v1)
+    t2 = _cross(v2, c1)
     # a positive dot product indicates that p is on the same side as p2 of the
     # perpendicular plane through p1 (or as p1 of plane through p2) -> if both
     # are positive, the target point p is between p1 and p2
