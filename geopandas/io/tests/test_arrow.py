@@ -455,6 +455,165 @@ def test_roundtrip_bytesio(file_format, test_dataset, request):
     assert_geodataframe_equal(df, pq_df)
 
 
+def _multiindex_columns_gdf():
+    """GeoDataFrame with MultiIndex columns (GH#3370)."""
+    columns = pd.MultiIndex.from_tuples(
+        [("foo", "bar"), ("foo", "baz"), ("dog", "cat"), ("geometry", "")]
+    )
+    return GeoDataFrame(
+        [[0, 0, 0, Point(0, 0)], [1, 1, 1, Point(1, 2)]],
+        columns=columns,
+        geometry=("geometry", ""),
+        crs="EPSG:4326",
+    )
+
+
+def test_multiindex_columns_roundtrip(tmpdir, file_format):
+    reader, writer = file_format
+
+    df = _multiindex_columns_gdf()
+    filename = os.path.join(str(tmpdir), "test.pq")
+
+    writer(df, filename)
+    result = reader(filename)
+
+    assert_geodataframe_equal(result, df)
+
+
+def test_multiindex_columns_roundtrip_issue_example(tmpdir):
+    # GH#3370: in this construction, the geometry column gets the
+    # ("geometry", "") label while the active geometry is designated
+    # with the plain "geometry" name
+    df = GeoDataFrame(
+        {
+            ("foo", "bar"): [0, 1],
+            ("foo", "baz"): [0, 1],
+            ("dog", "cat"): [0, 1],
+        },
+        geometry=[Point(0, 0), Point(1, 2)],
+    )
+    filename = os.path.join(str(tmpdir), "test.parquet")
+
+    df.to_parquet(filename)
+    result = read_parquet(filename)
+
+    assert list(result.columns) == list(df.columns)
+    assert result.active_geometry_name == ("geometry", "")
+    for col in [("foo", "bar"), ("foo", "baz"), ("dog", "cat")]:
+        assert result[col].tolist() == df[col].tolist()
+    assert result.geometry.tolist() == df.geometry.tolist()
+
+
+def test_multiindex_columns_non_string_level_raises(tmpdir):
+    columns = pd.MultiIndex.from_tuples([("foo", 1), ("geometry", "")])
+    df = GeoDataFrame([[0, Point(0, 0)]], columns=columns, geometry=("geometry", ""))
+
+    with pytest.raises(ValueError, match="requires string column names"):
+        df.to_parquet(os.path.join(str(tmpdir), "test.parquet"))
+
+
+def test_multiindex_columns_roundtrip_with_multiindex_index(tmpdir, file_format):
+    reader, writer = file_format
+
+    df = _multiindex_columns_gdf()
+    df.index = pd.MultiIndex.from_tuples([("r", 1), ("r", 2)], names=["L1", "L2"])
+    filename = os.path.join(str(tmpdir), "test.pq")
+
+    writer(df, filename)
+    result = reader(filename)
+
+    assert_geodataframe_equal(result, df)
+
+
+def test_read_multiindex_columns_subset(tmpdir, file_format):
+    reader, writer = file_format
+
+    df = _multiindex_columns_gdf()
+    filename = os.path.join(str(tmpdir), "test.pq")
+    writer(df, filename)
+
+    result = reader(filename, columns=[("foo", "bar"), ("geometry", "")])
+
+    assert list(result.columns) == [("foo", "bar"), ("geometry", "")]
+    assert result.active_geometry_name == ("geometry", "")
+
+
+def test_multiindex_columns_two_geometry_columns_mismatched_name(tmpdir):
+    # GH#3370: the active geometry is designated with the plain string
+    # "geometry" while its label is the ("geometry", "") tuple, and the
+    # frame has a second geometry column: writing should resolve the
+    # designation to the geometry column it refers to
+    df = GeoDataFrame(
+        {
+            ("foo", "bar"): [0, 1],
+            ("other", "geom"): geopandas.GeoSeries([Point(5, 5), Point(6, 6)]),
+        },
+        geometry=[Point(0, 0), Point(1, 2)],
+    )
+    assert df._geometry_column_name == "geometry"
+    filename = os.path.join(str(tmpdir), "test.parquet")
+
+    df.to_parquet(filename)
+    result = read_parquet(filename)
+
+    assert list(result.columns) == list(df.columns)
+    assert result.active_geometry_name == ("geometry", "")
+    assert result[("other", "geom")].tolist() == df[("other", "geom")].tolist()
+    assert result.geometry.tolist() == df.geometry.tolist()
+
+
+def test_multiindex_columns_ambiguous_geometry_name_raises(tmpdir):
+    # GH#3370: with several geometry columns whose first level value is
+    # "geometry", the plain string designation of the active geometry
+    # cannot be resolved unambiguously and writing should raise
+    df = GeoDataFrame(
+        {
+            ("geometry", "a"): geopandas.GeoSeries([Point(0, 0), Point(1, 2)]),
+            ("geometry", "b"): geopandas.GeoSeries([Point(5, 5), Point(6, 6)]),
+        },
+        geometry=[Point(0, 0), Point(1, 2)],
+    )
+    filename = os.path.join(str(tmpdir), "test.parquet")
+
+    with pytest.raises(ValueError, match="could not be unambiguously resolved"):
+        df.to_parquet(filename)
+
+
+def test_read_feather_bytesio_multiindex_columns_subset():
+    # reading a subset by MultiIndex labels from an in-memory buffer
+    df = _multiindex_columns_gdf()
+    bio = BytesIO()
+    df.to_feather(bio)
+    bio.seek(0)
+
+    result = read_feather(bio, columns=[("foo", "bar"), ("geometry", "")])
+
+    assert list(result.columns) == [("foo", "bar"), ("geometry", "")]
+    assert result.active_geometry_name == ("geometry", "")
+
+    # the buffer is left in a state where it can be used for another read
+    bio.seek(0)
+    assert_geodataframe_equal(read_feather(bio), df)
+
+
+def test_duplicate_column_names_raise(tmpdir, file_format):
+    # column labels that map to the same name in the file are rejected
+    _reader, writer = file_format
+    columns = pd.MultiIndex.from_tuples([("a", "b"), ("a", "b")])
+    # pass the geometry as a GeoSeries: with a non-unique MultiIndex,
+    # looking up the geometry column by label returns a DataFrame (and
+    # therefore raises) on pandas < 3, before the writer is reached
+    df = GeoDataFrame(
+        [[0, 1], [2, 3]],
+        columns=columns,
+        geometry=geopandas.GeoSeries([Point(0, 0), Point(1, 1)], name=("geometry", "")),
+    )
+    filename = os.path.join(str(tmpdir), "test.pq")
+
+    with pytest.raises(ValueError, match="requires unique column names"):
+        writer(df, filename)
+
+
 def test_index(tmpdir, file_format, naturalearth_lowres):
     """Setting index=`True` should preserve index in output, and
     setting index=`False` should drop index from output.
@@ -503,6 +662,48 @@ def test_column_order(tmpdir, file_format, naturalearth_lowres):
     result = reader(filename)
     assert list(result.columns) == custom_column_order[1:]
     assert_geodataframe_equal(result, df[custom_column_order[1:]])
+
+
+def test_roundtrip_named_index_column_order(tmpdir, file_format):
+    """Round-trip of a frame with plain string columns and a named index
+    that is stored in the file: the column order, including the position
+    of the geometry column, should be preserved."""
+    reader, writer = file_format
+
+    df = GeoDataFrame(
+        {"a": [0, 1], "b": [2, 3]},
+        geometry=[Point(0, 0), Point(1, 2)],
+        crs="EPSG:4326",
+        index=Index([10, 20], name="my_index"),
+    )
+    df = df[["a", "geometry", "b"]]
+    filename = os.path.join(str(tmpdir), "test.pq")
+
+    writer(df, filename)
+    result = reader(filename)
+
+    assert list(result.columns) == ["a", "geometry", "b"]
+    assert_geodataframe_equal(result, df)
+
+
+def test_read_subset_reordered_columns(tmpdir, file_format):
+    """Reading a subset of columns specified in a different order than
+    the file order: the result follows the requested order, with the
+    geometry column placed in the requested position."""
+    reader, writer = file_format
+
+    df = GeoDataFrame(
+        {"a": [0, 1], "b": [2, 3], "c": [4, 5]},
+        geometry=[Point(0, 0), Point(1, 2)],
+        crs="EPSG:4326",
+    )
+    filename = os.path.join(str(tmpdir), "test.pq")
+    writer(df, filename)
+
+    result = reader(filename, columns=["geometry", "c", "a"])
+
+    assert list(result.columns) == ["geometry", "c", "a"]
+    assert_geodataframe_equal(result, df[["geometry", "c", "a"]])
 
 
 @pytest.mark.parametrize(

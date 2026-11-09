@@ -1,5 +1,14 @@
 # Changelog
 
+## Version 1.2.1 (TBD)
+
+New features and improvements:
+
+- `GeoDataFrame.to_parquet` and `GeoDataFrame.to_feather` now support
+  GeoDataFrames with MultiIndex columns (provided all levels contain only
+  strings), and `read_parquet` and `read_feather` restore the MultiIndex
+  columns on read (#3370).
+
 ## Version 1.2.0 (September 28, 2026)
 
 New features and improvements:

@@ -1,11 +1,12 @@
 import contextlib
 import json
+import os
 import warnings
 from packaging.version import Version
 from typing import Literal, get_args
 
 import numpy as np
-from pandas import DataFrame, Series
+from pandas import DataFrame, MultiIndex, Series
 
 import shapely
 
@@ -111,6 +112,18 @@ def _get_geometry_types(series):
     return sorted([_geometry_type_names[idx] for idx in geometry_types])
 
 
+def _column_name_in_file(col):
+    """Return the name under which a column is stored in the Arrow table.
+
+    For a column that is part of a MultiIndex, pyarrow uses the string
+    representation of the tuple label as the field name. Other column
+    labels (plain strings) are used as-is.
+    """
+    if isinstance(col, tuple):
+        return str(col)
+    return col
+
+
 def _create_metadata(
     df, schema_version=None, geometry_encoding=None, write_covering_bbox=False
 ):
@@ -182,7 +195,8 @@ def _create_metadata(
                 "encoding."
             )
 
-        column_metadata[col] = {
+        col_name = _column_name_in_file(col)
+        column_metadata[col_name] = {
             "encoding": encoding,
             "crs": crs,
             geometry_types_name: geometry_types,
@@ -191,10 +205,10 @@ def _create_metadata(
         bbox = series.total_bounds.tolist()
         if np.isfinite(bbox).all():
             # don't add bbox with NaNs for empty / all-NA geometry column
-            column_metadata[col]["bbox"] = bbox
+            column_metadata[col_name]["bbox"] = bbox
 
         if write_covering_bbox:
-            column_metadata[col]["covering"] = {
+            column_metadata[col_name]["covering"] = {
                 "bbox": {
                     "xmin": ["bbox", "xmin"],
                     "ymin": ["bbox", "ymin"],
@@ -203,8 +217,41 @@ def _create_metadata(
                 },
             }
 
+    primary_column = df._geometry_column_name
+    if primary_column not in list(df.columns):
+        # The name of the active geometry column does not always match the
+        # label of the geometry column: for a GeoDataFrame with MultiIndex
+        # columns that was constructed with a plain string geometry name,
+        # the label of the geometry column is a tuple while
+        # ``_geometry_column_name`` is that string. The metadata needs to
+        # reference the actual column, so resolve the name to the label of
+        # the geometry column it designates: the single geometry column,
+        # or, if there are several geometry columns, the one whose first
+        # level value equals the name (which is also how the column is
+        # found by partial string indexing on the frame itself).
+        geometry_columns = list(df.columns[df.dtypes == "geometry"])
+        if len(geometry_columns) == 1:
+            primary_column = geometry_columns[0]
+        elif len(geometry_columns) > 1:
+            matches = [
+                col
+                for col in geometry_columns
+                if isinstance(col, tuple) and col[0] == primary_column
+            ]
+            if len(matches) == 1:
+                primary_column = matches[0]
+            else:
+                raise ValueError(
+                    "The active geometry column is designated with the name "
+                    f"{primary_column!r}, which does not match the label of "
+                    "any column, and it could not be unambiguously resolved "
+                    f"to one of the geometry columns {geometry_columns}. "
+                    "Set the active geometry using the full label of one of "
+                    "the geometry columns before writing."
+                )
+
     return {
-        "primary_column": df._geometry_column_name,
+        "primary_column": _column_name_in_file(primary_column),
         "columns": column_metadata,
         "version": schema_version,
         "creator": {"library": "geopandas", "version": geopandas.__version__},
@@ -258,8 +305,29 @@ def _validate_dataframe(df):
         raise ValueError("Writing to Parquet/Feather only supports IO with DataFrames")
 
     # must have value column names (strings only)
-    if df.columns.inferred_type not in {"string", "unicode", "empty"}:
+    if isinstance(df.columns, MultiIndex):
+        # MultiIndex columns are supported if all levels contain only strings
+        valid_column_names = all(
+            isinstance(name, str)
+            for level in range(df.columns.nlevels)
+            for name in df.columns.get_level_values(level).unique()
+        )
+        if not valid_column_names:
+            raise ValueError("Writing to Parquet/Feather requires string column names")
+    elif df.columns.inferred_type not in {"string", "unicode", "empty"}:
         raise ValueError("Writing to Parquet/Feather requires string column names")
+
+    # column names must be unique once stored in the file (columns that
+    # are part of a MultiIndex are stored under the string representation
+    # of their tuple label)
+    file_names = [_column_name_in_file(col) for col in df.columns]
+    if len(set(file_names)) != len(file_names):
+        duplicates = sorted({name for name in file_names if file_names.count(name) > 1})
+        raise ValueError(
+            "Writing to Parquet/Feather requires unique column names, but "
+            "the following names occur more than once when stored in the "
+            f"file: {duplicates}"
+        )
 
     # index level names must be strings
     valid_names = all(
@@ -425,12 +493,13 @@ def _geopandas_to_arrow(
         with _ensure_geoarrow_wkb_ext_type_registered():
             for col, encoding in geometry_encoding_dict.items():
                 if encoding == "WKB":
-                    geom_ext = pa.table(table.select([col]))
+                    col_name = _column_name_in_file(col)
+                    geom_ext = pa.table(table.select([col_name]))
 
                     table = table.set_column(
-                        table.schema.get_field_index(col),
-                        geom_ext.schema.field(col),
-                        geom_ext[col],
+                        table.schema.get_field_index(col_name),
+                        geom_ext.schema.field(col_name),
+                        geom_ext[col_name],
                     )
 
     if write_covering_bbox:
@@ -584,7 +653,22 @@ def _arrow_to_geopandas(table, geo_metadata=None, to_pandas_kwargs=None, df_attr
         col for col in geo_metadata["columns"] if col in table.column_names
     ]
     result_column_names = list(table.slice(0, 0).to_pandas(**to_pandas_kwargs).columns)
-    geometry_columns.sort(key=result_column_names.index)
+
+    # The labels in `result_column_names` correspond to the columns of the
+    # table that are not stored as index in the file: on conversion to
+    # pandas, pyarrow restores those index columns (per the pandas
+    # metadata) as the DataFrame index instead of as columns.
+    index_columns = []
+    if table.schema.metadata and b"pandas" in table.schema.metadata:
+        pandas_metadata = _decode_metadata(table.schema.metadata[b"pandas"])
+        index_columns = [
+            col
+            for col in pandas_metadata.get("index_columns", [])
+            if isinstance(col, str)
+        ]
+    data_column_names = [col for col in table.column_names if col not in index_columns]
+
+    geometry_columns.sort(key=data_column_names.index)
 
     if not len(geometry_columns):
         raise ValueError(
@@ -635,11 +719,23 @@ def _arrow_to_geopandas(table, geo_metadata=None, to_pandas_kwargs=None, df_attr
                 crs=crs,
             )
 
-        df.insert(result_column_names.index(col), col, geom_arr)
+        # `col` is the name of the column in the file, which can differ
+        # from the label it gets when converting to pandas: for MultiIndex
+        # columns, the label is the tuple of level values while the column
+        # is stored in the file under the string representation of that
+        # tuple. Insert the geometry under its pandas label, at the
+        # position of the column in the resulting DataFrame.
+        position = data_column_names.index(col)
+        df.insert(position, result_column_names[position], geom_arr)
 
     # Add dataframe attrs
     if df_attrs:
         df.attrs = json.loads(df_attrs)
+
+    if geometry in data_column_names:
+        # map the name of the geometry column in the file back to its
+        # label in the resulting DataFrame (see above)
+        geometry = result_column_names[data_column_names.index(geometry)]
 
     return GeoDataFrame(df, geometry=geometry)
 
@@ -774,6 +870,26 @@ def _open_parquet_dataset(path, filesystem, kwargs, bbox):
             pass
 
     return dataset, schema, metadata
+
+
+def _columns_to_file_names(columns, available_names):
+    """Translate column labels to the names of the columns in the file.
+
+    Users specify the columns to read by their label in the resulting
+    GeoDataFrame, but the columns are stored in the file under their file
+    name (e.g. the string representation of the tuple label for columns
+    that are part of a MultiIndex). Labels that do not correspond to a
+    column in the file are passed through unchanged, so that pyarrow
+    raises its usual error for missing columns.
+    """
+    translated = []
+    for col in columns:
+        file_name = _column_name_in_file(col)
+        if file_name in available_names:
+            translated.append(file_name)
+        else:
+            translated.append(col)
+    return translated
 
 
 def _add_index_columns_from_pandas_metadata(columns, metadata):
@@ -924,6 +1040,9 @@ def _read_parquet(
             the Parquet/Feather file.  To read this file without geometry columns,
             use pandas.read_parquet/read_feather() instead."""
         )
+
+    if columns is not None:
+        columns = _columns_to_file_names(columns, schema.names)
 
     bbox_filter = (
         _get_parquet_bbox_filter(geo_metadata, bbox) if bbox is not None else None
@@ -1082,6 +1201,34 @@ def _read_feather(path, columns=None, to_pandas_kwargs=None, **kwargs):
     )
 
     path = _expand_user(path)
+
+    if columns is not None and any(isinstance(col, tuple) for col in columns):
+        # translate MultiIndex column labels to the names of the columns
+        # in the file, which requires reading the schema of the file first
+        import pyarrow as pa
+
+        if isinstance(path, (str, os.PathLike)):
+            schema = pa.ipc.open_file(path).schema
+        elif (
+            hasattr(path, "seek")
+            and hasattr(path, "tell")
+            and (not hasattr(path, "seekable") or path.seekable())
+        ):
+            # file-like object: reading the schema advances the position
+            # of the buffer, so save and restore it around the schema read
+            position = path.tell()
+            try:
+                schema = pa.ipc.open_file(path).schema
+            finally:
+                path.seek(position)
+        else:
+            raise ValueError(
+                "Reading a subset of columns of a Feather file using "
+                "MultiIndex column labels is only supported for a file "
+                "path or a seekable file object, but the source is of "
+                f"type {type(path).__name__!r}."
+            )
+        columns = _columns_to_file_names(columns, schema.names)
 
     table = feather.read_table(path, columns=columns, **kwargs)
     return _arrow_to_geopandas(table, to_pandas_kwargs=to_pandas_kwargs)
