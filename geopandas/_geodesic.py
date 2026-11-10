@@ -80,7 +80,7 @@ def distance_point_line(point, line, geod):
         same_part = idx[:-1] == idx[1:]
         lon1, lat1 = coords[:-1, 0][same_part], coords[:-1, 1][same_part]
         lon2, lat2 = coords[1:, 0][same_part], coords[1:, 1][same_part]
-    dist = distance_to_segment(point, lon1, lat1, lon2, lat2, geod)
+    dist = distance_to_segments(point, lon1, lat1, lon2, lat2, geod)
     return dist
 
 
@@ -173,37 +173,36 @@ def distance_point_line_vectorized(points, lines, geod):
     return dist
 
 
-def _relative_haversine_metric(lon1, lat1, lon2, lat2):
-    # Haversine distance, but simplified to be sufficient for ranking
-    dLat = np.deg2rad(lat2 - lat1)
-    dLon = np.deg2rad(lon2 - lon1)
-    lat1 = np.deg2rad(lat1)
-    lat2 = np.deg2rad(lat2)
-
-    with np.errstate(invalid="ignore"):
-        a = np.sin(dLat / 2) ** 2 + np.sin(dLon / 2) ** 2 * np.cos(lat1) * np.cos(lat2)
-    # remaining part, calculating c and multiplication by R, is not needed for ranking
-    return a
-
-
-def distance_to_segment(point, lon1, lat1, lon2, lat2, geod):
+def distance_to_segments(
+    point: Point,
+    lon1: np.ndarray,
+    lat1: np.ndarray,
+    lon2: np.ndarray,
+    lat2: np.ndarray,
+    geod,
+) -> float:
     point_lon = np.broadcast_to(point.x, lon1.shape)
     point_lat = np.broadcast_to(point.y, lon1.shape)
     # TODO this also works with passing scalar point lon/lat -> is that faster
     # if we don't need the broadcast for the distance calculation?
+
+    point_vector = _lonlat_to_vector(point_lon, point_lat)
+    segment_starts_vector = _lonlat_to_vector(lon1, lat1)
+    segment_ends_vector = _lonlat_to_vector(lon2, lat2)
+
+    # use haversine distance (approximated by squared chord distance) to more
+    # cheaply find the closest segment
+    metric = _nearest_point_on_segment_metric(
+        point_vector, segment_starts_vector, segment_ends_vector
+    )
+    idx = np.argmin(metric)
     nearest_lon, nearest_lat = nearest_point_on_segment(
-        point_lon, point_lat, lon1, lat1, lon2, lat2
+        point_lon, point_lat, lon1[[idx]], lat1[[idx]], lon2[[idx]], lat2[[idx]]
     )
-    # use haversine distance to (more cheaply) find the closest segment, then
-    # only compute the geodetic distance for the closest points
-    haversine = _relative_haversine_metric(
-        point_lon, point_lat, nearest_lon, nearest_lat
-    )
-    idx = np.argmin(haversine)
-    _, _, dist = geod.inv(
-        point_lon[idx], point_lat[idx], nearest_lon[idx], nearest_lat[idx]
-    )
-    return dist
+
+    # then only compute the geodetic distance for the closest points
+    _, _, dist = geod.inv(point_lon, point_lat, nearest_lon, nearest_lat)
+    return dist[0]
 
 
 class Vector3D:
@@ -247,7 +246,6 @@ class Vector3D:
         )
 
     def normalize(self) -> "Vector3D":
-        norm = np.sqrt(self.x**2 + self.y**2 + self.z**2)
         norm = np.sqrt(self.x**2 + self.y**2 + self.z**2)
         return Vector3D(self.x / norm, self.y / norm, self.z / norm)
 
