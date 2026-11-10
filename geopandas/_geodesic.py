@@ -159,22 +159,14 @@ def distance_point_line_vectorized(points, lines, geod):
         nearest_vector_i = Vector3D(x, y, z)
         nearest_vector_i[on_segment] = projected_on_segment
 
-        # mask invalid input data in result
-        # TODO verify if this is needed (this might be caught higher up in the
-        # distance calculation)
-        invalid = ~np.isfinite(
-            points_vector_i.x
-            + points_vector_i.y
-            + points_vector_i.z
-            + segment_starts_vector_i.x
-            + segment_starts_vector_i.y
-            + segment_starts_vector_i.z
-            + segment_ends_vector_i.x
-            + segment_ends_vector_i.y
-            + segment_ends_vector_i.z
-        )
-        if invalid.any():
-            nearest_vector_i[invalid] = Vector3D(np.nan, np.nan, np.nan)
+        # Mask invalid input data in result (any lon/lat that is not finite ->
+        # x will be NaN already, not need to check x and y as well).
+        # Only check the lines, because non-finite points will already
+        # propagate to distance_metric through points_vector
+        # if lines_any_invalid:
+        invalid_line = ~np.isfinite(segment_starts_vector_i.x + segment_ends_vector_i.x)
+        if invalid_line.any():
+            nearest_vector_i[invalid_line] = Vector3D(np.nan, np.nan, np.nan)
 
         # Use squared chord distance to find the closest segment (this is monotonic
         # with actual spherical haversine distance, but cheaper to compute),
@@ -200,6 +192,16 @@ def distance_point_line_vectorized(points, lines, geod):
     )
     idx_min = np.minimum.reduceat(cand, idx_segments[:-1])
 
+    # Geometries where the minimum distance could not be found, e.g. because the
+    # min distance was NaN and thus `distance_metric == min` was all False for that
+    # set of segments, and `cand` gets set to `n_segments` (an out-of-bounds index)
+    # -> set them to a valid index now to avoid an error (actual distance gets
+    # marked as invalid at the end)
+    invalid = idx_min == n_segments
+    any_invalid = np.any(invalid)
+    if any_invalid:
+        idx_min[invalid] = 0
+
     # For a segment start/end point as nearest point, take its original lon/lat
     # coordinates to preserve them exactly (avoiding small rounding errors in
     # the lonlat -> vector -> lonlat roundtrip)
@@ -212,6 +214,8 @@ def distance_point_line_vectorized(points, lines, geod):
     # Compute the actual geodetic distance between the original point and
     # the (spherical) nearest point
     _, _, dist = geod.inv(point_lon, point_lat, nearest_lon, nearest_lat)
+    if any_invalid:
+        dist[invalid] = np.nan
     return dist
 
 
@@ -222,7 +226,8 @@ def _relative_haversine_metric(lon1, lat1, lon2, lat2):
     lat1 = np.deg2rad(lat1)
     lat2 = np.deg2rad(lat2)
 
-    a = np.sin(dLat / 2) ** 2 + np.sin(dLon / 2) ** 2 * np.cos(lat1) * np.cos(lat2)
+    with np.errstate(invalid="ignore"):
+        a = np.sin(dLat / 2) ** 2 + np.sin(dLon / 2) ** 2 * np.cos(lat1) * np.cos(lat2)
     # remaining part, calculating c and multiplication by R, is not needed for ranking
     return a
 
@@ -306,10 +311,11 @@ def _lonlat_to_vector(lon: np.ndarray, lat: np.ndarray) -> Vector3D:
     # (lonlat in degrees) * np.pi / 180
     lon_rad = np.deg2rad(lon)
     lat_rad = np.deg2rad(lat)
-    cos_lat = np.cos(lat_rad)
-    x = cos_lat * np.cos(lon_rad)
-    y = cos_lat * np.sin(lon_rad)
-    z = np.sin(lat_rad)
+    with np.errstate(invalid="ignore"):
+        cos_lat = np.cos(lat_rad)
+        x = cos_lat * np.cos(lon_rad)
+        y = cos_lat * np.sin(lon_rad)
+        z = np.sin(lat_rad)
     return Vector3D(x, y, z)
 
 

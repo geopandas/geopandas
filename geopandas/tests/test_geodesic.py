@@ -88,6 +88,27 @@ def test_point_linestring_vectorized(crs):
     assert_allclose(result, expected)
 
 
+@pytest.mark.parametrize("naninf", [np.nan, np.inf, -np.inf])
+def test_point_linestring_vectorized_invalid(crs, naninf):
+    with np.errstate(invalid="ignore"):
+        points = [Point(0, 0), Point(0, naninf), Point(0, 0), Point(2, 2), Point(0, 0)]
+        lines = [
+            LineString([(0, 0), (0, 1)]),
+            MultiLineString([[(1, 1), (1, 2)]]),
+            LineString([(0, 0), (1, 1), (2, naninf)]),
+            LineString([(0, naninf), (1, 1), (2, 2)]),
+            LineString([(0, 0), (1, naninf), (2, 2)]),
+        ]
+    result = geodetic_distance_vectorized(np.array(points), np.array(lines), crs)
+    expected = np.array([0.0, np.nan, np.nan, np.nan, np.nan])
+    assert_allclose(result, expected)
+
+    result = np.array(
+        [geodetic_distance(point, line, crs) for point, line in zip(points, lines)]
+    )
+    assert_allclose(result, expected)
+
+
 # cases taken from s2geography
 cases = [
     ("point_distance_same_point", "POINT (0 0)", "POINT (0 0)", 0.0),
