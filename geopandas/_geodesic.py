@@ -122,6 +122,8 @@ def distance_point_line_vectorized(points, lines, geod):
     chunksize = 16_000
     nearest_vector = Vector3D.create_empty(n_segments)
     distance_metric = np.empty(n_segments, dtype=np.float64)
+    use_projection = np.empty(n_segments, dtype=bool)
+    use_start = np.empty(n_segments, dtype=bool)
     for i in range(0, n_segments, chunksize):
         slc = slice(i, i + chunksize)
 
@@ -182,6 +184,8 @@ def distance_point_line_vectorized(points, lines, geod):
 
         nearest_vector[i : i + chunksize] = nearest_vector_i
         distance_metric[i : i + chunksize] = chord_distance_i
+        use_projection[i : i + chunksize] = on_segment
+        use_start[i : i + chunksize] = closest_to_start
 
     # Find segment with minimum point/segment distance per geometry
     # (mimicking an "argmin reduceat" operation)
@@ -196,13 +200,18 @@ def distance_point_line_vectorized(points, lines, geod):
     )
     idx_min = np.minimum.reduceat(cand, idx_segments[:-1])
 
-    nearest_lon, nearest_lat = _vector_to_lonlat(nearest_vector[idx_min])
-    _, _, dist = geod.inv(
-        point_lon,
-        point_lat,
-        nearest_lon,
-        nearest_lat,
+    # For a segment start/end point as nearest point, take its original lon/lat
+    # coordinates to preserve them exactly (avoiding small rounding errors in
+    # the lonlat -> vector -> lonlat roundtrip)
+    nearest_coords = coords[segment_starts[idx_min] + ~use_start[idx_min]]
+    nearest_lon, nearest_lat = nearest_coords[:, 0], nearest_coords[:, 1]
+    use_projected = use_projection[idx_min]
+    nearest_lon[use_projected], nearest_lat[use_projected] = _vector_to_lonlat(
+        nearest_vector[idx_min[use_projected]]
     )
+    # Compute the actual geodetic distance between the original point and
+    # the (spherical) nearest point
+    _, _, dist = geod.inv(point_lon, point_lat, nearest_lon, nearest_lat)
     return dist
 
 
@@ -421,14 +430,24 @@ def _nearest_point_on_segment_vector(
 
     # n is the zero vector if the segment is degenerate (p1 == p2) or the point
     # sits exactly at a pole of the segment's great circle: fall back to endpoints
-
     on_segment &= n.is_nonzero()
 
     # If the nearest point is not on the segment, we want the closest endpoint
     # p1 or p2 instead -> use squared chord length (straight line through the
     # sphere, monotonic with actual distance but cheaper)
     d1, d2 = v - v1, v - v2
-    closest_to_start = _dot(d1, d1) <= _dot(d2, d2)
+    dist1, dist2 = _dot(d1, d1), _dot(d2, d2)
+    closest_to_start = dist1 <= dist2
+
+    # If the point is exactly one of the start/end points of the segment, prefer
+    # that end point instead of the projected-on-segment point (using this projected
+    # point means a lonlat -> vector -> lonlat roundtrip, and because of floating
+    # point rounding errors, this roundtripped lonlat is not exactly equal to the
+    # original, and this can then give a tiny non-zero distance instead of
+    # exactly zero)
+    # (in such a case, v - v1 or v - v2 would be exactly zero -> dist1 or dist2
+    #  would be 0 -> check for strictly positive distance)
+    on_segment &= np.minimum(dist1, dist2) > 0
 
     return n, on_segment, closest_to_start
 

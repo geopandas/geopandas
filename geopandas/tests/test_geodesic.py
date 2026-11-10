@@ -61,19 +61,28 @@ def test_point_multilinestring(crs):
     result = geodetic_distance(line, Point(2, 0), crs)
     assert_allclose(result, expected)
 
+    # matching multiple vertices -> ensure we take exactly one of the vertices
+    # and not a projected point close by (ensure we have exactly a distance of 0)
+    line = MultiLineString([[(1, 0), (1, 1)], [(0, 0), (0, 1), (1, 1), (1, 2)]])
+    result = geodetic_distance(Point(0, 0), line, crs)
+    assert result == 0.0
+
 
 def test_point_linestring_vectorized(crs):
-    points = [Point(0, 0), Point(1, 1)]
+    points = [Point(0, 0), Point(1, 1), Point(0, 0)]
     lines = [
         LineString([(0, 0), (0, 1), (1, 1), (1, 2)]),
         MultiLineString([[(1, 0), (1, 1)], [(0, 0), (0, 1), (1, 1), (1, 2)]]),
+        LineString([(2, 0), (0, 2)]),
     ]
+    # array / array
     result = geodetic_distance_vectorized(np.array(points), np.array(lines), crs)
     expected = np.array(
         [geodetic_distance(point, line, crs) for point, line in zip(points, lines)]
     )
     assert_allclose(result, expected)
 
+    # point / array
     result = geodetic_distance_vectorized(points[0], np.array(lines), crs)
     expected = np.array([geodetic_distance(points[0], line, crs) for line in lines])
     assert_allclose(result, expected)
