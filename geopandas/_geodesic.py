@@ -91,78 +91,89 @@ def distance_point_line_vectorized(points, lines, geod):
         lines, include_z=False, include_m=False
     )
     idx_lines, idx_geoms = offsets
+    n_vertices = len(coords)
 
-    # get indices into coords for all segment starts (and then segment ends
-    # is `segment_starts + 1`)
-    is_segment_start = np.ones(len(coords), dtype=bool)
-    is_segment_start[idx_lines[1:] - 1] = False
-    segment_starts = np.flatnonzero(is_segment_start)
+    # For taking the segment start/ends coords, we optimize this by using all
+    # start/end pairs (including pairs that are not actually a segment but cross
+    # lines). That means we calculate the distance metric for those invalid pairs
+    # unnecessarily (and those distances will be set to inf later), but it is
+    # generally more efficient than copying the coordinates for each segment.
+    # (the lines vector can then just be sliced (for the chunking below), instead
+    #  of having to 'take' the coords (i.e. fancy indexing) for only the valid
+    #  segment pairs)
+    n_pairs = n_vertices - 1
+    is_segment = np.ones(n_pairs, dtype=bool)
+    is_segment[idx_lines[1:-1] - 1] = False
 
-    n_segments = segment_starts.size
-    n_segments_per_geom = np.diff(idx_lines[idx_geoms]) - np.diff(idx_geoms)
-    assert n_segments == n_segments_per_geom.sum()
+    idx_pairs = idx_lines[idx_geoms]
+    idx_pairs[-1] = n_pairs
+    n_pairs_per_geom = np.diff(idx_pairs)
 
     if isinstance(points, Point):
-        points_idx = np.zeros(n_segments, dtype=int)
+        points_idx = np.zeros(n_pairs, dtype=int)
         points_vector = _lonlat_to_vector([points.x], [points.y])
         # TODO make this more efficient
         point_lon = np.broadcast_to(points.x, lines.shape)
         point_lat = np.broadcast_to(points.y, lines.shape)
     else:
         # indices into `points` to match each segment pair for vectorized computation
-        points_idx = np.repeat(np.arange(len(points)), n_segments_per_geom)
+        points_idx = np.repeat(np.arange(len(points)), n_pairs_per_geom)
 
         point_lon = shapely.get_x(points)
         point_lat = shapely.get_y(points)
         points_vector = _lonlat_to_vector(point_lon, point_lat)
         # TODO empty lines would give negative repeats -> errors
 
-    lines_vector = _lonlat_to_vector(coords[:, 0], coords[:, 1])
+    lon, lat = coords[:, 0], coords[:, 1]
+    lines_vector = _lonlat_to_vector(lon, lat)
 
     # Calculate distance metric for each point/segment pair
     # (chunked to improve performance and reduce memory usage)
     chunksize = 16_000
-    distance_metric = np.empty(n_segments, dtype=np.float64)
-    for i in range(0, n_segments, chunksize):
-        slc = slice(i, i + chunksize)
+    distance_metric = np.empty(n_pairs, dtype=np.float64)
+    for i in range(0, n_pairs, chunksize):
+        j = min(i + chunksize, n_pairs)
 
         # Now actually select the point and segment coords for this chunk
-        pidx = points_idx[slc]
-        lidx = segment_starts[slc]
-
-        distance_metric[slc] = _nearest_point_on_segment_metric(
-            points_vector[pidx], lines_vector[lidx], lines_vector[lidx + 1]
+        pidx = points_idx[i:j]
+        segment_starts = slice(i, j)
+        segment_ends = slice(i + 1, j + 1)
+        distance_metric[i:j] = _nearest_point_on_segment_metric(
+            points_vector[pidx],
+            lines_vector[segment_starts],
+            lines_vector[segment_ends],
         )
+
+    # Mark distance metric for non-segment pairs as inf so they are ignored for
+    # the minimum distance step
+    distance_metric[~is_segment] = np.inf
 
     # Find segment with minimum point/segment distance per geometry
     # (mimicking an "argmin reduceat" operation)
-    line_lengths = np.diff(idx_lines)
-    idx_segments = np.insert(np.cumsum(line_lengths - 1), 0, 0)
-    idx_segments = idx_segments[idx_geoms]
-    # np.testing.assert_allclose(np.diff(idx_segments), n_segments_per_geom)
-    mins = np.minimum.reduceat(distance_metric, idx_segments[:-1])
-    pos = np.arange(0, n_segments)
-    cand = np.where(
-        distance_metric == np.repeat(mins, n_segments_per_geom), pos, n_segments
-    )
-    idx_min = np.minimum.reduceat(cand, idx_segments[:-1])
+    mins = np.minimum.reduceat(distance_metric, idx_pairs[:-1])
+    pos = np.arange(0, n_pairs)
+    cand = np.where(distance_metric == np.repeat(mins, n_pairs_per_geom), pos, n_pairs)
+    idx_min = np.minimum.reduceat(cand, idx_pairs[:-1])
 
     # Geometries where the minimum distance could not be found, e.g. because the
     # min distance was NaN and thus `distance_metric == min` was all False for that
-    # set of segments, and `cand` gets set to `n_segments` (an out-of-bounds index)
+    # set of segments, and `cand` gets set to `n_pairs` (an out-of-bounds index)
     # -> set them to a valid index now to avoid an error (actual distance gets
     # marked as invalid at the end)
-    invalid = idx_min == n_segments
+    invalid = idx_min == n_pairs
     any_invalid = np.any(invalid)
     if any_invalid:
         idx_min[invalid] = 0
 
     # Given the selected segments with the nearest point, actually calculate
     # the nearest points for each input point / line geometry
-    idx = segment_starts[idx_min]
-    lon, lat = coords[:, 0], coords[:, 1]
     nearest_lon, nearest_lat = nearest_point_on_segment(
-        point_lon, point_lat, lon[idx], lat[idx], lon[idx + 1], lat[idx + 1]
+        point_lon,
+        point_lat,
+        lon[idx_min],
+        lat[idx_min],
+        lon[idx_min + 1],
+        lat[idx_min + 1],
     )
 
     # Compute the actual geodetic distance between the original point and
