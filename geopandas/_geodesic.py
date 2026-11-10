@@ -86,7 +86,10 @@ def distance_point_line(point, line, geod):
 
 def distance_point_line_vectorized(points, lines, geod):
     # compute the distance to all line segments at once and take the minimum
-    _, coords, offsets = shapely.to_ragged_array(lines)
+    # TODO test with z/m/zm coords
+    _, coords, offsets = shapely.to_ragged_array(
+        lines, include_z=False, include_m=False
+    )
     idx_lines, idx_geoms = offsets
 
     # get indices into coords for all segment starts (and then segment ends
@@ -114,77 +117,91 @@ def distance_point_line_vectorized(points, lines, geod):
         points_vector = _lonlat_to_vector(point_lon, point_lat)
         # TODO empty lines would give negative repeats -> errors
 
-    lon = coords[:, 0]
-    lat = coords[:, 1]
-
     lines_vector = _lonlat_to_vector(coords[:, 0], coords[:, 1])
 
     chunksize = 16_000
-    nearest_lon = np.empty(n_segments, dtype=np.float64)
-    nearest_lat = np.empty(n_segments, dtype=np.float64)
-    haversine = np.empty(n_segments, dtype=np.float64)
+    nearest_vector = Vector3D.create_empty(n_segments)
+    distance_metric = np.empty(n_segments, dtype=np.float64)
     for i in range(0, n_segments, chunksize):
         slc = slice(i, i + chunksize)
 
+        # Now actually select the point and segment coords for this chunk
         pidx = points_idx[slc]
         lidx = segment_starts[slc]
+        points_vector_i = points_vector[pidx]
+        segment_starts_vector_i = lines_vector[lidx]
+        segment_ends_vector_i = lines_vector[lidx + 1]
 
-        n, on_segment, closest_to_start = _nearest_point_on_segment_vector(
-            points_vector[pidx],
-            lines_vector[lidx],
-            lines_vector[lidx + 1],
+        projected, on_segment, closest_to_start = _nearest_point_on_segment_vector(
+            points_vector_i,
+            segment_starts_vector_i,
+            segment_ends_vector_i,
         )
 
-        # Get the actual nearest point coordinates by choosing the intersection
-        # point or start point or end point accordingly (in a vectorized way)
-        nearest_lon_i = np.where(closest_to_start, lon[lidx], lon[lidx + 1])
-        nearest_lat_i = np.where(closest_to_start, lat[lidx], lat[lidx + 1])
+        projected_on_segment = projected[on_segment]
+        # normalize to unit vectors, to ensure the chord distance is comparable
+        # with the end/start points of the segment
+        projected_on_segment = projected_on_segment.normalize()
 
-        projected_lon, projected_lat = _vector_to_lonlat(n[on_segment])
-        nearest_lon_i[on_segment] = projected_lon
-        nearest_lat_i[on_segment] = projected_lat
+        # Get the actual nearest point by choosing the projected intersection
+        # point or start point or end point accordingly (in a vectorized way)
+        x = np.where(
+            closest_to_start, segment_starts_vector_i.x, segment_ends_vector_i.x
+        )
+        y = np.where(
+            closest_to_start, segment_starts_vector_i.y, segment_ends_vector_i.y
+        )
+        z = np.where(
+            closest_to_start, segment_starts_vector_i.z, segment_ends_vector_i.z
+        )
+        nearest_vector_i = Vector3D(x, y, z)
+        nearest_vector_i[on_segment] = projected_on_segment
 
         # mask invalid input data in result
         # TODO verify if this is needed (this might be caught higher up in the
         # distance calculation)
         invalid = ~np.isfinite(
-            point_lon[pidx]
-            + point_lat[pidx]
-            + lon[lidx]
-            + lat[lidx]
-            + lon[lidx + 1]
-            + lat[lidx + 1]
+            points_vector_i.x
+            + points_vector_i.y
+            + points_vector_i.z
+            + segment_starts_vector_i.x
+            + segment_starts_vector_i.y
+            + segment_starts_vector_i.z
+            + segment_ends_vector_i.x
+            + segment_ends_vector_i.y
+            + segment_ends_vector_i.z
         )
-        nearest_lon_i = np.where(invalid, np.nan, nearest_lon_i)
-        nearest_lat_i = np.where(invalid, np.nan, nearest_lat_i)
+        if invalid.any():
+            nearest_vector_i[invalid] = Vector3D(np.nan, np.nan, np.nan)
 
-        # use haversine distance to (more cheaply) find the closest segment, then
-        # only compute the geodetic distance for the closest points
-        haversine_i = _relative_haversine_metric(
-            point_lon[pidx],
-            point_lat[pidx],
-            nearest_lon_i,
-            nearest_lat_i,
-        )
-        nearest_lon[i : i + chunksize] = nearest_lon_i
-        nearest_lat[i : i + chunksize] = nearest_lat_i
-        haversine[i : i + chunksize] = haversine_i
+        # Use squared chord distance to find the closest segment (this is monotonic
+        # with actual spherical haversine distance, but cheaper to compute),
+        # then only compute the geodetic distance for the closest points
+        d = points_vector_i - nearest_vector_i
+        chord_distance_i = _dot(d, d)
 
-    # argmin reduceat
+        nearest_vector[i : i + chunksize] = nearest_vector_i
+        distance_metric[i : i + chunksize] = chord_distance_i
+
+    # Find segment with minimum point/segment distance per geometry
+    # (mimicking an "argmin reduceat" operation)
     line_lengths = np.diff(idx_lines)
     idx_segments = np.insert(np.cumsum(line_lengths - 1), 0, 0)
     idx_segments = idx_segments[idx_geoms]
     # np.testing.assert_allclose(np.diff(idx_segments), n_segments_per_geom)
-    mins = np.minimum.reduceat(haversine, idx_segments[:-1])
+    mins = np.minimum.reduceat(distance_metric, idx_segments[:-1])
     pos = np.arange(0, n_segments)
-    cand = np.where(haversine == np.repeat(mins, n_segments_per_geom), pos, n_segments)
+    cand = np.where(
+        distance_metric == np.repeat(mins, n_segments_per_geom), pos, n_segments
+    )
     idx_min = np.minimum.reduceat(cand, idx_segments[:-1])
 
+    nearest_lon, nearest_lat = _vector_to_lonlat(nearest_vector[idx_min])
     _, _, dist = geod.inv(
-        point_lon[points_idx[idx_min]],
-        point_lat[points_idx[idx_min]],
-        nearest_lon[idx_min],
-        nearest_lat[idx_min],
+        point_lon,
+        point_lat,
+        nearest_lon,
+        nearest_lat,
     )
     return dist
 
@@ -244,8 +261,27 @@ class Vector3D:
         return (self.x != 0) | (self.y != 0) | (self.z != 0)
 
     def __getitem__(self, key) -> np.ndarray:
-        assert isinstance(key, np.ndarray)
+        assert isinstance(key, (slice, np.ndarray))
         return Vector3D(self.x[key], self.y[key], self.z[key])
+
+    def __setitem__(self, key, value: "Vector3D") -> None:
+        assert isinstance(key, (slice, np.ndarray))
+        assert isinstance(value, Vector3D)
+        self.x[key] = value.x
+        self.y[key] = value.y
+        self.z[key] = value.z
+
+    def create_empty(size: int) -> "Vector3D":
+        return Vector3D(
+            np.empty(size, dtype=np.float64),
+            np.empty(size, dtype=np.float64),
+            np.empty(size, dtype=np.float64),
+        )
+
+    def normalize(self) -> "Vector3D":
+        norm = np.sqrt(self.x**2 + self.y**2 + self.z**2)
+        norm = np.sqrt(self.x**2 + self.y**2 + self.z**2)
+        return Vector3D(self.x / norm, self.y / norm, self.z / norm)
 
 
 def _lonlat_to_vector(lon: np.ndarray, lat: np.ndarray) -> Vector3D:
