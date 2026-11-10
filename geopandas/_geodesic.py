@@ -318,11 +318,19 @@ def _cross(a: Vector3D, b: Vector3D) -> Vector3D:
 
 def _dot(a: Vector3D, b: Vector3D) -> np.ndarray:
     # row-wise dot product
-    # slightly faster version of np.sum(a * b, axis=-1)
-    # return np.einsum("...i,...i -> ...", a, b)
+    # custom version for Vector3D with separate xyz arrays (with a 2D array,
+    # this would be np.sum(a * b, axis=-1), or np.einsum("...i,...i -> ...", a, b)
     a0, a1, a2 = a
     b0, b1, b2 = b
-    return a0 * b0 + a1 * b1 + a2 * b2
+
+    # a0 * b0 + a1 * b1 + a2 * b2
+    out = np.multiply(a0, b0)
+    tmp = np.multiply(a1, b1)
+    out += tmp
+    np.multiply(a2, b2, out=tmp)
+    out += tmp
+
+    return out
 
 
 def nearest_point_on_segment(
