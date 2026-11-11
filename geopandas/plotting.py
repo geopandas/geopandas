@@ -1276,9 +1276,11 @@ def plot_dataframe(
 
             # shrink the colorbar based on the new apect ratio - that way we ensure
             # that it is never much larger than the axis without complicated hacks
+            # (not needed with the compressed layout engine, which does this, GH3885)
+            compressed = getattr(ax.figure.get_layout_engine(), "_compress", False)
             bbox = ax.get_position()
             bbox_orig = ax.get_position(original=True)
-            if "shrink" not in legend_kwds:
+            if "shrink" not in legend_kwds and not compressed:
                 if (
                     legend_kwds.get("location", "right")
                     in [
