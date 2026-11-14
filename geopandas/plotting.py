@@ -1394,6 +1394,7 @@ def _is_exterior(ax, axis):
     siblings = shared.get_siblings(ax)
     if len(siblings) < 2:
         return True
+    # ax.get_subplotspec().is_last_row() does not work when a subset shares axis
     pos = [a.get_position() for a in siblings]
     me = ax.get_position()
     if axis == "x":
