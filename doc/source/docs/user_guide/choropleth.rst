@@ -171,7 +171,7 @@ The colormap used in the choropleth map can be any string recognized by Matplotl
     cmaps = ["viridis", "cividis", "plasma", "managua"]
 
     for cmap, ax in zip(cmaps, axs.flat):
-        south.plot(column='FH90', cmap=cmap, ax=ax, add_labels=False)
+        south.plot(column='FH90', cmap=cmap, ax=ax)
         ax.set_title(cmap)
     @savefig cmaps.png
     plt.tight_layout()
