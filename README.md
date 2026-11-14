@@ -70,7 +70,7 @@ Get in touch
 - Ask usage questions ("How do I?") on [StackOverflow](https://stackoverflow.com/questions/tagged/geopandas) or [GIS StackExchange](https://gis.stackexchange.com/questions/tagged/geopandas).
 - Get involved in [discussions on GitHub](https://github.com/geopandas/geopandas/discussions)
 - Report bugs, suggest features or view the source code [on GitHub](https://github.com/geopandas/geopandas).
-- For a quick question about a bug report or feature request, or Pull Request, head over to the [gitter channel](https://gitter.im/geopandas/geopandas).
+- For a quick question about a bug report or feature request, or Pull Request, head over to the gitter channel.
 - For less well defined questions or ideas, or to announce other projects of interest to GeoPandas users, ... use the [mailing list](https://groups.google.com/forum/#!forum/geopandas).
 
 Examples
