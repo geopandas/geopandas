@@ -401,8 +401,8 @@ intersphinx_mapping = {
         "https://pysal.org/libpysal/stable/objects.inv",
     ),
     "mapclassify": (
-        "https://pysal.org/mapclassify/",
-        "https://pysal.org/mapclassify/objects.inv",
+        "https://pysal.org/mapclassify/stable/",
+        "https://pysal.org/mapclassify/stable/objects.inv",
     ),
     "matplotlib": (
         "https://matplotlib.org/stable/",
