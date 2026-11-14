@@ -565,7 +565,7 @@ def plot_series(
 
     Returns
     -------
-    ax : matplotlib axes instance
+    ax : :class:`matplotlib.axes.Axes`
     """  # noqa: E501
     try:
         import matplotlib  # noqa: F401
@@ -779,7 +779,7 @@ def plot_dataframe(
         Plot a legend. Ignored if no ``column`` is given, or if ``color`` is given. This
         can be a :class:`matplotlib.legend.Legend` in case of categorical variables or
         those with set ``scheme`` and a categorical legend, or a
-        :class`:matplotlib.colorbar.Colorbar` in case of continuous variables or those
+        :class:`matplotlib.colorbar.Colorbar` in case of continuous variables or those
         with set ``scheme`` and a colorbar legend.
     scheme : str (default None)
         Name of a choropleth classification scheme (requires ``mapclassify``). A
@@ -879,7 +879,7 @@ def plot_dataframe(
 
     Returns
     -------
-    ax : matplotlib axes instance
+    ax : :class:`matplotlib.axes.Axes`
 
     Examples
     --------
