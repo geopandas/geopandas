@@ -2161,6 +2161,12 @@ default 'snappy'
                 object.__setattr__(self, name, getattr(first_obj, name, None))
 
             if (
+                self._geometry_column_name is not None
+                and self._geometry_column_name not in self.columns
+            ):
+                self._geometry_column_name = None
+
+            if (
                 self.columns.nlevels == 1
                 and (self.columns == self._geometry_column_name).sum() > 1
             ) or (
