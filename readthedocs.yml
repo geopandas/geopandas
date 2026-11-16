@@ -3,7 +3,7 @@ sphinx:
   # Path to your Sphinx configuration file.
   configuration: doc/source/conf.py
 build:
-  os: ubuntu-22.04
+  os: ubuntu-24.04
   tools:
     python: mambaforge-latest
   jobs:
@@ -13,6 +13,8 @@ build:
       - git fetch --tags
     post_build:
       - mamba list
+    pre_install:
+      - git update-index --assume-unchanged doc/environment.yml
 python:
   install:
   - method: pip

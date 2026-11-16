@@ -582,6 +582,9 @@ class TestComparisonOps(extension_tests.BaseComparisonOpsTests):
         self._compare_other(s, data, op_name, other)
 
 
+@pytest.mark.filterwarnings(
+    "ignore:.*default ExtensionArray implementation of searchsorted:pandas.errors.PerformanceWarning"  # noqa: E501
+)
 class TestMethods(extension_tests.BaseMethodsTests):
     @pytest.mark.parametrize("dropna", [True, False])
     def test_value_counts(self, all_data, dropna):
