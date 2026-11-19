@@ -322,18 +322,13 @@ class TestDataFrame:
         # Set the Series to be Point(i,i) where i is the index
         self.df.index = range(len(self.df) - 1, -1, -1)
 
-        d = {}
-        for i in range(len(self.df)):
-            d[i] = Point(i, i)
-        g = GeoSeries(d)
+        g = GeoSeries({i: Point(i, i) for i in range(len(self.df))})
         # At this point, the DataFrame index is [4,3,2,1,0] and the
         # GeoSeries index is [0,1,2,3,4]. Make sure set_geometry aligns
         # them to match indexes
         df = self.df.set_geometry(g)
-
-        for i, r in df.iterrows():
-            assert i == r["geometry"].x
-            assert i == r["geometry"].y
+        assert df.index.tolist() == [4, 3, 2, 1, 0]
+        assert df.geometry.x.tolist() == [4, 3, 2, 1, 0]
 
     def test_set_geometry_empty(self):
         df = pd.DataFrame(columns=["a", "geometry"], index=pd.DatetimeIndex([]))
