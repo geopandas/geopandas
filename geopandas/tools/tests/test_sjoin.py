@@ -824,8 +824,7 @@ class TestSpatialJoinNYBB:
     def test_sjoin_left(self):
         df = sjoin(self.pointdf, self.polydf, how="left")
         assert df.shape == (21, 8)
-        for i, row in df.iterrows():
-            assert row.geometry.geom_type == "Point"
+        assert df.geometry.geom_type.unique().tolist() == ["Point"]
         assert "pointattr1" in df.columns
         assert "BoroCode" in df.columns
 
@@ -835,10 +834,8 @@ class TestSpatialJoinNYBB:
         df2 = sjoin(self.polydf, self.pointdf, how="left")
         assert df.shape == (12, 8)
         assert df.shape == df2.shape
-        for i, row in df.iterrows():
-            assert row.geometry.geom_type == "MultiPolygon"
-        for i, row in df2.iterrows():
-            assert row.geometry.geom_type == "MultiPolygon"
+        assert df.geometry.geom_type.unique().tolist() == ["MultiPolygon"]
+        assert df2.geometry.geom_type.unique().tolist() == ["MultiPolygon"]
 
     def test_sjoin_inner(self):
         df = sjoin(self.pointdf, self.polydf, how="inner")
