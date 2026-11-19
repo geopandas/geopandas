@@ -9,6 +9,11 @@ New features and improvements:
   with others , only on the exterior of the grid (bottom for the x-axis, left for the 
   y-axis). If True, labels are added to all axes. If False, no labels are added (#3886).
 
+Bug fixes:
+
+- Fix the colorbar being shrunk when plotting with a ``"compressed"`` matplotlib
+  layout, which already sizes the colorbar to match the map (#3885).
+
 ## Version 1.2.0 (September 28, 2026)
 
 New features and improvements:

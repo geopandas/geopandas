@@ -912,6 +912,15 @@ class TestPolygonPlotting:
         cax = _get_colorbar_ax(ax.get_figure())
         assert cax.get_xlabel() == label_txt
 
+    def test_colorbar_compressed_layout(self):
+        # GH3885 - with the compressed layout engine, matplotlib sizes the
+        # colorbar to match the axes, so we should not shrink it
+        fig, ax = plt.subplots(layout="compressed")
+        self.df.plot(column="values", ax=ax, legend=True)
+        fig.draw_without_rendering()
+        cax = _get_colorbar_ax(fig)
+        assert cax.get_position().height == pytest.approx(ax.get_position().height)
+
     if MPL_DECORATORS:
         """Test that geometries are properly normalized so holes appear."""
 
