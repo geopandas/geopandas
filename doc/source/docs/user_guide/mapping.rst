@@ -100,6 +100,19 @@ However, the default appearance of the legend and plot axes may not be desirable
         legend_kwds={"label": "Population in 2010", "orientation": "horizontal"},
     );
 
+If you'd like to ensure that the colorbar is exactly aligned with the plot itself, you can use the compressed layout:
+
+.. ipython:: python
+
+    # Plot population estimates with an accurate legend
+    fig, ax = plt.subplots(layout="compressed")
+    @savefig chicago_compressed.png
+    chicago.plot(
+        column="POP2010",
+        ax=ax,
+        legend=True,
+        legend_kwds={"label": "Population in 2010", "orientation": "horizontal"},
+    );
 
 Choosing colors
 ~~~~~~~~~~~~~~~

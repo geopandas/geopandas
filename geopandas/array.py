@@ -1538,7 +1538,9 @@ class GeometryArray(ExtensionArray):
         values = to_wkb(self)
         from pandas import Index, Series
 
-        result = Series(values).value_counts(dropna=dropna)
+        # set sort=False to preserve the order of first appearance, pandas will
+        # further sort if necessary (depending on sort keyword in Series.value_counts)
+        result = Series(values).value_counts(dropna=dropna, sort=False)
         # value_counts converts None to nan, need to convert back for from_wkb to work
         # note result.index already has object dtype, not geometry
         # Can't use fillna(None) or Index.putmask, as this gets converted back to nan

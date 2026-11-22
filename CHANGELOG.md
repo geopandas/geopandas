@@ -1,8 +1,18 @@
 # Changelog
 
-## Version 1.3.0
+## Development version
+
+New features and improvements:
+
+- `add_plot` keyword in `GeoDataFrame.plot` and `GeoSeries.plot` now defaults to None. 
+  If None, labels are added only to axes without an existing label and, for axes shared 
+  with others , only on the exterior of the grid (bottom for the x-axis, left for the 
+  y-axis). If True, labels are added to all axes. If False, no labels are added (#3886).
 
 Bug fixes:
+
+- Fix the colorbar being shrunk when plotting with a ``"compressed"`` matplotlib
+  layout, which already sizes the colorbar to match the map (#3885).
 - `GeoDataFrame.explode()` now correctly handles being passed a geometry column
   besides the active geometry column (#3909)
 
