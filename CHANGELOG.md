@@ -13,6 +13,8 @@ Bug fixes:
 
 - Fix the colorbar being shrunk when plotting with a ``"compressed"`` matplotlib
   layout, which already sizes the colorbar to match the map (#3885).
+- `GeoDataFrame.explode()` now correctly handles being passed a geometry column
+  besides the active geometry column (#3909)
 
 ## Version 1.2.0 (September 28, 2026)
 

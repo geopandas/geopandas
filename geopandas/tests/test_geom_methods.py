@@ -2142,6 +2142,37 @@ class TestGeomMethods:
         assert test_df.geometry.name == "geom"
         assert test_df.geometry.name == test_df._geometry_column_name
         assert "geometry" in test_df.columns
+        assert_geoseries_equal(
+            test_df["geometry"].reset_index(drop=True), GeoSeries([s[0], s[0], s[1]])
+        )
+
+    def test_explode_non_active_geometry_column(self):
+        # GH3904
+        gdf = GeoDataFrame(
+            {"geom2": GeoSeries([MultiPoint([(0, 0), (1, 1)])])},
+            geometry=[Point(9, 9)],
+        )
+        result = gdf.explode(column="geom2")
+        expected = GeoDataFrame(
+            {
+                "geom2": GeoSeries([Point(0, 0), Point(1, 1)]),
+                "geometry": GeoSeries([Point(9, 9), Point(9, 9)]),
+            }
+        ).set_axis([0, 0])
+        assert result.geometry.name == "geometry"
+        assert_geodataframe_equal(result, expected)
+
+    def test_explode_no_active_geometry_column(self):
+        gdf = GeoDataFrame({"geom2": GeoSeries([MultiPoint([(0, 0), (1, 1)])])})
+        assert gdf._geometry_column_name is None
+        result = gdf.explode(column="geom2")
+        assert isinstance(result, GeoDataFrame)
+        expected = GeoDataFrame(
+            {
+                "geom2": GeoSeries([Point(0, 0), Point(1, 1)]),
+            }
+        ).set_axis([0, 0])
+        assert_frame_equal(result, expected)
 
     def test_get_coordinates(self):
         expected = DataFrame(
