@@ -11,6 +11,15 @@ New features and improvements:
     in the schema, and a `"geo"` key in its metadata is written as is.
   - The new `additional_metadata` keyword adds JSON-encoded key-value pairs to the
     file metadata. It can override the metadata of the schema, but never `"geo"`.
+- `add_plot` keyword in `GeoDataFrame.plot` and `GeoSeries.plot` now defaults to None. 
+  If None, labels are added only to axes without an existing label and, for axes shared 
+  with others , only on the exterior of the grid (bottom for the x-axis, left for the 
+  y-axis). If True, labels are added to all axes. If False, no labels are added (#3886).
+
+Bug fixes:
+
+- Fix the colorbar being shrunk when plotting with a ``"compressed"`` matplotlib
+  layout, which already sizes the colorbar to match the map (#3885).
 
 ## Version 1.2.0 (September 28, 2026)
 
