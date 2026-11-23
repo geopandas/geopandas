@@ -86,6 +86,7 @@ def geopandas_to_arrow(
     geometry_encoding="WKB",
     interleaved=True,
     include_z=None,
+    schema=None,
 ):
     """
     Convert GeoDataFrame to a pyarrow.Table.
@@ -116,11 +117,13 @@ def geopandas_to_arrow(
         input geometries. Note that this inference can be unreliable with
         empty geometries (for a guaranteed result, it is recommended to
         specify the keyword).
+    schema : pyarrow.Schema, default None
+        The expected schema of the Arrow Table; see
+        :meth:`GeoDataFrame.to_parquet` for how it is applied.
 
     """
     mask = df.dtypes == "geometry"
     geometry_columns = df.columns[mask]
-    geometry_indices = np.asarray(mask).nonzero()[0]
 
     df_attr = pd.DataFrame(df.copy(deep=False))
 
@@ -130,13 +133,18 @@ def geopandas_to_arrow(
     for col in geometry_columns:
         df_attr[col] = None
 
-    table = pa.Table.from_pandas(df_attr, preserve_index=index)
+    if schema is not None:
+        schema = _add_missing_geometry_fields(schema, geometry_columns)
+        if index:
+            _check_index_in_schema(df_attr, schema)
+
+    table = pa.Table.from_pandas(df_attr, preserve_index=index, schema=schema)
 
     geometry_encoding_dict = {}
 
     if geometry_encoding.lower() == "geoarrow":
         # Encode all geometry columns to GeoArrow
-        for i, col in zip(geometry_indices, geometry_columns):
+        for col in geometry_columns:
             field, geom_arr = construct_geometry_array(
                 np.array(df[col].array),
                 include_z=include_z,
@@ -144,7 +152,8 @@ def geopandas_to_arrow(
                 crs=df[col].crs,
                 interleaved=interleaved,
             )
-            table = table.set_column(i, field, geom_arr)
+            field = _merge_user_field_metadata(field, schema)
+            table = table.set_column(table.schema.get_field_index(col), field, geom_arr)
             geometry_encoding_dict[col] = (
                 field.metadata[b"ARROW:extension:name"]
                 .decode()
@@ -153,11 +162,12 @@ def geopandas_to_arrow(
 
     elif geometry_encoding.lower() == "wkb":
         # Encode all geometry columns to WKB
-        for i, col in zip(geometry_indices, geometry_columns):
+        for col in geometry_columns:
             field, wkb_arr = construct_wkb_array(
                 np.asarray(df[col].array), field_name=col, crs=df[col].crs
             )
-            table = table.set_column(i, field, wkb_arr)
+            field = _merge_user_field_metadata(field, schema)
+            table = table.set_column(table.schema.get_field_index(col), field, wkb_arr)
             geometry_encoding_dict[col] = "WKB"
 
     else:
@@ -165,6 +175,52 @@ def geopandas_to_arrow(
             f"Expected geometry encoding 'WKB' or 'geoarrow' got {geometry_encoding}"
         )
     return table, geometry_encoding_dict
+
+
+def _add_missing_geometry_fields(schema, geometry_columns):
+    """Append a placeholder field for each geometry column missing from ``schema``.
+
+    The geometry fields are replaced by the encoded geometry later on, so users
+    don't need to specify them in their schema.
+    """
+    for col in geometry_columns:
+        if col not in schema.names:
+            schema = schema.append(pa.field(col, pa.null()))
+    return schema
+
+
+def _check_index_in_schema(df_attr, schema):
+    """Raise if the index levels of ``df_attr`` are not all in ``schema``.
+
+    ``index=True`` explicitly asks for the index to be written, which contradicts
+    a schema that leaves out its levels.
+    """
+    # pyarrow names unnamed index levels e.g. "__index_level_0__"
+    index_names = pa.Schema.from_pandas(df_attr.iloc[:0], preserve_index=True).names
+    missing = [
+        name
+        for name in index_names
+        if name not in df_attr.columns and name not in schema.names
+    ]
+    if missing:
+        raise ValueError(
+            f"The index level(s) {missing} are not in the schema, but "
+            "index=True requires the index to be written. Add them to the "
+            "schema, or do not pass index=True."
+        )
+
+
+def _merge_user_field_metadata(field, schema):
+    """Add the metadata of the same-named field in ``schema`` to ``field``.
+
+    The metadata added by GeoPandas (the Arrow extension metadata) takes precedence.
+    """
+    if schema is None or field.name not in schema.names:
+        return field
+    user_metadata = schema.field(field.name).metadata
+    if not user_metadata:
+        return field
+    return field.with_metadata({**user_metadata, **(field.metadata or {})})
 
 
 def construct_wkb_array(

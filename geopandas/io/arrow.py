@@ -387,6 +387,8 @@ def _geopandas_to_arrow(
     geometry_encoding="WKB",
     schema_version=None,
     write_covering_bbox=None,
+    schema=None,
+    additional_metadata=None,
 ):
     """Convert a GeoDataFrame to a pyarrow Table.
 
@@ -410,8 +412,21 @@ def _geopandas_to_arrow(
                 f"{pa.__version__} is installed."
             )
 
+    if write_covering_bbox and schema is not None and b"geo" in (schema.metadata or {}):
+        raise ValueError(
+            "write_covering_bbox=True cannot be combined with a 'geo' key in the "
+            "metadata of the schema, as the 'geo' metadata would not describe the "
+            "bbox column. To manage the bbox column yourself, include it in the "
+            "dataframe and the schema, declare the covering in your 'geo' "
+            "metadata, and do not pass write_covering_bbox."
+        )
+
     table, geometry_encoding_dict = geopandas_to_arrow(
-        df, geometry_encoding=geometry_encoding, index=index, interleaved=False
+        df,
+        geometry_encoding=geometry_encoding,
+        index=index,
+        interleaved=False,
+        schema=schema,
     )
     geo_metadata = _create_metadata(
         df,
@@ -449,7 +464,13 @@ def _geopandas_to_arrow(
     # Store geopandas specific file-level metadata
     # This must be done AFTER creating the table or it is not persisted
     metadata = table.schema.metadata
-    metadata.update({b"geo": _encode_metadata(geo_metadata)})
+    for key, value in (additional_metadata or {}).items():
+        if key != "geo":
+            metadata[key.encode()] = _encode_metadata(value)
+    # A "geo" key passed through the metadata of a user-specified schema is
+    # written as is, otherwise the geo metadata is generated.
+    if b"geo" not in metadata:
+        metadata[b"geo"] = _encode_metadata(geo_metadata)
 
     # Store attributes in metadata if exists
     if df.attrs:
@@ -467,6 +488,8 @@ def _to_parquet(
     geometry_encoding="WKB",
     schema_version=None,
     write_covering_bbox=False,
+    schema=None,
+    additional_metadata=None,
     **kwargs,
 ):
     """
@@ -506,6 +529,12 @@ def _to_parquet(
         Writes the bounding box column for each row entry with column
         name 'bbox'. Writing a bbox column can be computationally
         expensive, hence is default setting is False.
+    schema : pyarrow.Schema, default None
+        The expected schema of the Parquet file. See
+        :meth:`GeoDataFrame.to_parquet` for how it is applied.
+    additional_metadata : dict, default None
+        Additional file metadata; each value is JSON-encoded. See
+        :meth:`GeoDataFrame.to_parquet`.
     **kwargs
         Additional keyword arguments passed to pyarrow.parquet.write_table().
     """
@@ -520,11 +549,22 @@ def _to_parquet(
         geometry_encoding=geometry_encoding,
         schema_version=schema_version,
         write_covering_bbox=write_covering_bbox,
+        schema=schema,
+        additional_metadata=additional_metadata,
     )
     parquet.write_table(table, path, compression=compression, **kwargs)
 
 
-def _to_feather(df, path, index=None, compression=None, schema_version=None, **kwargs):
+def _to_feather(
+    df,
+    path,
+    index=None,
+    compression=None,
+    schema_version=None,
+    schema=None,
+    additional_metadata=None,
+    **kwargs,
+):
     """
     Write a GeoDataFrame to the Feather format.
 
@@ -555,6 +595,12 @@ def _to_feather(df, path, index=None, compression=None, schema_version=None, **k
     schema_version : {'0.1.0', '0.4.0', '1.0.0', '1.1.0', '2.0.0', None}
         GeoParquet specification version for the metadata; if not provided
         will default to latest supported version.
+    schema : pyarrow.Schema, default None
+        The expected schema of the Feather file. See
+        :meth:`GeoDataFrame.to_parquet` for how it is applied.
+    additional_metadata : dict, default None
+        Additional file metadata; each value is JSON-encoded. See
+        :meth:`GeoDataFrame.to_parquet`.
     kwargs
         Additional keyword arguments passed to pyarrow.feather.write_feather().
     """
@@ -563,7 +609,13 @@ def _to_feather(df, path, index=None, compression=None, schema_version=None, **k
     )
 
     path = _expand_user(path)
-    table = _geopandas_to_arrow(df, index=index, schema_version=schema_version)
+    table = _geopandas_to_arrow(
+        df,
+        index=index,
+        schema_version=schema_version,
+        schema=schema,
+        additional_metadata=additional_metadata,
+    )
     feather.write_feather(table, path, compression=compression, **kwargs)
 
 
