@@ -1504,14 +1504,14 @@ default 'snappy'
             it in the DataFrame and the schema and declare the covering in your "geo"
             metadata.
 
-            .. versionadded:: 1.3
+            .. versionadded:: 1.3.0
         additional_metadata : dict, default None
             Adds additional metadata to the Parquet file metadata.
             Each value gets JSON-encoded.
             May override metadata that is provided through the 'schema' parameter,
             but never the 'geo' metadata.
 
-            .. versionadded:: 1.3
+            .. versionadded:: 1.3.0
         kwargs
             Additional keyword arguments passed to :func:`pyarrow.parquet.write_table`.
 
@@ -1641,14 +1641,14 @@ default 'snappy'
             The expected schema of the Feather file. See :meth:`to_parquet` for
             how the schema is applied, including for geometry columns.
 
-            .. versionadded:: 1.3
+            .. versionadded:: 1.3.0
         additional_metadata : dict, default None
             Adds additional metadata to the Feather file metadata.
             Each value gets JSON-encoded.
             May override metadata that is provided through the 'schema' parameter,
             but never the 'geo' metadata.
 
-            .. versionadded:: 1.3
+            .. versionadded:: 1.3.0
         kwargs
             Additional keyword arguments passed to
             :func:`pyarrow.feather.write_feather`.
