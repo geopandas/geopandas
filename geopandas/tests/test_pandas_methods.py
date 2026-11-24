@@ -638,6 +638,28 @@ def test_groupby_agg_tuple(df):
     assert_geodataframe_equal(res_dict, res_tup)
 
 
+def test_groupby_agg_renamed_geometry(df):
+    # GH 3897: named aggregation with a renamed geometry column should not
+    # leave a stale/invalid active geometry column name (e.g. 0)
+    grouped = df.groupby("value2").agg(geom=("geometry", "first"))
+    assert grouped.active_geometry_name is None
+    assert "geom" in grouped.columns
+    res = grouped.set_geometry("geom")
+    assert res.active_geometry_name == "geom"
+    assert res.geometry.name == "geom"
+
+
+def test_groupby_agg_named_multiple_columns(df):
+    grouped = df.groupby("value2").agg(
+        geom=("geometry", "first"),
+        v1=("value1", "sum"),
+    )
+    assert isinstance(grouped, GeoDataFrame)
+    assert grouped.active_geometry_name is None
+    res = grouped.set_geometry("geom")
+    assert res.active_geometry_name == "geom"
+
+
 def test_groupby_groups(df):
     g = df.groupby("value2")
     res = g.get_group(1)
