@@ -138,7 +138,10 @@ def _expand_kwargs(kwargs: dict, multiindex: np.ndarray) -> None:
 
     scalar_kwargs = ["marker", "path_effects"]
     for att, value in kwargs.items():
-        if "color" in att:  # color(s), edgecolor(s), facecolor(s)
+        if "color" in att or att in {
+            "ec",
+            "fc",
+        }:  # color(s), edgecolor(s), facecolor(s)
             if is_color_like(value):
                 continue
         elif "linestyle" in att:  # linestyle(s)

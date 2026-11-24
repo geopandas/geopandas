@@ -834,6 +834,17 @@ class TestPolygonPlotting:
         _check_colors(2, ax.collections[0].get_facecolors(), [(0.5, 0.5, 0.5, 0.5)] * 2)
         _check_colors(2, ax.collections[0].get_edgecolors(), [(0.4, 0.5, 0.6, 0.5)] * 2)
 
+    @pytest.mark.parametrize(
+        ("alias", "getter"),
+        [("ec", "get_edgecolors"), ("fc", "get_facecolors")],
+    )
+    def test_style_kwargs_color_alias_rgba(self, alias, getter):
+        rgba = (0.2, 0.4, 0.6, 0.1)
+        ax = self.df.plot(**{alias: rgba})
+
+        actual = getattr(ax.collections[0], getter)()
+        np.testing.assert_allclose(actual, [rgba])
+
     def test_style_kwargs_linestyle(self):
         #   single
         ax = self.df.plot(linestyle=":", linewidth=1)
