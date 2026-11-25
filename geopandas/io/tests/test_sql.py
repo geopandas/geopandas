@@ -19,6 +19,7 @@ from geopandas.io.sql import _get_conn as get_conn
 from geopandas.io.sql import _write_postgis as write_postgis
 
 import pytest
+from geopandas.testing import assert_geodataframe_equal
 from geopandas.tests.util import (
     create_postgis,
     create_spatialite,
@@ -56,30 +57,36 @@ def check_available_postgis_drivers() -> list[str]:
 
 POSTGIS_DRIVERS = check_available_postgis_drivers()
 
-POSTGIS_AVAILABLE = None
+POSTGIS_ENGINE_DRIVERS = POSTGIS_DRIVERS.copy()
+if find_spec("pg8000"):
+    POSTGIS_ENGINE_DRIVERS.append("pg8000")
+
+POSTGIS_AVAILABLE = {}
 
 
 def check_postgis_available(driver) -> bool:
     """
     Check if a PostGIS database is available for testing.
 
-    Check this once and cache the result, because this can be slow on Windows.
+    Cache the result per driver, because this can be slow on Windows.
     """
-    global POSTGIS_AVAILABLE
-    if POSTGIS_AVAILABLE is not None:
-        return POSTGIS_AVAILABLE
+    if driver in POSTGIS_AVAILABLE:
+        return POSTGIS_AVAILABLE[driver]
 
-    psycopg = pytest.importorskip(driver)
+    dbapi = pytest.importorskip(driver)
+    credentials = prepare_database_credentials()
+    if driver == "pg8000":
+        credentials["database"] = credentials.pop("dbname")
 
     try:
-        con = psycopg.connect(**prepare_database_credentials())
-    except psycopg.OperationalError:
-        POSTGIS_AVAILABLE = False
+        con = dbapi.connect(**credentials)
+    except dbapi.Error:
+        POSTGIS_AVAILABLE[driver] = False
     else:
         con.close()
-        POSTGIS_AVAILABLE = True
+        POSTGIS_AVAILABLE[driver] = True
 
-    return POSTGIS_AVAILABLE
+    return POSTGIS_AVAILABLE[driver]
 
 
 def prepare_database_credentials() -> dict:
@@ -118,9 +125,9 @@ def connection_postgis(request):
 @pytest.fixture()
 def engine_postgis(request):
     """
-    Initiate a sqlalchemy connection engine using either psycopg2 or psycopg.
+    Initiate a SQLAlchemy engine using psycopg2, psycopg, or pg8000.
 
-    Use this as an indirect fixture, where the request parameter is POSTGIS_DRIVERS.
+    Use this as an indirect fixture with POSTGIS_ENGINE_DRIVERS.
     """
     sqlalchemy = pytest.importorskip("sqlalchemy")
     from sqlalchemy.engine.url import URL
@@ -276,7 +283,7 @@ def df_3D_geoms():
 
 
 class TestIO:
-    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_ENGINE_DRIVERS, indirect=True)
     def test_get_conn(self, engine_postgis):
         Connection = pytest.importorskip("sqlalchemy.engine.base").Connection
 
@@ -416,7 +423,7 @@ class TestIO:
         # by user; should not be set to 0, as from get_srid failure
         assert df.crs is None
 
-    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_ENGINE_DRIVERS, indirect=True)
     def test_write_postgis_default(self, engine_postgis, df_nybb):
         """Tests that GeoDataFrame can be written to PostGIS with defaults."""
         engine = engine_postgis
@@ -432,7 +439,73 @@ class TestIO:
         df = read_postgis(sql, engine, geom_col="geometry")
         validate_boro_df(df)
 
-    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_ENGINE_DRIVERS, indirect=True)
+    def test_write_postgis_copy_csv_and_identifiers(self, engine_postgis):
+        from shapely.geometry import Point
+
+        schema = 'test_copy "schema"'
+        table = 'test_copy "table"'
+        geom_col = 'geom "value"'
+        gdf = GeoDataFrame(
+            {
+                "row_id": [0, 1, 2],
+                'data "label"': ['comma, quote" and\nnewline', "München 東京", None],
+                geom_col: [Point(1, 2), None, Point(3, 4)],
+            },
+            geometry=geom_col,
+            crs="EPSG:4326",
+        )
+        with engine_postgis.begin() as conn:
+            conn.execute(text('CREATE SCHEMA "test_copy ""schema"""'))
+        try:
+            with engine_postgis.begin() as conn:
+                gdf.to_postgis(table, conn, schema=schema, chunksize=1)
+                result = read_postgis(
+                    'SELECT * FROM "test_copy ""schema""".'
+                    '"test_copy ""table""" ORDER BY row_id',
+                    conn,
+                    geom_col=geom_col,
+                )
+                assert_geodataframe_equal(result, gdf)
+        finally:
+            with engine_postgis.begin() as conn:
+                conn.execute(text('DROP SCHEMA "test_copy ""schema""" CASCADE'))
+
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_ENGINE_DRIVERS, indirect=True)
+    def test_write_postgis_copy_error_rolls_back(self, engine_postgis):
+        from sqlalchemy import Integer
+
+        from shapely.geometry import Point
+
+        table = "test_copy_rollback"
+        initial = GeoDataFrame({"value": [1]}, geometry=[Point(1, 2)], crs=4326)
+        initial.to_postgis(
+            table, engine_postgis, if_exists="replace", dtype={"value": Integer}
+        )
+        invalid = GeoDataFrame(
+            {"value": [2, "invalid integer"]},
+            geometry=[Point(3, 4), Point(5, 6)],
+            crs=4326,
+        )
+
+        with pytest.raises(
+            engine_postgis.dialect.dbapi.Error,
+            match="invalid input syntax for type integer",
+        ):
+            invalid.to_postgis(
+                table,
+                engine_postgis,
+                if_exists="append",
+                chunksize=1,
+                dtype={"value": Integer},
+            )
+
+        result = read_postgis(
+            f"SELECT * FROM {table}", engine_postgis, geom_col="geometry"
+        )
+        assert_geodataframe_equal(result, initial)
+
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_ENGINE_DRIVERS, indirect=True)
     def test_write_postgis_uppercase_tablename(self, engine_postgis, df_nybb):
         """Tests writing GeoDataFrame to PostGIS with uppercase tablename."""
         engine = engine_postgis
@@ -448,7 +521,7 @@ class TestIO:
         df = read_postgis(sql, engine, geom_col="geometry")
         validate_boro_df(df)
 
-    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_ENGINE_DRIVERS, indirect=True)
     def test_write_postgis_sqlalchemy_connection(self, engine_postgis, df_nybb):
         """Tests that GeoDataFrame can be written to PostGIS with defaults."""
         with engine_postgis.begin() as con:
@@ -464,7 +537,7 @@ class TestIO:
             df = read_postgis(sql, con, geom_col="geometry")
             validate_boro_df(df)
 
-    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_ENGINE_DRIVERS, indirect=True)
     def test_write_postgis_fail_when_table_exists(self, engine_postgis, df_nybb):
         """
         Tests that uploading the same table raises error when: if_replace='fail'.
@@ -484,7 +557,7 @@ class TestIO:
             else:
                 raise e
 
-    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_ENGINE_DRIVERS, indirect=True)
     def test_write_postgis_replace_when_table_exists(self, engine_postgis, df_nybb):
         """
         Tests that replacing a table is possible when: if_replace='replace'.
@@ -502,7 +575,7 @@ class TestIO:
         df = read_postgis(sql, engine, geom_col="geometry")
         validate_boro_df(df)
 
-    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_ENGINE_DRIVERS, indirect=True)
     def test_write_postgis_append_when_table_exists(self, engine_postgis, df_nybb):
         """
         Tests that appending to existing table produces correct results when:
@@ -529,7 +602,7 @@ class TestIO:
             f"There should be {orig_cols} columns,found: {new_cols}",
         )
 
-    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_ENGINE_DRIVERS, indirect=True)
     def test_write_postgis_without_crs(self, engine_postgis, df_nybb):
         """
         Tests that GeoDataFrame can be written to PostGIS without CRS information.
@@ -552,7 +625,7 @@ class TestIO:
             target_srid = conn.execute(sql).fetchone()[0]
         assert target_srid == 0, f"SRID should be 0, found {target_srid}"
 
-    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_ENGINE_DRIVERS, indirect=True)
     def test_write_postgis_with_esri_authority(self, engine_postgis, df_nybb):
         """
         Tests that GeoDataFrame can be written to PostGIS with ESRI Authority
@@ -575,7 +648,7 @@ class TestIO:
             target_srid = conn.execute(sql).fetchone()[0]
         assert target_srid == 102003, f"SRID should be 102003, found {target_srid}"
 
-    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_ENGINE_DRIVERS, indirect=True)
     def test_write_postgis_geometry_collection(
         self, engine_postgis, df_geom_collection
     ):
@@ -598,7 +671,7 @@ class TestIO:
         assert geom_type.upper() == "GEOMETRYCOLLECTION"
         assert df.geom_type.unique()[0] == "GeometryCollection"
 
-    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_ENGINE_DRIVERS, indirect=True)
     def test_write_postgis_none_geometry_types(
         self, engine_postgis, df_mixed_none_geometry
     ):
@@ -620,7 +693,7 @@ class TestIO:
         assert res[0][0].upper() == "MULTIPOLYGON"
         assert pd.isna(res[1][0])
 
-    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_ENGINE_DRIVERS, indirect=True)
     def test_write_postgis_mixed_geometry_types(
         self, engine_postgis, df_mixed_single_and_multi
     ):
@@ -643,7 +716,7 @@ class TestIO:
         assert res[1][0].upper() == "MULTILINESTRING"
         assert res[2][0].upper() == "POINT"
 
-    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_ENGINE_DRIVERS, indirect=True)
     def test_write_postgis_linear_ring(self, engine_postgis, df_linear_ring):
         """
         Tests that writing a LinearRing.
@@ -661,7 +734,7 @@ class TestIO:
 
         assert geom_type.upper() == "LINESTRING"
 
-    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_ENGINE_DRIVERS, indirect=True)
     def test_write_postgis_in_chunks(self, engine_postgis, df_mixed_single_and_multi):
         """
         Tests writing a LinearRing works.
@@ -691,7 +764,7 @@ class TestIO:
         assert res[1][0].upper() == "MULTILINESTRING"
         assert res[2][0].upper() == "POINT"
 
-    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_ENGINE_DRIVERS, indirect=True)
     def test_write_postgis_to_different_schema(self, engine_postgis, df_nybb):
         """
         Tests writing data to alternative schema.
@@ -713,7 +786,7 @@ class TestIO:
         df = read_postgis(sql, engine, geom_col="geometry")
         validate_boro_df(df)
 
-    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_ENGINE_DRIVERS, indirect=True)
     def test_write_postgis_to_different_schema_when_table_exists(
         self, engine_postgis, df_nybb
     ):
@@ -752,7 +825,7 @@ class TestIO:
         df = read_postgis(sql, engine, geom_col="geometry")
         validate_boro_df(df)
 
-    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_ENGINE_DRIVERS, indirect=True)
     def test_write_postgis_3D_geometries(self, engine_postgis, df_3D_geoms):
         """
         Tests writing a geometries with 3 dimensions works.
@@ -768,7 +841,7 @@ class TestIO:
         df = read_postgis(sql, engine, geom_col="geometry")
         assert list(df.geometry.has_z) == [True, True, True]
 
-    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_ENGINE_DRIVERS, indirect=True)
     def test_row_order(self, engine_postgis, df_nybb):
         """
         Tests that the row order in db table follows the order of the original frame.
@@ -785,7 +858,7 @@ class TestIO:
         df = read_postgis(sql, engine, geom_col="geometry")
         assert df["BoroCode"].tolist() == correct_order
 
-    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_ENGINE_DRIVERS, indirect=True)
     def test_append_before_table_exists(self, engine_postgis, df_nybb):
         """
         Tests that insert works with if_exists='append' when table does not exist yet.
@@ -803,7 +876,7 @@ class TestIO:
         df = read_postgis(sql, engine, geom_col="geometry")
         validate_boro_df(df)
 
-    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_ENGINE_DRIVERS, indirect=True)
     def test_append_with_different_crs(self, engine_postgis, df_nybb):
         """
         Tests that the warning is raised if table CRS differs from frame.
@@ -820,7 +893,7 @@ class TestIO:
         with pytest.raises(ValueError, match="CRS of the target table"):
             write_postgis(df_nybb2, con=engine, name=table, if_exists="append")
 
-    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_ENGINE_DRIVERS, indirect=True)
     def test_append_without_crs(self, engine_postgis, df_nybb):
         # This test was included in #3328 when the default value for no
         # CRS was changed from an SRID of -1 to 0. This resolves issues
@@ -836,7 +909,7 @@ class TestIO:
         df_nybb2 = df_nybb
         write_postgis(df_nybb2, con=engine, name=table, if_exists="append")
 
-    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_ENGINE_DRIVERS, indirect=True)
     def test_append_with_custom_geom_col(self, engine_postgis, df_nybb):
         engine = engine_postgis
         table = "test_custom_geom"
@@ -853,7 +926,7 @@ class TestIO:
         df = read_postgis(sql, engine, geom_col="custom_geom_123")
         assert len(df) == len(gdf) * 2
 
-    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_ENGINE_DRIVERS, indirect=True)
     def test_duplicate_geometry_column_fails(self, engine_postgis):
         """
         Tests that a ValueError is raised if an SQL query returns two geometry columns.
@@ -931,7 +1004,7 @@ class TestIO:
         validate_boro_df(df)
         assert df.crs == "ESRI:54052"
 
-    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_ENGINE_DRIVERS, indirect=True)
     def test_to_postgis_sql_injection_prevention_geometry_column(
         self, engine_postgis, df_nybb
     ):
@@ -990,7 +1063,7 @@ class TestIO:
             assert conn.execute(sql_check).fetchone()[0] == initial_count
             assert conn.execute(sql_check_target).fetchone()[0] == 1
 
-    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_ENGINE_DRIVERS, indirect=True)
     def test_to_postgis_sql_injection_prevention_geometry_column_union(
         self, engine_postgis, df_nybb
     ):

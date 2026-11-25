@@ -336,6 +336,8 @@ def _psql_insert_copy(tbl, conn, keys, data_iter):
         if hasattr(cur, "copy") and callable(cur.copy):
             with cur.copy(sql) as copy:
                 copy.write(s_buf.read())
+        elif conn.dialect.driver == "pg8000":
+            cur.execute(sql, stream=s_buf)
         else:  # otherwise use psycopg2 method
             cur.copy_expert(sql, s_buf)
 
@@ -355,7 +357,7 @@ def _write_postgis(
     Upload GeoDataFrame into PostGIS database.
 
     This method requires SQLAlchemy and GeoAlchemy2, and a PostgreSQL
-    Python driver (e.g. psycopg2) to be installed.
+    Python driver (psycopg, psycopg2, or pg8000) to be installed.
 
     Parameters
     ----------
