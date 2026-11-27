@@ -319,3 +319,12 @@ the spatial information.
     version is used when writing files, but older versions can be specified using
     the ``schema_version`` keyword. GeoPandas supports reading files
     encoded using any GeoParquet version.
+
+Choosing between Parquet and Feather
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Both formats require ``pyarrow`` and support reading a subset of columns via ``columns`` as well as storing multiple geometry columns and Coordinate Reference System (CRS) metadata. Each format targets different trade-offs:
+
+* **File size and compression**: Parquet is designed for long-term storage and analytical workloads. It applies columnar encodings (such as dictionary and run-length encoding) alongside Snappy compression by default (``compression="snappy"``), typically yielding smaller files on disk than Feather. Feather mirrors the in-memory Apache Arrow format on disk (using LZ4 compression by default when available) to minimize serialization overhead, which usually produces larger files.
+* **Read and write speed**: Because Feather stores the Arrow memory layout directly, reading and writing full tables is often faster than Parquet. When reading subsets of a large dataset, Parquet supports predicate pushdown via ``filters`` and spatial filtering via ``bbox`` (when written with ``write_covering_bbox=True``, ``schema_version="2.0.0"``, or GeoArrow point encoding via ``geometry_encoding="geoarrow"``), whereas :func:`geopandas.read_feather` does not support ``bbox`` or ``filters``.
+* **Ecosystem interoperability**: Both formats provide fast I/O for Python and Arrow-compatible tools, though traditional desktop GIS applications often have broader out-of-the-box support for GeoPackage or ESRI Shapefile than for Feather or GeoParquet. GeoParquet is more widely supported across cloud data warehouses, GDAL (when built with Arrow/Parquet support), and distributed geospatial tools than Feather.
