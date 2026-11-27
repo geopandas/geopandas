@@ -139,6 +139,10 @@ Now, you create centroids and make it the geometry:
 
 **Note 2:** Somewhat confusingly, by default when you use the :func:`~geopandas.read_file` command, the column containing spatial objects from the file is named "geometry" by default, and will be set as the active geometry column. However, despite using the same term for the name of the column and the name of the special attribute that keeps track of the active column, they are distinct. You can easily shift the active geometry column to a different :class:`GeoSeries` with the :meth:`~GeoDataFrame.set_geometry` command. Further, ``gdf.geometry`` will always return the active geometry column, *not* the column named ``geometry``. If you wish to call a column named "geometry", and a different column is the active geometry column, use ``gdf['geometry']``, not ``gdf.geometry``.
 
+.. note::
+
+    Importing ``geopandas`` attaches :meth:`~GeoDataFrame.set_geometry` to :class:`pandas.DataFrame` at import time (via ``DataFrame.set_geometry``). Calling ``df.set_geometry(...)`` on a plain :class:`pandas.DataFrame` therefore relies on ``import geopandas`` having executed, and can raise ``AttributeError`` if a linter removes an otherwise unused ``geopandas`` import. Prefer constructing :class:`GeoDataFrame` explicitly with ``GeoDataFrame(df, geometry=...)``.
+
 Attributes and methods
 ~~~~~~~~~~~~~~~~~~~~~~
 

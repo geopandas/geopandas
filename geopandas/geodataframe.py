@@ -2988,6 +2988,38 @@ def _dataframe_set_geometry(
     inplace: Literal[False] = False,
     crs: Any | None = None,
 ) -> GeoDataFrame:
+    """
+    Convert a pandas DataFrame into a GeoDataFrame and set the geometry column.
+
+    Importing ``geopandas`` attaches this method to :class:`pandas.DataFrame` at
+    import time so that ``df.set_geometry(...)`` works on plain DataFrames.
+    Because this relies on importing ``geopandas`` for its side effect, code that
+    calls ``set_geometry`` on a plain :class:`pandas.DataFrame` without otherwise
+    referencing ``geopandas`` will raise an ``AttributeError`` if a linter removes
+    the unused import. Prefer calling ``GeoDataFrame(df, geometry=...)`` directly
+    to avoid depending on import-time patching.
+
+    Parameters
+    ----------
+    col : column label or array-like
+        An existing column name or values to set as the new geometry column.
+    drop : bool, optional
+        Deprecated. Controls whether the previous geometry column is dropped.
+    inplace : bool, default False
+        Must be ``False``. In-place conversion from a ``pandas.DataFrame`` is
+        not supported and raises a ``ValueError``.
+    crs : pyproj.CRS, optional
+        Coordinate system to use for the resulting ``GeoDataFrame``.
+
+    Returns
+    -------
+    GeoDataFrame
+
+    See Also
+    --------
+    GeoDataFrame : Construct a GeoDataFrame directly from a pandas DataFrame.
+    GeoDataFrame.set_geometry : Set the geometry column on an existing GeoDataFrame.
+    """
     if inplace:
         raise ValueError(
             "Can't do inplace setting when converting from DataFrame to GeoDataFrame"
