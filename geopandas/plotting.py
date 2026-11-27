@@ -174,7 +174,7 @@ def _subset_kwds(kwds: dict, index: np.ndarray) -> dict:
     """
     subset_kwds = {}
     for key, val in kwds.items():
-        if isinstance(val, (np.ndarray, pd.Series, pd.Index, pd.DataFrame)) and (
+        if isinstance(val, np.ndarray | pd.Series | pd.Index | pd.DataFrame) and (
             len(val) == index.shape[0]
         ):
             subsetted = val[index]

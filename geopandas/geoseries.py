@@ -26,7 +26,6 @@ from .array import (
     from_wkb,
     from_wkt,
     points_from_xy,
-    to_wkb,
     to_wkt,
 )
 from .base import is_geometry_type
@@ -1420,7 +1419,7 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         - Empty Points will be converted to Points with NaN as coordinates (but will be
           read by :meth:`from_wkb` as empty Points).
         """
-        return Series(to_wkb(self.array, hex=hex, **kwargs), index=self.index)
+        return Series(self.array.to_wkb(hex=hex, **kwargs), index=self.index)
 
     def to_wkt(self, **kwargs) -> Series:
         """Convert GeoSeries geometries to WKT.
