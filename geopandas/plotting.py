@@ -544,7 +544,7 @@ def plot_series(
         :class:`xyzservices.TileProvider`, any string that can be resolved by
         :func:`xyzservices.providers.query_name`, URL, or a path to a local file. The
         placeholders for the XYZ in the URL need to be `{x}`, `{y}`, `{z}`,
-        respectively. For local file paths, the file is read with `rasterio` and all
+        respectively. For local file paths, the file is read with :mod:`rasterio` and all
         bands are loaded into the basemap. The tiles are automatically warped to the CRS
         of the geometry. Note that this can result in suboptimal rendering. To avoid
         warping, geometry needs to be in EPSG:3857 (Web Mercator) or a CRS of the tiles
@@ -569,7 +569,8 @@ def plot_series(
 
     Returns
     -------
-    ax : matplotlib axes instance
+    ax : matplotlib.axes.Axes
+        matplotlib :class:`~matplotlib.axes.Axes` instance
     """  # noqa: E501
     try:
         import matplotlib  # noqa: F401
@@ -783,7 +784,7 @@ def plot_dataframe(
         Plot a legend. Ignored if no ``column`` is given, or if ``color`` is given. This
         can be a :class:`matplotlib.legend.Legend` in case of categorical variables or
         those with set ``scheme`` and a categorical legend, or a
-        :class`:matplotlib.colorbar.Colorbar` in case of continuous variables or those
+        :class:`matplotlib.colorbar.Colorbar` in case of continuous variables or those
         with set ``scheme`` and a colorbar legend.
     scheme : str (default None)
         Name of a choropleth classification scheme (requires ``mapclassify``). A
@@ -840,7 +841,8 @@ def plot_dataframe(
     categories : ``list-like``
         Ordered list-like object of categories to be used for categorical plot.
     classification_kwds : ``dict`` (default ``None``)
-        Keyword arguments to pass to ``mapclassify`` when ``scheme`` is set.
+        Keyword arguments to pass to :class:`mapclassify.classifiers.MapClassifier`
+        when ``scheme`` is set.
     missing_kwds : ``dict`` (default None)
         Keyword arguments specifying style options (e.g. color, hatch, linewidth) to be
         passed on to geometries with missing values in addition to or overwriting other
@@ -861,7 +863,7 @@ def plot_dataframe(
         :class:`xyzservices.TileProvider`, any string that can be resolved by
         :func:`xyzservices.providers.query_name`, URL, or a path to a local file. The
         placeholders for the XYZ in the URL need to be `{x}`, `{y}`, `{z}`,
-        respectively. For local file paths, the file is read with `rasterio` and all
+        respectively. For local file paths, the file is read with :mod:`rasterio` and all
         bands are loaded into the basemap. The tiles are automatically warped to the CRS
         of the geometry. Note that this can result in suboptimal rendering. To avoid
         warping, geometry needs to be in EPSG:3857 (Web Mercator) or a CRS of the tiles
@@ -887,7 +889,8 @@ def plot_dataframe(
 
     Returns
     -------
-    ax : matplotlib axes instance
+    ax : matplotlib.axes.Axes
+        matplotlib :class:`~matplotlib.axes.Axes` instance
 
     Examples
     --------
