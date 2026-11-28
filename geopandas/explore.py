@@ -785,6 +785,9 @@ def _tooltip_popup(type, fields, gdf, **kwds):
         if field in fields:
             fields.remove(field)
 
+    if not fields:
+        return None
+
     # Cast fields to str
     fields = list(map(str, fields))
     if type == "tooltip":
