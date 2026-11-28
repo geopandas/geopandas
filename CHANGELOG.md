@@ -11,6 +11,8 @@ New features and improvements:
 
 Bug fixes:
 
+- Avoid empty tooltips and popups in `explore` when no displayable attributes
+  remain (#2168).
 - Fix the colorbar being shrunk when plotting with a ``"compressed"`` matplotlib
   layout, which already sizes the colorbar to match the map (#3885).
 - `GeoDataFrame.explode()` now correctly handles being passed a geometry column
