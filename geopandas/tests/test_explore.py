@@ -23,6 +23,41 @@ from matplotlib import cm, colors
 FOLIUM_GE_019 = Version(folium.__version__) >= Version("0.19.0")
 
 
+@pytest.mark.parametrize("fields", [True, 1, []])
+def test_tooltip_popup_no_attributes(fields):
+    # GH#2168
+    gdf = gpd.GeoDataFrame(geometry=[shapely.Point(0, 0)])
+    m = gdf.explore(tooltip=fields, popup=fields)
+
+    assert "GeoJsonTooltip" not in str(m.to_dict())
+    assert "GeoJsonPopup" not in str(m.to_dict())
+    m.get_root().render()
+
+
+@pytest.mark.parametrize("column", [None, [1]])
+def test_tooltip_popup_filtered_attributes(column):
+    # Neither secondary geometries nor internal colour columns are display fields.
+    gdf = gpd.GeoDataFrame(geometry=[shapely.Point(0, 0)])
+    gdf["other_geometry"] = gdf.geometry
+    m = gdf.explore(column=column, tooltip=True, popup=True)
+
+    assert "GeoJsonTooltip" not in str(m.to_dict())
+    assert "GeoJsonPopup" not in str(m.to_dict())
+    m.get_root().render()
+
+
+@pytest.mark.parametrize("named_index", [False, True])
+def test_tooltip_popup_retains_attributes(named_index):
+    gdf = gpd.GeoDataFrame({"value": [1]}, geometry=[shapely.Point(0, 0)])
+    if named_index:
+        gdf = gdf.set_index("value")
+    m = gdf.explore(tooltip=True, popup=True)
+
+    assert "GeoJsonTooltip" in str(m.to_dict())
+    assert "GeoJsonPopup" in str(m.to_dict())
+    assert 'fields = ["value"]' in m.get_root().render()
+
+
 @pytest.fixture(scope="class")
 def _setup_class_test_explore(
     nybb_filename, naturalearth_lowres, naturalearth_cities, request
